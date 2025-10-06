@@ -5,6 +5,16 @@ class SplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(body: Center(child: Text('Splash Screen')));
+    return Scaffold(
+      backgroundColor: const Color(0xFFE5E5E5),
+      body: Center(
+        child: Image.asset(
+          'assets/BullXchange Design-PNG/Logo IMAGE.png',
+          width: 300,
+          height: 300,
+          fit: BoxFit.contain,
+        ),
+      ),
+    );
   }
 }
