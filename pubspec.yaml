@@ -20,11 +20,14 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - assets/images/
+    - assets/images/splashBottom.png
     - assets/icon/
+    - assets/BullXchange Design-PNG/
+
 
 
 flutter_icons:                      
   android: true
   ios: true
-  image_path: "assets/icon/app_icon.png"   
-  
+  image_path: "assets/icon/app_icon.png"

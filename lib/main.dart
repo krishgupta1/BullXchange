@@ -1,3 +1,4 @@
+import 'package:bullxchange/features/auth/pages/onboarding_page_1.1.dart';
 import 'package:bullxchange/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -14,7 +15,8 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
-      home: Scaffold(body: Center(child: Text('Hello World!'))),
+      debugShowCheckedModeBanner: false,
+      home: OnboardingPage(),
     );
   }
 }
