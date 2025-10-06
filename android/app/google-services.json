@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "966889537689",
+    "project_id": "bullxchange-94945",
+    "storage_bucket": "bullxchange-94945.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:966889537689:android:24f07b228b26de4669b808",
+        "android_client_info": {
+          "package_name": "com.example.bullxchange"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDfA_E0gfZP1d2W7UQ99yd38BwwGtY-tC4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
