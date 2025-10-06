@@ -23,7 +23,7 @@ class _MainAppState extends State<MainApp> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 5), () {
+    Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
         setState(() {
           _showSplash = false;
@@ -36,7 +36,22 @@ class _MainAppState extends State<MainApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: _showSplash ? const SplashScreen() : const OnboardingPage(),
+      home: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 500),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        transitionBuilder: (child, animation) {
+          final curved = CurvedAnimation(parent: animation, curve: Curves.easeInOutCubic);
+          final offset = Tween<Offset>(begin: const Offset(0.1, 0), end: Offset.zero).animate(curved);
+          return FadeTransition(
+            opacity: curved,
+            child: SlideTransition(position: offset, child: child),
+          );
+        },
+        child: _showSplash
+            ? const SplashScreen(key: ValueKey('splash'))
+            : const OnboardingPage(key: ValueKey('onboarding-1.1')),
+      ),
     );
   }
 }

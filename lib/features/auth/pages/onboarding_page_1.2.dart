@@ -53,17 +53,18 @@ class OnboardingPage12 extends StatelessWidget {
                         const SizedBox(height: 24),
                         // Title
                         Text(
-                          'Get Started  with Tradebase',
+                          'Get Started  with BullXchange',
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                                 fontWeight: FontWeight.w700,
+                                fontSize: 24,
                                 color: const Color(0xFF0F2B46),
                               ),
                         ),
                         const SizedBox(height: 16),
                         // Description
                         Text(
-                          "A place that provides you with the world's top stocks that you can buy and trade",
+                          "Discover India’s top stocks and F&O to trade and learn.",
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                                 color: const Color(0xFF8AA0B2),

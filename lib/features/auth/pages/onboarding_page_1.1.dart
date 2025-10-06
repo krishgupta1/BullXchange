@@ -37,17 +37,18 @@ class OnboardingPage extends StatelessWidget {
                         const SizedBox(height: 60),
                         // Title
                         Text(
-                          'Buy & Trade Top Stock',
+                          'Buy & Trade Top Stock and F&O',
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                                 fontWeight: FontWeight.w700,
+                                fontSize: 24,
                                 color: const Color(0xFF0F2B46),
                               ),
                         ),
                         const SizedBox(height: 60),
                         // Description
                         Text(
-                          "A place that provides you with the world's top stocks that you can buy and trade",
+                          "A platform to practice trading India’s top stocks and F&O with zero risk.",
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                                 color: const Color(0xFF8AA0B2),
