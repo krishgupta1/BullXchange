@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:bullxchange/features/auth/screens/pages/reset_password_page.dart';
 import 'package:bullxchange/features/auth/screens/pages/signup_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -16,6 +17,120 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
+
+  final RegExp _emailRegex = RegExp(
+    r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+  );
+
+  void _showSnack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _showEmailNotFoundDialog(String email) async {
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('Email not found'),
+          content: Text('No account exists for "$email".'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Back'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                Navigator.pushReplacement(
+                  context,
+                  slideRightToLeft(const SignupPage()),
+                );
+              },
+              child: const Text('Create Account'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _handleLogin() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      _showSnack('Please enter both email and password.');
+      return;
+    }
+    if (!_emailRegex.hasMatch(email)) {
+      _showSnack('Incorrect email format.');
+      return;
+    }
+    if (password.length < 8) {
+      _showSnack('Password should be at least 8 characters.');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      _showSnack('Signed in successfully.');
+      // TODO: Navigate to your app's home/dashboard screen
+    } on FirebaseAuthException catch (e) {
+      switch (e.code) {
+        case 'invalid-email':
+          _showSnack('Incorrect email format.');
+          break;
+        case 'user-disabled':
+          _showSnack('This account has been disabled.');
+          break;
+        case 'user-not-found':
+          await _showEmailNotFoundDialog(email);
+          break;
+        case 'wrong-password':
+          _showSnack('Incorrect password.');
+          break;
+        case 'invalid-credential':
+          await _showEmailNotFoundDialog(email);
+          break;
+        case 'invalid-login-credentials':
+          // Newer SDK combined error for wrong email/password
+          _showSnack('Invalid email or password.');
+          break;
+        case 'operation-not-allowed':
+          _showSnack('Email/Password sign-in is disabled in Firebase.');
+          break;
+        case 'network-request-failed':
+          _showSnack('Network error. Check your connection and try again.');
+          break;
+        case 'too-many-requests':
+          _showSnack('Too many attempts. Please try again later.');
+          break;
+        default:
+          _showSnack('Login failed. (${e.code})');
+      }
+    } catch (e) {
+      _showSnack('Something went wrong. Please try again.');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -213,9 +328,7 @@ class _LoginPageState extends State<LoginPage> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: () {
-                    // TODO: Implement login logic
-                  },
+                  onPressed: _isLoading ? null : _handleLogin,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF4318FF),
                     foregroundColor: Colors.white,
@@ -224,14 +337,25 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
-                    'Login',
-                    style: TextStyle(
-                      fontFamily: 'EudoxusSans',
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                      : const Text(
+                          'Login',
+                          style: TextStyle(
+                            fontFamily: 'EudoxusSans',
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                 ),
               ),
               const Spacer(),
