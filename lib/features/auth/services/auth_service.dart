@@ -8,7 +8,7 @@ class UsersService {
 
   // Add a user document (e.g., during sign up)
   Future<void> addUser(String uid, Map<String, dynamic> data) async {
-    await usersRef.doc(uid).set(data);
+    await usersRef.doc(uid).set(data, SetOptions(merge: true));
   }
 
   // --- ADD THIS METHOD ---

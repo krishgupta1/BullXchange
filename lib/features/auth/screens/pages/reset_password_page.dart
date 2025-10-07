@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bullxchange/features/auth/screens/pages/login_page.dart';
 import 'package:bullxchange/features/auth/navigation/route_transitions.dart';
 
@@ -11,6 +12,7 @@ class ResetPasswordPage extends StatefulWidget {
 
 class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final TextEditingController _emailController = TextEditingController();
+  bool _isSending = false;
 
   @override
   void dispose() {
@@ -122,12 +124,60 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 width: double.infinity,
                 height: 64,
                 child: ElevatedButton(
-                  onPressed: () {
-                    // TODO: Implement send OTP flow
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('OTP code sent (mock)')),
-                    );
-                  },
+                  onPressed: _isSending
+                      ? null
+                      : () async {
+                          final email = _emailController.text.trim();
+                          if (email.isEmpty || !email.contains('@')) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please enter a valid email.'),
+                              ),
+                            );
+                            return;
+                          }
+                          setState(() {
+                            _isSending = true;
+                          });
+                          try {
+                            await FirebaseAuth.instance.sendPasswordResetEmail(
+                              email: email,
+                            );
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Reset link sent. Check your email.',
+                                ),
+                              ),
+                            );
+                            Navigator.pushReplacement(
+                              context,
+                              slideLeftToRight(const LoginPage()),
+                            );
+                          } on FirebaseAuthException catch (e) {
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  e.message ?? 'Failed to send reset link.',
+                                ),
+                              ),
+                            );
+                          } catch (_) {
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Something went wrong.'),
+                              ),
+                            );
+                          } finally {
+                            if (!mounted) return;
+                            setState(() {
+                              _isSending = false;
+                            });
+                          }
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF4318FF),
                     foregroundColor: Colors.white,
@@ -136,14 +186,23 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
-                    'Send Reset Password Link',
-                    style: TextStyle(
-                      fontFamily: 'EudoxusSans',
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                  child: _isSending
+                      ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            valueColor: AlwaysStoppedAnimation(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          'Send Reset Password Link',
+                          style: TextStyle(
+                            fontFamily: 'EudoxusSans',
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                 ),
               ),
             ],

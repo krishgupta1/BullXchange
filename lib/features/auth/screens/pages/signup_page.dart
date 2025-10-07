@@ -1,6 +1,9 @@
 import 'package:bullxchange/features/auth/screens/onboarding/onboarding_page_1.2.dart';
 import 'package:bullxchange/features/auth/screens/pages/login_page.dart';
 import 'package:bullxchange/features/auth/navigation/route_transitions.dart';
+import 'package:bullxchange/features/auth/services/auth_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
@@ -17,9 +20,13 @@ class _SignupPageState extends State<SignupPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final UsersService _usersService = UsersService();
+
   // State for password visibility and terms checkbox
   bool _obscurePassword = true;
   bool _agreedToTerms = false;
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -287,11 +294,15 @@ class _SignupPageState extends State<SignupPage> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: _agreedToTerms
+                  onPressed: _agreedToTerms && !_isSubmitting
                       ? () {
-                          // TODO: Implement sign up logic
+                          _signUp();
+                          Navigator.pushReplacement(
+                            context,
+                            slideLeftToRight(const LoginPage()),
+                          );
                         }
-                      : null, // Disable button if terms not agreed
+                      : null, // Disable when terms not agreed or loading
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryBlue,
                     foregroundColor: Colors.white,
@@ -300,14 +311,23 @@ class _SignupPageState extends State<SignupPage> {
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
-                    'Start',
-                    style: TextStyle(
-                      fontFamily: 'EudoxusSans',
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            valueColor: AlwaysStoppedAnimation(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          'Start',
+                          style: TextStyle(
+                            fontFamily: 'EudoxusSans',
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -386,5 +406,80 @@ class _SignupPageState extends State<SignupPage> {
         ),
       ],
     );
+  }
+
+  Future<void> _signUp() async {
+    final String fullName = _fullNameController.text.trim();
+    final String email = _emailController.text.trim();
+    final String password = _passwordController.text.trim();
+
+    // Simple validation
+    if (fullName.isEmpty || email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please fill all fields.')));
+      return;
+    }
+    if (!email.contains('@')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid email.')),
+      );
+      return;
+    }
+    if (password.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Password must be at least 6 characters.'),
+        ),
+      );
+      return;
+    }
+
+    try {
+      setState(() {
+        _isSubmitting = true;
+      });
+      final UserCredential credential = await _auth
+          .createUserWithEmailAndPassword(email: email, password: password);
+
+      final User? user = credential.user;
+      if (user != null) {
+        // Send verification email (non-blocking)
+        try {
+          await user.sendEmailVerification();
+        } catch (_) {}
+
+        await _usersService.addUser(user.uid, {
+          'name': fullName,
+          'email': email,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Signup successful! Verify your email, then sign in.',
+            ),
+          ),
+        );
+        Navigator.pushReplacement(context, slideLeftToRight(const LoginPage()));
+      }
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message ?? 'Signup failed')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('An unexpected error occurred.')),
+      );
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+      });
+    }
   }
 }
