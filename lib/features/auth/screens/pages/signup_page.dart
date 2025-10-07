@@ -1,5 +1,6 @@
 import 'package:bullxchange/features/auth/screens/onboarding/onboarding_page_1.2.dart';
 import 'package:bullxchange/features/auth/screens/pages/login_page.dart';
+import 'package:bullxchange/features/auth/screens/pages/setup_pin_screen.dart';
 import 'package:bullxchange/features/auth/navigation/route_transitions.dart';
 import 'package:bullxchange/features/auth/services/auth_service.dart';
 import 'package:bullxchange/features/auth/widgets/app_back_button.dart';
@@ -18,7 +19,6 @@ class SignupPage extends StatefulWidget {
 }
 
 class _SignupPageState extends State<SignupPage> {
-  // Controllers
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -38,46 +38,29 @@ class _SignupPageState extends State<SignupPage> {
     super.dispose();
   }
 
-  // ----------------------------
-  // EMAIL VALIDATION - ABSTRACT API
-  // ----------------------------
+  // ✅ Email validation
   Future<bool> validateEmailWithAPI(String email) async {
     try {
       final dio = Dio();
       final apiKey = dotenv.env['ABSTRACT_API_KEY'];
 
-      if (apiKey == null || apiKey.isEmpty) {
-        debugPrint('❌ API Key is missing.');
-        return false;
-      }
+      if (apiKey == null || apiKey.isEmpty) return false;
 
       final response = await dio.get(
         'https://emailvalidation.abstractapi.com/v1/',
         queryParameters: {'api_key': apiKey, 'email': email},
-        options: Options(
-          receiveTimeout: const Duration(seconds: 5),
-          sendTimeout: const Duration(seconds: 5),
-        ),
       );
 
       if (response.statusCode == 200) {
-        final data = response.data;
-        debugPrint('✅ Email validation response: $data');
-
-        // Mark email as valid if deliverable
-        return data['deliverability'] == 'DELIVERABLE';
+        return response.data['deliverability'] == 'DELIVERABLE';
       }
-
       return false;
-    } catch (e) {
-      debugPrint('❌ Email validation failed: $e');
+    } catch (_) {
       return false;
     }
   }
 
-  // ----------------------------
-  // SIGNUP FUNCTION
-  // ----------------------------
+  // ✅ Signup
   Future<void> _signUp() async {
     final fullName = _fullNameController.text.trim();
     final email = _emailController.text.trim();
@@ -95,7 +78,6 @@ class _SignupPageState extends State<SignupPage> {
 
     setState(() => _isSubmitting = true);
 
-    // ✅ Validate email
     final isRealEmail = await validateEmailWithAPI(email);
     if (!isRealEmail) {
       setState(() => _isSubmitting = false);
@@ -103,7 +85,6 @@ class _SignupPageState extends State<SignupPage> {
       return;
     }
 
-    // ✅ Password length check
     if (password.length < 6) {
       setState(() => _isSubmitting = false);
       _showSnackBar('Password must be at least 6 characters.');
@@ -111,7 +92,6 @@ class _SignupPageState extends State<SignupPage> {
     }
 
     try {
-      // ✅ Create user in Firebase
       final credential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
@@ -119,54 +99,37 @@ class _SignupPageState extends State<SignupPage> {
 
       final user = credential.user;
       if (user != null) {
-        // Send verification email
-        try {
-          await user.sendEmailVerification();
-        } catch (e) {
-          debugPrint('⚠️ Email verification send failed: $e');
-        }
-
-        // Save user info in Firestore
         await _usersService.addUser(user.uid, {
           'name': fullName,
           'email': email,
           'createdAt': FieldValue.serverTimestamp(),
+          'hasPin': false,
         });
 
         if (!mounted) return;
-        _showSnackBar(
-          'Signup successful! Please verify your email before logging in.',
-        );
 
-        // Navigate to Login Page
-        Navigator.pushReplacement(context, slideLeftToRight(const LoginPage()));
+        // Go to PIN setup after successful signup
+        Navigator.pushReplacement(
+          context,
+          slideRightToLeft(const SetupPinScreen()),
+        );
       }
     } on FirebaseAuthException catch (e) {
-      if (!mounted) return;
       _showSnackBar(e.message ?? 'Signup failed');
-    } catch (e) {
-      debugPrint('❌ Unexpected error: $e');
-      if (!mounted) return;
-      _showSnackBar('Unexpected error: $e');
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  // ----------------------------
-  // UI
-  // ----------------------------
   @override
   Widget build(BuildContext context) {
-    const Color primaryBlue = Color(0xFF4318FF);
-    const Color secondaryText = Color(0xFF8AA0B2);
-    const Color titleText = Color(0xFF0F2B46);
+    const primaryBlue = Color(0xFF4318FF);
+    const secondaryText = Color(0xFF8AA0B2);
+    const titleText = Color(0xFF0F2B46);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -178,7 +141,6 @@ class _SignupPageState extends State<SignupPage> {
             children: [
               const SizedBox(height: 20),
 
-              // Back Button
               AppBackButton(
                 onPressed: () => Navigator.pushReplacement(
                   context,
@@ -187,7 +149,6 @@ class _SignupPageState extends State<SignupPage> {
               ),
               const SizedBox(height: 30),
 
-              // App Logo & Name
               Row(
                 children: [
                   Container(
@@ -235,7 +196,6 @@ class _SignupPageState extends State<SignupPage> {
               ),
               const SizedBox(height: 40),
 
-              // Full Name
               _buildTextFieldWithLabel(
                 label: 'Full Name',
                 controller: _fullNameController,
@@ -244,7 +204,6 @@ class _SignupPageState extends State<SignupPage> {
               ),
               const SizedBox(height: 16),
 
-              // Email
               _buildTextFieldWithLabel(
                 label: 'Email Address',
                 controller: _emailController,
@@ -253,7 +212,6 @@ class _SignupPageState extends State<SignupPage> {
               ),
               const SizedBox(height: 16),
 
-              // Password
               _buildTextFieldWithLabel(
                 label: 'Password',
                 controller: _passwordController,
@@ -261,9 +219,7 @@ class _SignupPageState extends State<SignupPage> {
                 keyboardType: TextInputType.visiblePassword,
                 obscureText: _obscurePassword,
                 suffixIcon: IconButton(
-                  onPressed: () => setState(() {
-                    _obscurePassword = !_obscurePassword;
-                  }),
+                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                   icon: Icon(
                     _obscurePassword
                         ? Icons.visibility_off_outlined
@@ -274,64 +230,32 @@ class _SignupPageState extends State<SignupPage> {
               ),
               const SizedBox(height: 24),
 
-              // Terms of Service
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Checkbox(
                     value: _agreedToTerms,
-                    onChanged: (val) =>
-                        setState(() => _agreedToTerms = val ?? false),
+                    onChanged: (val) => setState(() => _agreedToTerms = val ?? false),
                     activeColor: primaryBlue,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    side: const BorderSide(
-                      color: Color(0xFFE5E5E5),
-                      width: 1.5,
-                    ),
                   ),
-                  const SizedBox(width: 8),
                   Expanded(
                     child: RichText(
                       text: TextSpan(
+                        style: const TextStyle(
+                          fontFamily: 'EudoxusSans',
+                          fontSize: 14,
+                          color: secondaryText,
+                        ),
                         children: [
-                          const TextSpan(
-                            text: 'I agree to the ',
-                            style: TextStyle(
-                              fontFamily: 'EudoxusSans',
-                              fontSize: 14,
-                              color: secondaryText,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          const TextSpan(text: 'I agree to the '),
                           TextSpan(
                             text: 'Terms of Service',
-                            style: const TextStyle(
-                              fontFamily: 'EudoxusSans',
-                              fontSize: 14,
-                              color: primaryBlue,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: const TextStyle(color: primaryBlue, fontWeight: FontWeight.bold),
                             recognizer: TapGestureRecognizer()..onTap = () {},
                           ),
-                          const TextSpan(
-                            text: ' and ',
-                            style: TextStyle(
-                              fontFamily: 'EudoxusSans',
-                              fontSize: 14,
-                              color: secondaryText,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          const TextSpan(text: ' and '),
                           TextSpan(
                             text: 'Privacy Policy',
-                            style: const TextStyle(
-                              fontFamily: 'EudoxusSans',
-                              fontSize: 14,
-                              color: primaryBlue,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: const TextStyle(color: primaryBlue, fontWeight: FontWeight.bold),
                             recognizer: TapGestureRecognizer()..onTap = () {},
                           ),
                         ],
@@ -342,7 +266,6 @@ class _SignupPageState extends State<SignupPage> {
               ),
               const SizedBox(height: 32),
 
-              // Start Button
               SizedBox(
                 width: double.infinity,
                 height: 56,
@@ -351,18 +274,12 @@ class _SignupPageState extends State<SignupPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryBlue,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   child: _isSubmitting
-                      ? const SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            valueColor: AlwaysStoppedAnimation(Colors.white),
-                          ),
+                      ? const CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          valueColor: AlwaysStoppedAnimation(Colors.white),
                         )
                       : const Text(
                           'Start',
@@ -376,28 +293,20 @@ class _SignupPageState extends State<SignupPage> {
               ),
               const SizedBox(height: 15),
 
-              // Sign In Link
               Center(
                 child: RichText(
                   text: TextSpan(
+                    style: const TextStyle(
+                      fontFamily: 'EudoxusSans',
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: secondaryText,
+                    ),
                     children: [
-                      const TextSpan(
-                        text: "Already have an account? ",
-                        style: TextStyle(
-                          fontFamily: 'EudoxusSans',
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: secondaryText,
-                        ),
-                      ),
+                      const TextSpan(text: "Already have an account? "),
                       TextSpan(
                         text: 'Sign in',
-                        style: const TextStyle(
-                          fontFamily: 'EudoxusSans',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.black,
-                        ),
+                        style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w700),
                         recognizer: TapGestureRecognizer()
                           ..onTap = () {
                             Navigator.pushReplacement(
@@ -418,9 +327,6 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 
-  // ----------------------------
-  // INPUT FIELD BUILDER
-  // ----------------------------
   Widget _buildTextFieldWithLabel({
     required String label,
     required TextEditingController controller,
@@ -432,52 +338,20 @@ class _SignupPageState extends State<SignupPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4.0, bottom: 4.0),
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontFamily: 'EudoxusSans',
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF0F2B46),
-            ),
-          ),
-        ),
+        Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+        const SizedBox(height: 4),
         TextField(
           controller: controller,
           keyboardType: keyboardType,
           obscureText: obscureText,
-          decoration: _buildInputDecoration(hintText, suffixIcon: suffixIcon),
+          decoration: InputDecoration(
+            hintText: hintText,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            suffixIcon: suffixIcon,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          ),
         ),
       ],
-    );
-  }
-
-  InputDecoration _buildInputDecoration(String hintText, {Widget? suffixIcon}) {
-    const borderSide = BorderSide(color: Color(0xFFE5E5E5));
-    final outlineInputBorder = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: borderSide,
-    );
-
-    return InputDecoration(
-      hintText: hintText,
-      hintStyle: const TextStyle(
-        fontFamily: 'EudoxusSans',
-        color: Color(0xFF8AA0B2),
-        fontSize: 16,
-      ),
-      border: outlineInputBorder,
-      enabledBorder: outlineInputBorder,
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF4318FF)),
-      ),
-      filled: true,
-      fillColor: Colors.white,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      suffixIcon: suffixIcon,
     );
   }
 }
