@@ -30,7 +30,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
             children: [
               const SizedBox(height: 20),
               // Back button
-              Container(
+              SizedBox(
                 width: 40,
                 height: 40,
                 child: Center(

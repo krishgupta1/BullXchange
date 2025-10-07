@@ -36,7 +36,7 @@ class _LoginPageState extends State<LoginPage> {
             children: [
               const SizedBox(height: 20),
               // Back button
-              Container(
+              SizedBox(
                 width: 40,
                 height: 40,
                 child: Center(
