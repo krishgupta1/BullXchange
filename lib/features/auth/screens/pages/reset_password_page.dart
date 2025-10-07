@@ -129,6 +129,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                       : () async {
                           final email = _emailController.text.trim();
                           if (email.isEmpty || !email.contains('@')) {
+                            if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text('Please enter a valid email.'),
@@ -143,7 +144,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                             await FirebaseAuth.instance.sendPasswordResetEmail(
                               email: email,
                             );
-                            if (!mounted) return;
+                            if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text(
@@ -151,12 +152,13 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                 ),
                               ),
                             );
+                            if (!context.mounted) return;
                             Navigator.pushReplacement(
                               context,
                               slideLeftToRight(const LoginPage()),
                             );
                           } on FirebaseAuthException catch (e) {
-                            if (!mounted) return;
+                            if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
@@ -165,17 +167,18 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                               ),
                             );
                           } catch (_) {
-                            if (!mounted) return;
+                            if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text('Something went wrong.'),
                               ),
                             );
                           } finally {
-                            if (!mounted) return;
-                            setState(() {
-                              _isSending = false;
-                            });
+                            if (context.mounted) {
+                              setState(() {
+                                _isSending = false;
+                              });
+                            }
                           }
                         },
                   style: ElevatedButton.styleFrom(

@@ -72,4 +72,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'bullxchange-94945.firebasestorage.app',
     iosBundleId: 'com.example.bullxchange',
   );
+
 }

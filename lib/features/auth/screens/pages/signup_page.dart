@@ -297,10 +297,6 @@ class _SignupPageState extends State<SignupPage> {
                   onPressed: _agreedToTerms && !_isSubmitting
                       ? () {
                           _signUp();
-                          Navigator.pushReplacement(
-                            context,
-                            slideLeftToRight(const LoginPage()),
-                          );
                         }
                       : null, // Disable when terms not agreed or loading
                   style: ElevatedButton.styleFrom(
@@ -476,10 +472,11 @@ class _SignupPageState extends State<SignupPage> {
         const SnackBar(content: Text('An unexpected error occurred.')),
       );
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _isSubmitting = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
     }
   }
 }

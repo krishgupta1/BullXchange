@@ -1,10 +1,11 @@
-import 'package:bullxchange/features/auth/screens/onboarding/onboarding_page_1.2.dart';
-import 'package:bullxchange/features/auth/navigation/route_transitions.dart';
+import 'package:bullxchange/features/homepage/homepage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
-import 'package:bullxchange/features/auth/screens/pages/reset_password_page.dart';
-import 'package:bullxchange/features/auth/screens/pages/signup_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:bullxchange/features/auth/screens/pages/signup_page.dart';
+import 'package:bullxchange/features/auth/screens/pages/reset_password_page.dart';
+import 'package:bullxchange/features/auth/screens/onboarding/onboarding_page_1.2.dart';
+import 'package:bullxchange/features/auth/navigation/route_transitions.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -60,6 +61,9 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _handleLogin() async {
+    // Dismiss keyboard
+    FocusScope.of(context).unfocus();
+
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
@@ -76,19 +80,27 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
+      // Attempt login
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
 
+      if (!mounted) return;
+
       _showSnack('Signed in successfully.');
-      // TODO: Navigate to your app's home/dashboard screen
+
+      // Navigate to home/dashboard
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomePage()),
+      );
     } on FirebaseAuthException catch (e) {
+      debugPrint('FirebaseAuthException: ${e.code} - ${e.message}');
+
       switch (e.code) {
         case 'invalid-email':
           _showSnack('Incorrect email format.');
@@ -103,10 +115,7 @@ class _LoginPageState extends State<LoginPage> {
           _showSnack('Incorrect password.');
           break;
         case 'invalid-credential':
-          await _showEmailNotFoundDialog(email);
-          break;
         case 'invalid-login-credentials':
-          // Newer SDK combined error for wrong email/password
           _showSnack('Invalid email or password.');
           break;
         case 'operation-not-allowed':
@@ -122,12 +131,11 @@ class _LoginPageState extends State<LoginPage> {
           _showSnack('Login failed. (${e.code})');
       }
     } catch (e) {
+      debugPrint('Unexpected error: $e');
       _showSnack('Something went wrong. Please try again.');
     } finally {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -150,7 +158,8 @@ class _LoginPageState extends State<LoginPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-              // Back button
+
+              // Back Button
               SizedBox(
                 width: 40,
                 height: 40,
@@ -158,7 +167,7 @@ class _LoginPageState extends State<LoginPage> {
                   child: IconButton(
                     onPressed: () => Navigator.pushReplacement(
                       context,
-                      slideLeftToRight(OnboardingPage12()),
+                      slideLeftToRight(const OnboardingPage12()),
                     ),
                     padding: EdgeInsets.zero,
                     alignment: Alignment.center,
@@ -171,6 +180,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               const SizedBox(height: 40),
+
               // Logo and App Name
               Row(
                 children: [
@@ -200,6 +210,7 @@ class _LoginPageState extends State<LoginPage> {
                 ],
               ),
               const SizedBox(height: 40),
+
               // Title
               const Text(
                 "Let's Sign You In",
@@ -211,7 +222,6 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               const SizedBox(height: 8),
-              // Welcome message
               const Text(
                 "Welcome back, you've been missed!",
                 style: TextStyle(
@@ -222,7 +232,8 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               const SizedBox(height: 40),
-              // Email field
+
+              // Email Field
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
@@ -254,7 +265,8 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               const SizedBox(height: 16),
-              // Password field
+
+              // Password Field
               TextField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
@@ -299,6 +311,8 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               const SizedBox(height: 8),
+
+              // Reset Password
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
@@ -323,7 +337,8 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               const SizedBox(height: 150),
-              // Login button
+
+              // Login Button
               SizedBox(
                 width: double.infinity,
                 height: 56,
@@ -343,9 +358,8 @@ class _LoginPageState extends State<LoginPage> {
                           height: 22,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
                       : const Text(
@@ -359,7 +373,8 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               const Spacer(),
-              // Sign up link
+
+              // Signup Link
               Center(
                 child: RichText(
                   text: TextSpan(
