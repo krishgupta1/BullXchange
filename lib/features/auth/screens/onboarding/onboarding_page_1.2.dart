@@ -1,5 +1,6 @@
 import 'package:bullxchange/features/auth/screens/onboarding/onboarding_page_1.1.dart';
 import 'package:bullxchange/features/auth/screens/pages/login_page.dart';
+import 'package:bullxchange/features/auth/screens/pages/signup_page.dart';
 import 'package:flutter/material.dart';
 
 class OnboardingPage12 extends StatelessWidget {
@@ -100,7 +101,14 @@ class OnboardingPage12 extends StatelessWidget {
                         const Spacer(),
                         // Get Started button
                         ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => SignupPage(),
+                              ),
+                            );
+                          },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF1541D5),
                             foregroundColor: Colors.white,

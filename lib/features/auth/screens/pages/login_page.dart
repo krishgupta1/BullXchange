@@ -1,4 +1,7 @@
+import 'package:bullxchange/features/auth/screens/onboarding/onboarding_page_1.2.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
+import 'package:bullxchange/features/auth/screens/pages/signup_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -36,14 +39,16 @@ class _LoginPageState extends State<LoginPage> {
                 height: 40,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: const Color(0xFFE5E5E5),
-                    width: 1,
-                  ),
+                  border: Border.all(color: const Color(0xFFE5E5E5), width: 1),
                 ),
                 child: Center(
                   child: IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => OnboardingPage12(),
+                      ),
+                    ),
                     padding: EdgeInsets.zero,
                     alignment: Alignment.center,
                     icon: const Icon(
@@ -174,7 +179,9 @@ class _LoginPageState extends State<LoginPage> {
                       });
                     },
                     icon: Icon(
-                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                       color: const Color(0xFF8AA0B2),
                     ),
                   ),
@@ -211,9 +218,9 @@ class _LoginPageState extends State<LoginPage> {
               // Sign up link
               Center(
                 child: RichText(
-                  text: const TextSpan(
+                  text: TextSpan(
                     children: [
-                      TextSpan(
+                      const TextSpan(
                         text: "Don't have an account? ",
                         style: TextStyle(
                           fontFamily: 'EudoxusSans',
@@ -224,12 +231,20 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       TextSpan(
                         text: 'Sign up',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontFamily: 'EudoxusSans',
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF00BFA5),
                         ),
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const SignupPage(),
+                              ),
+                            );
+                          },
                       ),
                     ],
                   ),
@@ -243,4 +258,3 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
- 

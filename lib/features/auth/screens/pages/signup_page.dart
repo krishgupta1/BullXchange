@@ -1,3 +1,5 @@
+import 'package:bullxchange/features/auth/screens/onboarding/onboarding_page_1.2.dart';
+import 'package:bullxchange/features/auth/screens/pages/login_page.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
@@ -85,7 +87,12 @@ class _SignupPageState extends State<SignupPage> {
                 ),
                 child: Center(
                   child: IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => OnboardingPage12(),
+                      ),
+                    ),
                     padding: EdgeInsets.zero,
                     alignment: Alignment.center,
                     icon: const Icon(
@@ -97,7 +104,7 @@ class _SignupPageState extends State<SignupPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 30),
 
               // Logo and App Name
               Row(
@@ -310,7 +317,7 @@ class _SignupPageState extends State<SignupPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 20),
 
               // --- Sign In link ---
               Center(
@@ -337,7 +344,12 @@ class _SignupPageState extends State<SignupPage> {
                         recognizer: TapGestureRecognizer()
                           ..onTap = () {
                             // TODO: Implement navigation back to LoginPage
-                            Navigator.of(context).pop();
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => LoginPage(),
+                              ),
+                            );
                           },
                       ),
                     ],
