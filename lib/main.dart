@@ -1,6 +1,7 @@
 import 'package:bullxchange/features/auth/screens/onboarding/onboarding_page_1.1.dart';
-import 'package:bullxchange/firebase_options.dart';
 import 'package:bullxchange/features/auth/screens/onboarding/splash_screen.dart';
+import 'package:bullxchange/features/auth/screens/pages/signup_page.dart';
+import 'package:bullxchange/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
@@ -41,8 +42,14 @@ class _MainAppState extends State<MainApp> {
         switchInCurve: Curves.easeOutCubic,
         switchOutCurve: Curves.easeInCubic,
         transitionBuilder: (child, animation) {
-          final curved = CurvedAnimation(parent: animation, curve: Curves.easeInOutCubic);
-          final offset = Tween<Offset>(begin: const Offset(0.1, 0), end: Offset.zero).animate(curved);
+          final curved = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeInOutCubic,
+          );
+          final offset = Tween<Offset>(
+            begin: const Offset(0.1, 0),
+            end: Offset.zero,
+          ).animate(curved);
           return FadeTransition(
             opacity: curved,
             child: SlideTransition(position: offset, child: child),

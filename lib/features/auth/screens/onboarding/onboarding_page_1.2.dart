@@ -19,7 +19,9 @@ class OnboardingPage12 extends StatelessWidget {
             if (Navigator.of(context).canPop()) {
               Navigator.of(context).pop();
             } else {
-              Navigator.of(context).pushReplacement(_slideLeftToRight(const OnboardingPage()));
+              Navigator.of(
+                context,
+              ).pushReplacement(_slideLeftToRight(const OnboardingPage()));
             }
           },
         ),
@@ -32,7 +34,10 @@ class OnboardingPage12 extends StatelessWidget {
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: IntrinsicHeight(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 16,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -55,7 +60,8 @@ class OnboardingPage12 extends StatelessWidget {
                         Text(
                           'Get Started  with BullXchange',
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          style: Theme.of(context).textTheme.headlineMedium
+                              ?.copyWith(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 24,
                                 color: const Color(0xFF0F2B46),
@@ -66,7 +72,8 @@ class OnboardingPage12 extends StatelessWidget {
                         Text(
                           "Discover India’s top stocks and F&O to trade and learn.",
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          style: Theme.of(context).textTheme.bodyLarge
+                              ?.copyWith(
                                 color: const Color(0xFF8AA0B2),
                                 height: 1.4,
                               ),
@@ -79,7 +86,9 @@ class OnboardingPage12 extends StatelessWidget {
                             InkWell(
                               borderRadius: BorderRadius.circular(8),
                               onTap: () {
-                                Navigator.of(context).pushReplacement(_slideLeftToRight(const OnboardingPage()));
+                                Navigator.of(context).pushReplacement(
+                                  _slideLeftToRight(const OnboardingPage()),
+                                );
                               },
                               child: const _Dot(active: false),
                             ),
@@ -152,7 +161,10 @@ Route _slideLeftToRight(Widget page) {
       const begin = Offset(-1.0, 0.0); // from left
       const end = Offset.zero;
       const curve = Curves.easeInOutCubic;
-      final tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+      final tween = Tween(
+        begin: begin,
+        end: end,
+      ).chain(CurveTween(curve: curve));
       return SlideTransition(position: animation.drive(tween), child: child);
     },
   );
@@ -179,5 +191,3 @@ class _Dot extends StatelessWidget {
     );
   }
 }
-
-

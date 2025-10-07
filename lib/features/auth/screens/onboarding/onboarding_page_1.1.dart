@@ -16,7 +16,10 @@ class OnboardingPage extends StatelessWidget {
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: IntrinsicHeight(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 16,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -39,7 +42,8 @@ class OnboardingPage extends StatelessWidget {
                         Text(
                           'Buy & Trade Top Stock and F&O',
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          style: Theme.of(context).textTheme.headlineMedium
+                              ?.copyWith(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 24,
                                 color: const Color(0xFF0F2B46),
@@ -50,7 +54,8 @@ class OnboardingPage extends StatelessWidget {
                         Text(
                           "A platform to practice trading India’s top stocks and F&O with zero risk.",
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          style: Theme.of(context).textTheme.bodyLarge
+                              ?.copyWith(
                                 color: const Color(0xFF8AA0B2),
                                 height: 1.4,
                               ),
@@ -65,7 +70,9 @@ class OnboardingPage extends StatelessWidget {
                             InkWell(
                               borderRadius: BorderRadius.circular(8),
                               onTap: () {
-                                Navigator.of(context).push(_slideRightToLeft(const OnboardingPage12()));
+                                Navigator.of(context).push(
+                                  _slideRightToLeft(const OnboardingPage12()),
+                                );
                               },
                               child: const _Dot(active: false, isLong: true),
                             ),
@@ -75,7 +82,9 @@ class OnboardingPage extends StatelessWidget {
                         // Next button
                         ElevatedButton(
                           onPressed: () {
-                            Navigator.of(context).push(_slideRightToLeft(const OnboardingPage12()));
+                            Navigator.of(
+                              context,
+                            ).push(_slideRightToLeft(const OnboardingPage12()));
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF4318FF),
@@ -117,7 +126,10 @@ Route _slideRightToLeft(Widget page) {
       const begin = Offset(1.0, 0.0); // from right
       const end = Offset.zero;
       const curve = Curves.easeInOutCubic;
-      final tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+      final tween = Tween(
+        begin: begin,
+        end: end,
+      ).chain(CurveTween(curve: curve));
       return SlideTransition(position: animation.drive(tween), child: child);
     },
   );
