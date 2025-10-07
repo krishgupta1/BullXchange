@@ -1,4 +1,4 @@
-import 'package:bullxchange/features/auth/pages/onboarding_page_1.2.dart';
+import 'package:bullxchange/features/auth/screens/onboarding/onboarding_page_1.2.dart';
 import 'package:flutter/material.dart';
 
 class OnboardingPage extends StatelessWidget {

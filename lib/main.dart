@@ -1,6 +1,6 @@
-import 'package:bullxchange/features/auth/pages/onboarding_page_1.1.dart';
+import 'package:bullxchange/features/auth/screens/onboarding/onboarding_page_1.1.dart';
 import 'package:bullxchange/firebase_options.dart';
-import 'package:bullxchange/screens/splash_screen.dart';
+import 'package:bullxchange/features/auth/screens/onboarding/splash_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
