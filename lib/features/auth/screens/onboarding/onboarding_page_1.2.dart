@@ -1,4 +1,5 @@
 import 'package:bullxchange/features/auth/screens/onboarding/onboarding_page_1.1.dart';
+import 'package:bullxchange/features/auth/screens/pages/login_page.dart';
 import 'package:flutter/material.dart';
 
 class OnboardingPage12 extends StatelessWidget {
@@ -111,7 +112,14 @@ class OnboardingPage12 extends StatelessWidget {
                         const SizedBox(height: 16),
                         // Sign in button (outlined, white background)
                         OutlinedButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => LoginPage(),
+                              ),
+                            );
+                          },
                           style: OutlinedButton.styleFrom(
                             backgroundColor: Colors.white,
                             foregroundColor: const Color(0xFF0F2B46),
