@@ -10,6 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   firebase_core: ^4.1.1
+  firebase_auth: ^6.1.0
   flutter_launcher_icons: ^0.14.4
   cloud_firestore: ^6.0.2
 
