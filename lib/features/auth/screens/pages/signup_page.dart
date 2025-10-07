@@ -1,8 +1,11 @@
 import 'package:bullxchange/features/auth/screens/onboarding/onboarding_page_1.2.dart';
 import 'package:bullxchange/features/auth/screens/pages/login_page.dart';
+import 'package:bullxchange/features/auth/screens/pages/setup_pin_screen.dart';
 import 'package:bullxchange/features/auth/navigation/route_transitions.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -287,11 +290,7 @@ class _SignupPageState extends State<SignupPage> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: _agreedToTerms
-                      ? () {
-                          // TODO: Implement sign up logic
-                        }
-                      : null, // Disable button if terms not agreed
+                  onPressed: _agreedToTerms ? _handleSignup : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryBlue,
                     foregroundColor: Colors.white,
@@ -386,5 +385,53 @@ class _SignupPageState extends State<SignupPage> {
         ),
       ],
     );
+  }
+
+  Future<void> _handleSignup() async {
+    final fullName = _fullNameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (fullName.isEmpty || email.isEmpty || password.length < 8) {
+      _showSnack('Please fill all fields. Password must be 8+ chars.');
+      return;
+    }
+
+    try {
+      final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      // Create user document with hasPin=false initially
+      await FirebaseFirestore.instance.collection('users').doc(cred.user!.uid).set({
+        'fullName': fullName,
+        'email': email,
+        'createdAt': FieldValue.serverTimestamp(),
+        'hasPin': false,
+      }, SetOptions(merge: true));
+
+      if (!mounted) return;
+      // Immediately route to PIN setup as per flow: Signup -> create pin
+      Navigator.pushReplacement(
+        context,
+        slideRightToLeft(const SetupPinScreen()),
+      );
+    } on FirebaseAuthException catch (e) {
+      String msg = 'Sign up failed. ${e.code}';
+      if (e.code == 'email-already-in-use') msg = 'Email already in use.';
+      if (e.code == 'invalid-email') msg = 'Invalid email.';
+      if (e.code == 'weak-password') msg = 'Password too weak.';
+      _showSnack(msg);
+    } catch (_) {
+      _showSnack('Something went wrong. Please try again.');
+    }
+  }
+
+  void _showSnack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 }

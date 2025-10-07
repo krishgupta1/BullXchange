@@ -13,6 +13,10 @@ dependencies:
   firebase_auth: ^6.1.0
   flutter_launcher_icons: ^0.14.4
   cloud_firestore: ^6.0.2
+  flutter_secure_storage: ^9.2.2
+  pinput: ^5.0.0
+  local_auth: ^2.3.0
+  crypto: ^3.0.3
 
 dev_dependencies:
   flutter_test:

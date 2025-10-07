@@ -36,6 +36,9 @@ class _MainAppState extends State<MainApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      routes: {
+        '/home': (_) => const _HomePage(),
+      },
       home: AnimatedSwitcher(
         duration: const Duration(milliseconds: 500),
         switchInCurve: Curves.easeOutCubic,
@@ -55,9 +58,22 @@ class _MainAppState extends State<MainApp> {
           );
         },
         child: _showSplash
-            ? const SplashScreen(key: ValueKey('splash'))
-            : const OnboardingPage(key: ValueKey('onboarding-1.1')),
+            ? const SplashScreen()
+            : const OnboardingPage(),
       ),
+    );
+  }
+}
+
+/// Minimal home page placeholder. Replace with the actual app home.
+class _HomePage extends StatelessWidget {
+  const _HomePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Home')),
+      body: const Center(child: Text('Welcome!')),
     );
   }
 }
