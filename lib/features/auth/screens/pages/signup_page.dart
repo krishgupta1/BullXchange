@@ -2,6 +2,7 @@ import 'package:bullxchange/features/auth/screens/onboarding/onboarding_page_1.2
 import 'package:bullxchange/features/auth/screens/pages/login_page.dart';
 import 'package:bullxchange/features/auth/navigation/route_transitions.dart';
 import 'package:bullxchange/features/auth/services/auth_service.dart';
+import 'package:bullxchange/features/auth/widgets/app_back_button.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
@@ -17,9 +18,7 @@ class SignupPage extends StatefulWidget {
 }
 
 class _SignupPageState extends State<SignupPage> {
-  // ----------------------------
   // Controllers
-  // ----------------------------
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -54,10 +53,7 @@ class _SignupPageState extends State<SignupPage> {
 
       final response = await dio.get(
         'https://emailvalidation.abstractapi.com/v1/',
-        queryParameters: {
-          'api_key': apiKey,
-          'email': email,
-        },
+        queryParameters: {'api_key': apiKey, 'email': email},
         options: Options(
           receiveTimeout: const Duration(seconds: 5),
           sendTimeout: const Duration(seconds: 5),
@@ -143,10 +139,7 @@ class _SignupPageState extends State<SignupPage> {
         );
 
         // Navigate to Login Page
-        Navigator.pushReplacement(
-          context,
-          slideLeftToRight(const LoginPage()),
-        );
+        Navigator.pushReplacement(context, slideLeftToRight(const LoginPage()));
       }
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
@@ -161,9 +154,9 @@ class _SignupPageState extends State<SignupPage> {
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   // ----------------------------
@@ -186,22 +179,10 @@ class _SignupPageState extends State<SignupPage> {
               const SizedBox(height: 20),
 
               // Back Button
-              SizedBox(
-                width: 40,
-                height: 40,
-                child: Center(
-                  child: IconButton(
-                    onPressed: () => Navigator.pushReplacement(
-                      context,
-                      slideLeftToRight(const OnboardingPage12()),
-                    ),
-                    padding: EdgeInsets.zero,
-                    icon: const Icon(
-                      Icons.arrow_back_ios,
-                      color: Colors.black,
-                      size: 18,
-                    ),
-                  ),
+              AppBackButton(
+                onPressed: () => Navigator.pushReplacement(
+                  context,
+                  slideLeftToRight(const OnboardingPage12()),
                 ),
               ),
               const SizedBox(height: 30),
@@ -230,7 +211,7 @@ class _SignupPageState extends State<SignupPage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 30),
 
               const Text(
                 "Getting Started",
@@ -393,7 +374,7 @@ class _SignupPageState extends State<SignupPage> {
                         ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 15),
 
               // Sign In Link
               Center(

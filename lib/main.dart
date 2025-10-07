@@ -12,9 +12,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // If you use .env for API keys, load it here:
   await dotenv.load(fileName: ".env");
@@ -67,10 +65,7 @@ class _MainAppState extends State<MainApp> {
 
           return FadeTransition(
             opacity: curved,
-            child: SlideTransition(
-              position: offset,
-              child: child,
-            ),
+            child: SlideTransition(position: offset, child: child),
           );
         },
         child: _showSplash

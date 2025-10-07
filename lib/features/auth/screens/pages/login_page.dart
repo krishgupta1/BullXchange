@@ -31,37 +31,8 @@ class _LoginPageState extends State<LoginPage> {
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Future<void> _showEmailNotFoundDialog(String email) async {
-    if (!mounted) return;
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          title: const Text('Email not found'),
-          content: Text('No account exists for "$email".'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Back'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(ctx).pop();
-                Navigator.pushReplacement(
-                  context,
-                  slideRightToLeft(const SignupPage()),
-                );
-              },
-              child: const Text('Create Account'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
+  /// Handles login
   Future<void> _handleLogin() async {
-    // Dismiss keyboard
     FocusScope.of(context).unfocus();
 
     final email = _emailController.text.trim();
@@ -82,8 +53,9 @@ class _LoginPageState extends State<LoginPage> {
 
     setState(() => _isLoading = true);
 
+    // Proceed directly to sign-in; handle specific errors below
+
     try {
-      // Attempt login
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
@@ -92,41 +64,34 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
 
       _showSnack('Signed in successfully.');
-
-      // Navigate to home/dashboard
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const HomePage()),
       );
     } on FirebaseAuthException catch (e) {
       debugPrint('FirebaseAuthException: ${e.code} - ${e.message}');
-
       switch (e.code) {
-        case 'invalid-email':
-          _showSnack('Incorrect email format.');
-          break;
-        case 'user-disabled':
-          _showSnack('This account has been disabled.');
-          break;
         case 'user-not-found':
-          await _showEmailNotFoundDialog(email);
+          _showSnack('Incorrect email or password.');
           break;
+
         case 'wrong-password':
           _showSnack('Incorrect password.');
           break;
+
         case 'invalid-credential':
         case 'invalid-login-credentials':
-          _showSnack('Invalid email or password.');
+          _showSnack('Incorrect email or password.');
           break;
-        case 'operation-not-allowed':
-          _showSnack('Email/Password sign-in is disabled in Firebase.');
-          break;
+
         case 'network-request-failed':
-          _showSnack('Network error. Check your connection and try again.');
+          _showSnack('Network error. Check your connection.');
           break;
+
         case 'too-many-requests':
           _showSnack('Too many attempts. Please try again later.');
           break;
+
         default:
           _showSnack('Login failed. (${e.code})');
       }
@@ -211,7 +176,6 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 40),
 
-              // Title
               const Text(
                 "Let's Sign You In",
                 style: TextStyle(
@@ -312,7 +276,6 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 8),
 
-              // Reset Password
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
@@ -358,8 +321,9 @@ class _LoginPageState extends State<LoginPage> {
                           height: 22,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         )
                       : const Text(

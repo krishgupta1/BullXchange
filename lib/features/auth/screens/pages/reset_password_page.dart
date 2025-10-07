@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:bullxchange/features/auth/screens/pages/login_page.dart';
 import 'package:bullxchange/features/auth/navigation/route_transitions.dart';
+import 'package:bullxchange/features/auth/widgets/app_back_button.dart';
 
 class ResetPasswordPage extends StatefulWidget {
   const ResetPasswordPage({super.key});
@@ -44,9 +45,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
 
       if (userQuery.docs.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No account found with this email.'),
-          ),
+          const SnackBar(content: Text('No account found with this email.')),
         );
         setState(() => _isSending = false);
         return;
@@ -57,17 +56,12 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Reset link sent. Check your email.'),
-        ),
+        const SnackBar(content: Text('Reset link sent. Check your email.')),
       );
 
       // Go back to login
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        slideLeftToRight(const LoginPage()),
-      );
+      Navigator.pushReplacement(context, slideLeftToRight(const LoginPage()));
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
 
@@ -76,8 +70,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
           context: context,
           builder: (ctx) => AlertDialog(
             title: const Text('Email not found'),
-            content:
-                const Text('No account exists with this email address.'),
+            content: const Text('No account exists with this email address.'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(),
@@ -88,16 +81,16 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.message ?? 'Failed to send reset link.'),
-          ),
+          SnackBar(content: Text(e.message ?? 'Failed to send reset link.')),
         );
       }
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Email not found, try again or please create an account')
+          content: Text(
+            'Email not found, try again or please create an account',
+          ),
         ),
       );
     } finally {
@@ -118,26 +111,13 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
               const SizedBox(height: 20),
 
               // Back Button
-              SizedBox(
-                width: 40,
-                height: 40,
-                child: Center(
-                  child: IconButton(
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        slideLeftToRight(const LoginPage()),
-                      );
-                    },
-                    padding: EdgeInsets.zero,
-                    alignment: Alignment.center,
-                    icon: const Icon(
-                      Icons.arrow_back_ios,
-                      color: Colors.black,
-                      size: 18,
-                    ),
-                  ),
-                ),
+              AppBackButton(
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    slideLeftToRight(const LoginPage()),
+                  );
+                },
               ),
 
               const SizedBox(height: 40),
@@ -233,8 +213,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                           width: 24,
                           child: CircularProgressIndicator(
                             strokeWidth: 2.5,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         )
                       : const Text(

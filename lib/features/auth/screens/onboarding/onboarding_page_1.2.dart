@@ -3,6 +3,7 @@ import 'package:bullxchange/features/auth/screens/pages/login_page.dart';
 import 'package:bullxchange/features/auth/screens/pages/signup_page.dart';
 import 'package:bullxchange/features/auth/navigation/route_transitions.dart';
 import 'package:flutter/material.dart';
+import 'package:bullxchange/features/auth/widgets/app_back_button.dart';
 
 class OnboardingPage12 extends StatelessWidget {
   const OnboardingPage12({super.key});
@@ -11,24 +12,6 @@ class OnboardingPage12 extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF3F5FF),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFF3F5FF),
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF0F2B46)),
-          onPressed: () {
-            // Use pop to reverse the previously pushed custom animation when possible
-            if (Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-            } else {
-              Navigator.of(
-                context,
-              ).pushReplacement(_slideLeftToRight(const OnboardingPage()));
-            }
-          },
-        ),
-      ),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -37,14 +20,27 @@ class OnboardingPage12 extends StatelessWidget {
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: IntrinsicHeight(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 16,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 20),
+                        // Back Button (match auth pages position)
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: AppBackButton(
+                            onPressed: () {
+                              if (Navigator.of(context).canPop()) {
+                                Navigator.of(context).pop();
+                              } else {
+                                Navigator.of(context).pushReplacement(
+                                  _slideLeftToRight(const OnboardingPage()),
+                                );
+                              }
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 40),
                         // Illustration
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
