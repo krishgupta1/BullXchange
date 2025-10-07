@@ -1,4 +1,5 @@
 import 'package:bullxchange/features/auth/screens/onboarding/onboarding_page_1.2.dart';
+import 'package:bullxchange/features/auth/navigation/route_transitions.dart';
 import 'package:flutter/material.dart';
 
 class OnboardingPage extends StatelessWidget {
@@ -71,7 +72,7 @@ class OnboardingPage extends StatelessWidget {
                               borderRadius: BorderRadius.circular(8),
                               onTap: () {
                                 Navigator.of(context).push(
-                                  _slideRightToLeft(const OnboardingPage12()),
+                                  slideRightToLeft(const OnboardingPage12()),
                                 );
                               },
                               child: const _Dot(active: false, isLong: true),
@@ -84,7 +85,7 @@ class OnboardingPage extends StatelessWidget {
                           onPressed: () {
                             Navigator.of(
                               context,
-                            ).push(_slideRightToLeft(const OnboardingPage12()));
+                            ).push(slideRightToLeft(const OnboardingPage12()));
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF4318FF),
@@ -117,23 +118,7 @@ class OnboardingPage extends StatelessWidget {
   }
 }
 
-Route _slideRightToLeft(Widget page) {
-  return PageRouteBuilder(
-    pageBuilder: (context, animation, secondaryAnimation) => page,
-    transitionDuration: const Duration(milliseconds: 400),
-    reverseTransitionDuration: const Duration(milliseconds: 400),
-    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      const begin = Offset(1.0, 0.0); // from right
-      const end = Offset.zero;
-      const curve = Curves.easeInOutCubic;
-      final tween = Tween(
-        begin: begin,
-        end: end,
-      ).chain(CurveTween(curve: curve));
-      return SlideTransition(position: animation.drive(tween), child: child);
-    },
-  );
-}
+// Using shared transitions from route_transitions.dart
 
 class _Dot extends StatelessWidget {
   const _Dot({required this.active, this.isLong = false});

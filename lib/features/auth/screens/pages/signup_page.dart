@@ -1,5 +1,6 @@
 import 'package:bullxchange/features/auth/screens/onboarding/onboarding_page_1.2.dart';
 import 'package:bullxchange/features/auth/screens/pages/login_page.dart';
+import 'package:bullxchange/features/auth/navigation/route_transitions.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
@@ -63,9 +64,7 @@ class _SignupPageState extends State<SignupPage> {
     const Color primaryBlue = Color(0xFF4318FF);
     const Color secondaryText = Color(0xFF8AA0B2);
     const Color titleText = Color(0xFF0F2B46);
-    const Color termsLinkColor = Color(
-      0xFF00BFA5,
-    ); // Teal/Green from Login's Sign up link
+    // const Color termsLinkColor = Color(0xFF00BFA5);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -85,9 +84,7 @@ class _SignupPageState extends State<SignupPage> {
                   child: IconButton(
                     onPressed: () => Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => OnboardingPage12(),
-                      ),
+                      slideLeftToRight(OnboardingPage12()),
                     ),
                     padding: EdgeInsets.zero,
                     alignment: Alignment.center,
@@ -339,12 +336,9 @@ class _SignupPageState extends State<SignupPage> {
                         ),
                         recognizer: TapGestureRecognizer()
                           ..onTap = () {
-                            // TODO: Implement navigation back to LoginPage
                             Navigator.pushReplacement(
                               context,
-                              MaterialPageRoute(
-                                builder: (context) => LoginPage(),
-                              ),
+                              slideLeftToRight(LoginPage()),
                             );
                           },
                       ),

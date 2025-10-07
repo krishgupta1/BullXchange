@@ -1,6 +1,7 @@
 import 'package:bullxchange/features/auth/screens/onboarding/onboarding_page_1.1.dart';
 import 'package:bullxchange/features/auth/screens/pages/login_page.dart';
 import 'package:bullxchange/features/auth/screens/pages/signup_page.dart';
+import 'package:bullxchange/features/auth/navigation/route_transitions.dart';
 import 'package:flutter/material.dart';
 
 class OnboardingPage12 extends StatelessWidget {
@@ -104,9 +105,7 @@ class OnboardingPage12 extends StatelessWidget {
                           onPressed: () {
                             Navigator.pushReplacement(
                               context,
-                              MaterialPageRoute(
-                                builder: (context) => SignupPage(),
-                              ),
+                              slideRightToLeft(SignupPage()),
                             );
                           },
                           style: ElevatedButton.styleFrom(
@@ -132,9 +131,7 @@ class OnboardingPage12 extends StatelessWidget {
                           onPressed: () {
                             Navigator.pushReplacement(
                               context,
-                              MaterialPageRoute(
-                                builder: (context) => LoginPage(),
-                              ),
+                              slideRightToLeft(LoginPage()),
                             );
                           },
                           style: OutlinedButton.styleFrom(
