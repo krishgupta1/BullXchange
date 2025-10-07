@@ -81,10 +81,6 @@ class _SignupPageState extends State<SignupPage> {
               Container(
                 width: 40,
                 height: 40,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFFE5E5E5), width: 1),
-                ),
                 child: Center(
                   child: IconButton(
                     onPressed: () => Navigator.pushReplacement(
@@ -98,7 +94,7 @@ class _SignupPageState extends State<SignupPage> {
                     icon: const Icon(
                       Icons.arrow_back_ios,
                       // Using the same red color as the login page back button
-                      color: Color(0xFFE53E3E),
+                      color: Colors.black,
                       size: 18,
                     ),
                   ),
@@ -339,7 +335,7 @@ class _SignupPageState extends State<SignupPage> {
                           fontFamily: 'EudoxusSans',
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: termsLinkColor, // Using the accent color
+                          color: Colors.black, // Using the accent color
                         ),
                         recognizer: TapGestureRecognizer()
                           ..onTap = () {

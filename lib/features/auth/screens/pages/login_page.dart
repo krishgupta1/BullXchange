@@ -1,6 +1,7 @@
 import 'package:bullxchange/features/auth/screens/onboarding/onboarding_page_1.2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:bullxchange/features/auth/screens/pages/reset_password_page.dart';
 import 'package:bullxchange/features/auth/screens/pages/signup_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -37,10 +38,6 @@ class _LoginPageState extends State<LoginPage> {
               Container(
                 width: 40,
                 height: 40,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFFE5E5E5), width: 1),
-                ),
                 child: Center(
                   child: IconButton(
                     onPressed: () => Navigator.pushReplacement(
@@ -53,7 +50,7 @@ class _LoginPageState extends State<LoginPage> {
                     alignment: Alignment.center,
                     icon: const Icon(
                       Icons.arrow_back_ios,
-                      color: Color(0xFFE53E3E),
+                      color: Colors.black,
                       size: 18,
                     ),
                   ),
@@ -187,7 +184,33 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 200),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.pushReplacement(
+                      context, 
+                      MaterialPageRoute(
+                        builder: (context) => const ResetPasswordPage(),
+                      ),
+                    );
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.black,
+                    padding: EdgeInsets.zero,
+                  ),
+                  child: const Text(
+                    'Reset password?',
+                    style: TextStyle(
+                      fontFamily: 'EudoxusSans',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 150),
               // Login button
               SizedBox(
                 width: double.infinity,
@@ -235,11 +258,12 @@ class _LoginPageState extends State<LoginPage> {
                           fontFamily: 'EudoxusSans',
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF00BFA5),
+                          color: Colors.black,
                         ),
                         recognizer: TapGestureRecognizer()
                           ..onTap = () {
-                            Navigator.of(context).push(
+                            Navigator.pushReplacement(
+                              context,
                               MaterialPageRoute(
                                 builder: (context) => const SignupPage(),
                               ),

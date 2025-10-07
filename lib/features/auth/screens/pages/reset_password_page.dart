@@ -1,0 +1,158 @@
+import 'package:flutter/material.dart';
+import 'package:bullxchange/features/auth/screens/pages/login_page.dart';
+
+class ResetPasswordPage extends StatefulWidget {
+  const ResetPasswordPage({super.key});
+
+  @override
+  State<ResetPasswordPage> createState() => _ResetPasswordPageState();
+}
+
+class _ResetPasswordPageState extends State<ResetPasswordPage> {
+  final TextEditingController _emailController = TextEditingController();
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 20),
+              // Back button
+              Container(
+                width: 40,
+                height: 40,
+                child: Center(
+                  child: IconButton(
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const LoginPage(),
+                        ),
+                      );
+                    },
+                    padding: EdgeInsets.zero,
+                    alignment: Alignment.center,
+                    icon: const Icon(
+                      Icons.arrow_back_ios,
+                      color:Colors.black,
+                      size: 18,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 40),
+              // Title
+              const Text(
+                'Password Recovery',
+                style: TextStyle(
+                  fontFamily: 'EudoxusSans',
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF0F2B46),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Enter your email to recover your password',
+                style: TextStyle(
+                  fontFamily: 'EudoxusSans',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF8AA0B2),
+                ),
+              ),
+              const SizedBox(height: 32),
+              // Email label + field
+              const Padding(
+                padding: EdgeInsets.only(bottom: 8.0),
+                child: Text(
+                  'Email address',
+                  style: TextStyle(
+                    fontFamily: 'EudoxusSans',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color : Colors.black,
+                  ),
+                ),
+              ),
+              TextField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(
+                  hintText: 'username@mail.com',
+                  hintStyle: const TextStyle(
+                    fontFamily: 'EudoxusSans',
+                    color: Color(0xFF0F2B46),
+                    fontSize: 16,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: const BorderSide(color: Color(0xFFBDB2FF)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: const BorderSide(color: Color(0xFFBDB2FF)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: const BorderSide(color: Color(0xFF4318FF)),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 18,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+              // Send OTP button
+              SizedBox(
+                width: double.infinity,
+                height: 64,
+                child: ElevatedButton(
+                  onPressed: () {
+                    // TODO: Implement send OTP flow
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('OTP code sent (mock)')),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4318FF),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Send Reset Password Link',
+                    style: TextStyle(
+                      fontFamily: 'EudoxusSans',
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
