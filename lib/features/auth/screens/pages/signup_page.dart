@@ -6,6 +6,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -15,7 +17,9 @@ class SignupPage extends StatefulWidget {
 }
 
 class _SignupPageState extends State<SignupPage> {
-  // Controllers for the input fields
+  // ----------------------------
+  // Controllers
+  // ----------------------------
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -23,7 +27,6 @@ class _SignupPageState extends State<SignupPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final UsersService _usersService = UsersService();
 
-  // State for password visibility and terms checkbox
   bool _obscurePassword = true;
   bool _agreedToTerms = false;
   bool _isSubmitting = false;
@@ -36,54 +39,153 @@ class _SignupPageState extends State<SignupPage> {
     super.dispose();
   }
 
-  // Common input decoration consistent with the login page style
-  InputDecoration _buildInputDecoration(String hintText, {Widget? suffixIcon}) {
-    // Define the common border style
-    const borderSide = BorderSide(color: Color(0xFFE5E5E5));
-    final outlineInputBorder = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: borderSide,
-    );
+  // ----------------------------
+  // EMAIL VALIDATION - ABSTRACT API
+  // ----------------------------
+  Future<bool> validateEmailWithAPI(String email) async {
+    try {
+      final dio = Dio();
+      final apiKey = dotenv.env['ABSTRACT_API_KEY'];
 
-    return InputDecoration(
-      hintText: hintText,
-      hintStyle: const TextStyle(
-        fontFamily: 'EudoxusSans',
-        color: Color(0xFF8AA0B2),
-        fontSize: 16,
-      ),
-      border: outlineInputBorder,
-      enabledBorder: outlineInputBorder,
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF4318FF)), // Focused color
-      ),
-      filled: true,
-      fillColor: Colors.white,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      suffixIcon: suffixIcon,
+      if (apiKey == null || apiKey.isEmpty) {
+        debugPrint('❌ API Key is missing.');
+        return false;
+      }
+
+      final response = await dio.get(
+        'https://emailvalidation.abstractapi.com/v1/',
+        queryParameters: {
+          'api_key': apiKey,
+          'email': email,
+        },
+        options: Options(
+          receiveTimeout: const Duration(seconds: 5),
+          sendTimeout: const Duration(seconds: 5),
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data;
+        debugPrint('✅ Email validation response: $data');
+
+        // Mark email as valid if deliverable
+        return data['deliverability'] == 'DELIVERABLE';
+      }
+
+      return false;
+    } catch (e) {
+      debugPrint('❌ Email validation failed: $e');
+      return false;
+    }
+  }
+
+  // ----------------------------
+  // SIGNUP FUNCTION
+  // ----------------------------
+  Future<void> _signUp() async {
+    final fullName = _fullNameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (fullName.isEmpty || email.isEmpty || password.isEmpty) {
+      _showSnackBar('Please fill all fields.');
+      return;
+    }
+
+    if (!_agreedToTerms) {
+      _showSnackBar('You must agree to the Terms of Service.');
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    // ✅ Validate email
+    final isRealEmail = await validateEmailWithAPI(email);
+    if (!isRealEmail) {
+      setState(() => _isSubmitting = false);
+      _showSnackBar('Please enter a valid, real email address.');
+      return;
+    }
+
+    // ✅ Password length check
+    if (password.length < 6) {
+      setState(() => _isSubmitting = false);
+      _showSnackBar('Password must be at least 6 characters.');
+      return;
+    }
+
+    try {
+      // ✅ Create user in Firebase
+      final credential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      final user = credential.user;
+      if (user != null) {
+        // Send verification email
+        try {
+          await user.sendEmailVerification();
+        } catch (e) {
+          debugPrint('⚠️ Email verification send failed: $e');
+        }
+
+        // Save user info in Firestore
+        await _usersService.addUser(user.uid, {
+          'name': fullName,
+          'email': email,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+
+        if (!mounted) return;
+        _showSnackBar(
+          'Signup successful! Please verify your email before logging in.',
+        );
+
+        // Navigate to Login Page
+        Navigator.pushReplacement(
+          context,
+          slideLeftToRight(const LoginPage()),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      _showSnackBar(e.message ?? 'Signup failed');
+    } catch (e) {
+      debugPrint('❌ Unexpected error: $e');
+      if (!mounted) return;
+      _showSnackBar('Unexpected error: $e');
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
     );
   }
 
+  // ----------------------------
+  // UI
+  // ----------------------------
   @override
   Widget build(BuildContext context) {
-    // Define main colors for better readability
     const Color primaryBlue = Color(0xFF4318FF);
     const Color secondaryText = Color(0xFF8AA0B2);
     const Color titleText = Color(0xFF0F2B46);
-    // const Color termsLinkColor = Color(0xFF00BFA5);
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        // Wrap the content in SingleChildScrollView to prevent overflow
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-              // Back button
+
+              // Back Button
               SizedBox(
                 width: 40,
                 height: 40,
@@ -91,13 +193,11 @@ class _SignupPageState extends State<SignupPage> {
                   child: IconButton(
                     onPressed: () => Navigator.pushReplacement(
                       context,
-                      slideLeftToRight(OnboardingPage12()),
+                      slideLeftToRight(const OnboardingPage12()),
                     ),
                     padding: EdgeInsets.zero,
-                    alignment: Alignment.center,
                     icon: const Icon(
                       Icons.arrow_back_ios,
-                      // Using the same red color as the login page back button
                       color: Colors.black,
                       size: 18,
                     ),
@@ -106,27 +206,21 @@ class _SignupPageState extends State<SignupPage> {
               ),
               const SizedBox(height: 30),
 
-              // Logo and App Name
+              // App Logo & Name
               Row(
                 children: [
-                  // Logo container
                   Container(
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF4318FF),
+                      color: primaryBlue,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(
-                      Icons.trending_up,
-                      color: Colors.white,
-                      size: 24,
-                    ),
+                    child: const Icon(Icons.trending_up, color: Colors.white),
                   ),
-                  SizedBox(width: 12),
-                  // App Name
+                  const SizedBox(width: 12),
                   const Text(
-                    'BullXchange', // Keeping App Name consistent with LoginPage
+                    'BullXchange',
                     style: TextStyle(
                       fontFamily: 'EudoxusSans',
                       fontSize: 20,
@@ -138,7 +232,6 @@ class _SignupPageState extends State<SignupPage> {
               ),
               const SizedBox(height: 40),
 
-              // Title: "Getting Started"
               const Text(
                 "Getting Started",
                 style: TextStyle(
@@ -150,7 +243,6 @@ class _SignupPageState extends State<SignupPage> {
               ),
               const SizedBox(height: 8),
 
-              // Welcome message: "Create an account to continue!"
               const Text(
                 "Create an account to continue!",
                 style: TextStyle(
@@ -162,39 +254,35 @@ class _SignupPageState extends State<SignupPage> {
               ),
               const SizedBox(height: 40),
 
-              // --- Input Fields ---
-
-              // 1. Full Name field
+              // Full Name
               _buildTextFieldWithLabel(
-                'Full Name',
-                _fullNameController,
-                'Full Name',
-                TextInputType.name,
+                label: 'Full Name',
+                controller: _fullNameController,
+                hintText: 'Full Name',
+                keyboardType: TextInputType.name,
               ),
               const SizedBox(height: 16),
 
-              // 2. Email field
+              // Email
               _buildTextFieldWithLabel(
-                'Email Address',
-                _emailController,
-                'Email Address',
-                TextInputType.emailAddress,
+                label: 'Email Address',
+                controller: _emailController,
+                hintText: 'Email Address',
+                keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 16),
 
-              // 3. Password field
+              // Password
               _buildTextFieldWithLabel(
-                'Password',
-                _passwordController,
-                'Password', // Placeholder text
-                TextInputType.visiblePassword,
+                label: 'Password',
+                controller: _passwordController,
+                hintText: 'Password',
+                keyboardType: TextInputType.visiblePassword,
                 obscureText: _obscurePassword,
                 suffixIcon: IconButton(
-                  onPressed: () {
-                    setState(() {
-                      _obscurePassword = !_obscurePassword;
-                    });
-                  },
+                  onPressed: () => setState(() {
+                    _obscurePassword = !_obscurePassword;
+                  }),
                   icon: Icon(
                     _obscurePassword
                         ? Icons.visibility_off_outlined
@@ -205,83 +293,67 @@ class _SignupPageState extends State<SignupPage> {
               ),
               const SizedBox(height: 24),
 
-              // --- Terms of Service Checkbox ---
+              // Terms of Service
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(
-                    height: 24.0,
-                    width: 24.0,
-                    child: Checkbox(
-                      value: _agreedToTerms,
-                      onChanged: (bool? newValue) {
-                        setState(() {
-                          _agreedToTerms = newValue ?? false;
-                        });
-                      },
-                      activeColor: primaryBlue,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      side: const BorderSide(
-                        color: Color(0xFFE5E5E5),
-                        width: 1.5,
-                      ),
+                  Checkbox(
+                    value: _agreedToTerms,
+                    onChanged: (val) =>
+                        setState(() => _agreedToTerms = val ?? false),
+                    activeColor: primaryBlue,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    side: const BorderSide(
+                      color: Color(0xFFE5E5E5),
+                      width: 1.5,
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 3.0),
-                      child: RichText(
-                        text: TextSpan(
-                          children: [
-                            const TextSpan(
-                              text: 'I agree to the ',
-                              style: TextStyle(
-                                fontFamily: 'EudoxusSans',
-                                fontSize: 14,
-                                color: secondaryText,
-                                fontWeight: FontWeight.bold,
-                              ),
+                    child: RichText(
+                      text: TextSpan(
+                        children: [
+                          const TextSpan(
+                            text: 'I agree to the ',
+                            style: TextStyle(
+                              fontFamily: 'EudoxusSans',
+                              fontSize: 14,
+                              color: secondaryText,
+                              fontWeight: FontWeight.bold,
                             ),
-                            TextSpan(
-                              text: 'Terms of Service',
-                              style: const TextStyle(
-                                fontFamily: 'EudoxusSans',
-                                fontSize: 14,
-                                color: primaryBlue,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              recognizer: TapGestureRecognizer()
-                                ..onTap = () {
-                                  // TODO: Handle navigation to Terms of Service
-                                },
+                          ),
+                          TextSpan(
+                            text: 'Terms of Service',
+                            style: const TextStyle(
+                              fontFamily: 'EudoxusSans',
+                              fontSize: 14,
+                              color: primaryBlue,
+                              fontWeight: FontWeight.bold,
                             ),
-                            const TextSpan(
-                              text: ' and ',
-                              style: TextStyle(
-                                fontFamily: 'EudoxusSans',
-                                fontSize: 14,
-                                color: secondaryText,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            recognizer: TapGestureRecognizer()..onTap = () {},
+                          ),
+                          const TextSpan(
+                            text: ' and ',
+                            style: TextStyle(
+                              fontFamily: 'EudoxusSans',
+                              fontSize: 14,
+                              color: secondaryText,
+                              fontWeight: FontWeight.bold,
                             ),
-                            TextSpan(
-                              text: 'Privacy Policy',
-                              style: const TextStyle(
-                                fontFamily: 'EudoxusSans',
-                                fontSize: 14,
-                                color: primaryBlue,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              recognizer: TapGestureRecognizer()
-                                ..onTap = () {
-                                  // TODO: Handle navigation to Privacy Policy
-                                },
+                          ),
+                          TextSpan(
+                            text: 'Privacy Policy',
+                            style: const TextStyle(
+                              fontFamily: 'EudoxusSans',
+                              fontSize: 14,
+                              color: primaryBlue,
+                              fontWeight: FontWeight.bold,
                             ),
-                          ],
-                        ),
+                            recognizer: TapGestureRecognizer()..onTap = () {},
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -289,23 +361,18 @@ class _SignupPageState extends State<SignupPage> {
               ),
               const SizedBox(height: 32),
 
-              // --- "Start" button ---
+              // Start Button
               SizedBox(
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: _agreedToTerms && !_isSubmitting
-                      ? () {
-                          _signUp();
-                        }
-                      : null, // Disable when terms not agreed or loading
+                  onPressed: _agreedToTerms && !_isSubmitting ? _signUp : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryBlue,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    elevation: 0,
                   ),
                   child: _isSubmitting
                       ? const SizedBox(
@@ -328,7 +395,7 @@ class _SignupPageState extends State<SignupPage> {
               ),
               const SizedBox(height: 20),
 
-              // --- Sign In link ---
+              // Sign In Link
               Center(
                 child: RichText(
                   text: TextSpan(
@@ -348,13 +415,13 @@ class _SignupPageState extends State<SignupPage> {
                           fontFamily: 'EudoxusSans',
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: Colors.black, // Using the accent color
+                          color: Colors.black,
                         ),
                         recognizer: TapGestureRecognizer()
                           ..onTap = () {
                             Navigator.pushReplacement(
                               context,
-                              slideLeftToRight(LoginPage()),
+                              slideLeftToRight(const LoginPage()),
                             );
                           },
                       ),
@@ -370,12 +437,14 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 
-  // Helper widget to build the label + text field combination
-  Widget _buildTextFieldWithLabel(
-    String label,
-    TextEditingController controller,
-    String hintText,
-    TextInputType keyboardType, {
+  // ----------------------------
+  // INPUT FIELD BUILDER
+  // ----------------------------
+  Widget _buildTextFieldWithLabel({
+    required String label,
+    required TextEditingController controller,
+    required String hintText,
+    required TextInputType keyboardType,
     bool obscureText = false,
     Widget? suffixIcon,
   }) {
@@ -404,79 +473,30 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 
-  Future<void> _signUp() async {
-    final String fullName = _fullNameController.text.trim();
-    final String email = _emailController.text.trim();
-    final String password = _passwordController.text.trim();
+  InputDecoration _buildInputDecoration(String hintText, {Widget? suffixIcon}) {
+    const borderSide = BorderSide(color: Color(0xFFE5E5E5));
+    final outlineInputBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: borderSide,
+    );
 
-    // Simple validation
-    if (fullName.isEmpty || email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please fill all fields.')));
-      return;
-    }
-    if (!email.contains('@')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid email.')),
-      );
-      return;
-    }
-    if (password.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password must be at least 6 characters.'),
-        ),
-      );
-      return;
-    }
-
-    try {
-      setState(() {
-        _isSubmitting = true;
-      });
-      final UserCredential credential = await _auth
-          .createUserWithEmailAndPassword(email: email, password: password);
-
-      final User? user = credential.user;
-      if (user != null) {
-        // Send verification email (non-blocking)
-        try {
-          await user.sendEmailVerification();
-        } catch (_) {}
-
-        await _usersService.addUser(user.uid, {
-          'name': fullName,
-          'email': email,
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Signup successful! Verify your email, then sign in.',
-            ),
-          ),
-        );
-        Navigator.pushReplacement(context, slideLeftToRight(const LoginPage()));
-      }
-    } on FirebaseAuthException catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.message ?? 'Signup failed')));
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('An unexpected error occurred.')),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSubmitting = false;
-        });
-      }
-    }
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: const TextStyle(
+        fontFamily: 'EudoxusSans',
+        color: Color(0xFF8AA0B2),
+        fontSize: 16,
+      ),
+      border: outlineInputBorder,
+      enabledBorder: outlineInputBorder,
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFF4318FF)),
+      ),
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      suffixIcon: suffixIcon,
+    );
   }
 }
