@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:bullxchange/features/auth/screens/pages/login_page.dart';
+import 'package:bullxchange/features/auth/navigation/route_transitions.dart';
 
 class ResetPasswordPage extends StatefulWidget {
   const ResetPasswordPage({super.key});
@@ -37,16 +38,14 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                     onPressed: () {
                       Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => const LoginPage(),
-                        ),
+                        slideLeftToRight(const LoginPage()),
                       );
                     },
                     padding: EdgeInsets.zero,
                     alignment: Alignment.center,
                     icon: const Icon(
                       Icons.arrow_back_ios,
-                      color:Colors.black,
+                      color: Colors.black,
                       size: 18,
                     ),
                   ),
@@ -83,7 +82,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                     fontFamily: 'EudoxusSans',
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color : Colors.black,
+                    color: Colors.black,
                   ),
                 ),
               ),
@@ -154,5 +153,3 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     );
   }
 }
-
-

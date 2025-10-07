@@ -1,4 +1,5 @@
 import 'package:bullxchange/features/auth/screens/onboarding/onboarding_page_1.2.dart';
+import 'package:bullxchange/features/auth/navigation/route_transitions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:bullxchange/features/auth/screens/pages/reset_password_page.dart';
@@ -42,9 +43,7 @@ class _LoginPageState extends State<LoginPage> {
                   child: IconButton(
                     onPressed: () => Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => OnboardingPage12(),
-                      ),
+                      slideLeftToRight(OnboardingPage12()),
                     ),
                     padding: EdgeInsets.zero,
                     alignment: Alignment.center,
@@ -190,10 +189,8 @@ class _LoginPageState extends State<LoginPage> {
                 child: TextButton(
                   onPressed: () {
                     Navigator.pushReplacement(
-                      context, 
-                      MaterialPageRoute(
-                        builder: (context) => const ResetPasswordPage(),
-                      ),
+                      context,
+                      slideRightToLeft(const ResetPasswordPage()),
                     );
                   },
                   style: TextButton.styleFrom(
@@ -264,9 +261,7 @@ class _LoginPageState extends State<LoginPage> {
                           ..onTap = () {
                             Navigator.pushReplacement(
                               context,
-                              MaterialPageRoute(
-                                builder: (context) => const SignupPage(),
-                              ),
+                              slideRightToLeft(const SignupPage()),
                             );
                           },
                       ),
