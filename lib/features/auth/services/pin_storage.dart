@@ -76,5 +76,3 @@ class PinStorageService {
     return result == 0;
   }
 }
-
-

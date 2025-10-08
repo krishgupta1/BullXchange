@@ -122,7 +122,9 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
                       onPressed: () {
                         // Navigate back to setup pin screen
                         Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(builder: (_) => const SetupPinScreen()),
+                          MaterialPageRoute(
+                            builder: (_) => const SetupPinScreen(),
+                          ),
                         );
                       },
                       padding: EdgeInsets.zero,
@@ -163,7 +165,9 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
               const SizedBox(height: 8),
               Center(
                 child: Text(
-                  widget.expectedPin != null ? 'Re-enter to confirm' : 'Unlock to continue',
+                  widget.expectedPin != null
+                      ? 'Re-enter to confirm'
+                      : 'Unlock to continue',
                   style: const TextStyle(
                     fontFamily: 'EudoxusSans',
                     fontSize: 16,
@@ -197,7 +201,9 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: widget.expectedPin == null ? _tryBiometric : null,
+                      onPressed: widget.expectedPin == null
+                          ? _tryBiometric
+                          : null,
                       icon: const Icon(Icons.fingerprint),
                       label: const Text('Use biometrics'),
                     ),
@@ -221,10 +227,14 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
                               height: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
                               ),
                             )
-                          : Text(widget.expectedPin != null ? 'Confirm' : 'Unlock'),
+                          : Text(
+                              widget.expectedPin != null ? 'Confirm' : 'Unlock',
+                            ),
                     ),
                   ),
                 ],

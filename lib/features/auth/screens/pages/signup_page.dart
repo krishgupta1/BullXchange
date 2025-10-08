@@ -38,7 +38,7 @@ class _SignupPageState extends State<SignupPage> {
     super.dispose();
   }
 
-  // ✅ Email validation
+  // ✅ Email validation via Abstract API
   Future<bool> validateEmailWithAPI(String email) async {
     try {
       final dio = Dio();
@@ -60,7 +60,7 @@ class _SignupPageState extends State<SignupPage> {
     }
   }
 
-  // ✅ Signup
+  // ✅ Signup flow
   Future<void> _signUp() async {
     final fullName = _fullNameController.text.trim();
     final email = _emailController.text.trim();
@@ -122,7 +122,10 @@ class _SignupPageState extends State<SignupPage> {
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -219,7 +222,8 @@ class _SignupPageState extends State<SignupPage> {
                 keyboardType: TextInputType.visiblePassword,
                 obscureText: _obscurePassword,
                 suffixIcon: IconButton(
-                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                  onPressed: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),
                   icon: Icon(
                     _obscurePassword
                         ? Icons.visibility_off_outlined
@@ -234,7 +238,8 @@ class _SignupPageState extends State<SignupPage> {
                 children: [
                   Checkbox(
                     value: _agreedToTerms,
-                    onChanged: (val) => setState(() => _agreedToTerms = val ?? false),
+                    onChanged: (val) =>
+                        setState(() => _agreedToTerms = val ?? false),
                     activeColor: primaryBlue,
                   ),
                   Expanded(
@@ -249,13 +254,17 @@ class _SignupPageState extends State<SignupPage> {
                           const TextSpan(text: 'I agree to the '),
                           TextSpan(
                             text: 'Terms of Service',
-                            style: const TextStyle(color: primaryBlue, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                                color: primaryBlue,
+                                fontWeight: FontWeight.bold),
                             recognizer: TapGestureRecognizer()..onTap = () {},
                           ),
                           const TextSpan(text: ' and '),
                           TextSpan(
                             text: 'Privacy Policy',
-                            style: const TextStyle(color: primaryBlue, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                                color: primaryBlue,
+                                fontWeight: FontWeight.bold),
                             recognizer: TapGestureRecognizer()..onTap = () {},
                           ),
                         ],
@@ -274,7 +283,8 @@ class _SignupPageState extends State<SignupPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryBlue,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
                   child: _isSubmitting
                       ? const CircularProgressIndicator(
@@ -306,7 +316,8 @@ class _SignupPageState extends State<SignupPage> {
                       const TextSpan(text: "Already have an account? "),
                       TextSpan(
                         text: 'Sign in',
-                        style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w700),
+                        style: const TextStyle(
+                            color: Colors.black, fontWeight: FontWeight.w700),
                         recognizer: TapGestureRecognizer()
                           ..onTap = () {
                             Navigator.pushReplacement(
@@ -338,7 +349,9 @@ class _SignupPageState extends State<SignupPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+        Text(label,
+            style:
+                const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
         const SizedBox(height: 4),
         TextField(
           controller: controller,
@@ -346,9 +359,11 @@ class _SignupPageState extends State<SignupPage> {
           obscureText: obscureText,
           decoration: InputDecoration(
             hintText: hintText,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            border:
+                OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             suffixIcon: suffixIcon,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           ),
         ),
       ],

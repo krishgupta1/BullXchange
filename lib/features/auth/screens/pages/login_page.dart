@@ -1,8 +1,10 @@
 import 'package:bullxchange/features/auth/screens/onboarding/onboarding_page_1.2.dart';
 import 'package:bullxchange/features/auth/navigation/route_transitions.dart';
 import 'package:bullxchange/features/auth/services/pin_storage.dart';
-import 'package:bullxchange/features/auth/screens/pages/setup_pin_screen.dart' as setup;
-import 'package:bullxchange/features/auth/screens/pages/verify_pin_screen.dart' as verify;
+import 'package:bullxchange/features/auth/screens/pages/setup_pin_screen.dart'
+    as setup;
+import 'package:bullxchange/features/auth/screens/pages/verify_pin_screen.dart'
+    as verify;
 import 'package:bullxchange/features/auth/screens/pages/signup_page.dart';
 import 'package:bullxchange/features/auth/screens/pages/reset_password_page.dart';
 import 'package:flutter/material.dart';
@@ -23,8 +25,9 @@ class _LoginPageState extends State<LoginPage> {
   bool _obscurePassword = true;
   bool _isLoading = false;
 
-  final RegExp _emailRegex =
-      RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+  final RegExp _emailRegex = RegExp(
+    r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+  );
 
   void _showSnack(String message) {
     if (!mounted) return;
@@ -55,14 +58,15 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _isLoading = true);
 
     try {
-      await FirebaseAuth.instance
-          .signInWithEmailAndPassword(email: email, password: password);
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
       if (!mounted) return;
-
       _showSnack('Signed in successfully.');
 
-      // ✅ Check PIN status
+      // ✅ Check if a PIN has been set up
       final pinService = PinStorageService();
       final hasPin = await pinService.hasPin();
 
@@ -141,7 +145,11 @@ class _LoginPageState extends State<LoginPage> {
                       slideLeftToRight(const OnboardingPage12()),
                     ),
                     padding: EdgeInsets.zero,
-                    icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 18),
+                    icon: const Icon(
+                      Icons.arrow_back_ios,
+                      color: Colors.black,
+                      size: 18,
+                    ),
                   ),
                 ),
               ),
@@ -208,15 +216,19 @@ class _LoginPageState extends State<LoginPage> {
                 obscureText: _obscurePassword,
                 decoration: _inputDecoration('Password').copyWith(
                   suffixIcon: IconButton(
-                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                    onPressed: () =>
+                        setState(() => _obscurePassword = !_obscurePassword),
                     icon: Icon(
-                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                     ),
                   ),
                 ),
               ),
               const SizedBox(height: 8),
 
+              // Reset Password link
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
@@ -237,6 +249,10 @@ class _LoginPageState extends State<LoginPage> {
                   onPressed: _isLoading ? null : _handleLogin,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF4318FF),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
@@ -289,6 +305,7 @@ class _LoginPageState extends State<LoginPage> {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Color(0xFF4318FF)),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       );
 }

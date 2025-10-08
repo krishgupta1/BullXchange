@@ -49,9 +49,7 @@ class _MainAppState extends State<MainApp> {
     return MaterialApp(
       title: 'BullXchange',
       debugShowCheckedModeBanner: false,
-      routes: {
-        '/home': (_) => const _HomePage(),
-      },
+      routes: {'/home': (_) => const _HomePage()},
       home: AnimatedSwitcher(
         duration: const Duration(milliseconds: 500),
         switchInCurve: Curves.easeOutCubic,
@@ -71,9 +69,7 @@ class _MainAppState extends State<MainApp> {
             child: SlideTransition(position: offset, child: child),
           );
         },
-        child: _showSplash
-            ? const SplashScreen()
-            : const OnboardingPage(),
+        child: _showSplash ? const SplashScreen() : const OnboardingPage(),
       ),
     );
   }
