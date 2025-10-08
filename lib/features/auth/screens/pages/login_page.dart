@@ -1,8 +1,10 @@
 import 'package:bullxchange/features/auth/screens/onboarding/onboarding_page_1.2.dart';
 import 'package:bullxchange/features/auth/navigation/route_transitions.dart';
 import 'package:bullxchange/features/auth/services/pin_storage.dart';
-import 'package:bullxchange/features/auth/screens/pages/setup_pin_screen.dart' as setup;
-import 'package:bullxchange/features/auth/screens/pages/verify_pin_screen.dart' as verify;
+import 'package:bullxchange/features/auth/screens/pages/setup_pin_screen.dart'
+    as setup;
+import 'package:bullxchange/features/auth/screens/pages/verify_pin_screen.dart'
+    as verify;
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:bullxchange/features/auth/screens/pages/reset_password_page.dart';
@@ -22,8 +24,9 @@ class _LoginPageState extends State<LoginPage> {
   bool _obscurePassword = true;
   bool _isLoading = false;
 
-  final RegExp _emailRegex =
-      RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+  final RegExp _emailRegex = RegExp(
+    r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+  );
 
   void _showSnack(String message) {
     if (!mounted) return;
@@ -79,8 +82,10 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _isLoading = true);
 
     try {
-      await FirebaseAuth.instance
-          .signInWithEmailAndPassword(email: email, password: password);
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
       _showSnack('Signed in successfully.');
 
@@ -165,7 +170,11 @@ class _LoginPageState extends State<LoginPage> {
                       slideLeftToRight(const OnboardingPage12()),
                     ),
                     padding: EdgeInsets.zero,
-                    icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 18),
+                    icon: const Icon(
+                      Icons.arrow_back_ios,
+                      color: Colors.black,
+                      size: 18,
+                    ),
                   ),
                 ),
               ),
@@ -225,8 +234,13 @@ class _LoginPageState extends State<LoginPage> {
                 obscureText: _obscurePassword,
                 decoration: _inputDecoration('Password').copyWith(
                   suffixIcon: IconButton(
-                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                    icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                    onPressed: () =>
+                        setState(() => _obscurePassword = !_obscurePassword),
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                    ),
                   ),
                 ),
               ),
@@ -271,9 +285,9 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         recognizer: TapGestureRecognizer()
                           ..onTap = () => Navigator.pushReplacement(
-                                context,
-                                slideRightToLeft(const SignupPage()),
-                              ),
+                            context,
+                            slideRightToLeft(const SignupPage()),
+                          ),
                       ),
                     ],
                   ),
@@ -288,16 +302,16 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   InputDecoration _inputDecoration(String hint) => InputDecoration(
-        hintText: hint,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE5E5E5)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF4318FF)),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      );
+    hintText: hint,
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: Color(0xFFE5E5E5)),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: Color(0xFF4318FF)),
+    ),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+  );
 }

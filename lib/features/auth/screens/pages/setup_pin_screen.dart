@@ -77,10 +77,7 @@ class _SetupPinScreenState extends State<SetupPinScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-              SizedBox(
-                width: 40,
-                height: 40,
-              ),
+              SizedBox(width: 40, height: 40),
               const SizedBox(height: 24),
               Center(
                 child: Container(
@@ -147,7 +144,8 @@ class _SetupPinScreenState extends State<SetupPinScreen> {
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: null, // biometric isn't applicable here, so leave disabled
+                      onPressed:
+                          null, // biometric isn't applicable here, so leave disabled
                       icon: const Icon(Icons.fingerprint),
                       label: const Text('Use biometrics'),
                     ),
@@ -169,7 +167,12 @@ class _SetupPinScreenState extends State<SetupPinScreen> {
                           ? const SizedBox(
                               width: 20,
                               height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
                             )
                           : const Text('Next'),
                     ),

@@ -404,12 +404,15 @@ class _SignupPageState extends State<SignupPage> {
       );
 
       // Create user document with hasPin=false initially
-      await FirebaseFirestore.instance.collection('users').doc(cred.user!.uid).set({
-        'fullName': fullName,
-        'email': email,
-        'createdAt': FieldValue.serverTimestamp(),
-        'hasPin': false,
-      }, SetOptions(merge: true));
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(cred.user!.uid)
+          .set({
+            'fullName': fullName,
+            'email': email,
+            'createdAt': FieldValue.serverTimestamp(),
+            'hasPin': false,
+          }, SetOptions(merge: true));
 
       if (!mounted) return;
       // Immediately route to PIN setup as per flow: Signup -> create pin
