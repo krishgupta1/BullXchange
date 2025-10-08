@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bullxchange/features/auth/screens/pages/login_page.dart';
 import 'package:bullxchange/features/auth/navigation/route_transitions.dart';
-import 'package:bullxchange/features/auth/widgets/app_back_button.dart';
 
 class ResetPasswordPage extends StatefulWidget {
   const ResetPasswordPage({super.key});
@@ -24,10 +22,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
 
   Future<void> _sendResetEmail() async {
     final email = _emailController.text.trim();
-
-    if (email.isEmpty || !email.contains('@')) {
+    if (email.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid email address.')),
+        const SnackBar(content: Text('Please enter your email address')),
       );
       return;
     }
@@ -35,40 +32,24 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     setState(() => _isLoading = true);
 
     try {
-      // Optional: verify if user exists in Firestore
-      final userQuery = await FirebaseFirestore.instance
-          .collection('users')
-          .where('email', isEqualTo: email)
-          .limit(1)
-          .get();
-
-      if (userQuery.docs.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No account found with this email.')),
-        );
-        setState(() => _isLoading = false);
-        return;
-      }
-
-      // Send reset email
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
 
-      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Password reset link sent! Check your inbox.'),
+          content: Text('Password reset email sent! Check your inbox.'),
           backgroundColor: Colors.green,
         ),
       );
 
-      // Go back to login
-      Navigator.pushReplacement(context, slideLeftToRight(const LoginPage()));
+      // Optionally navigate back to login
+      Navigator.pushReplacement(
+        context,
+        slideLeftToRight(const LoginPage()),
+      );
     } on FirebaseAuthException catch (e) {
-      if (!mounted) return;
-
       String message = 'An error occurred. Please try again.';
       if (e.code == 'user-not-found') {
-        message = 'No account found with this email.';
+        message = 'Email not found. Please check your address.';
       } else if (e.code == 'invalid-email') {
         message = 'Invalid email format.';
       }
@@ -76,17 +57,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),
       );
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Something went wrong. Please try again later.',
-          ),
-        ),
-      );
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      setState(() => _isLoading = false);
     }
   }
 
@@ -101,19 +73,30 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-
               // Back button
-              AppBackButton(
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    slideLeftToRight(const LoginPage()),
-                  );
-                },
+              SizedBox(
+                width: 40,
+                height: 40,
+                child: Center(
+                  child: IconButton(
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        slideLeftToRight(const LoginPage()),
+                      );
+                    },
+                    padding: EdgeInsets.zero,
+                    alignment: Alignment.center,
+                    icon: const Icon(
+                      Icons.arrow_back_ios,
+                      color: Colors.black,
+                      size: 18,
+                    ),
+                  ),
+                ),
               ),
-
               const SizedBox(height: 40),
-
+              // Title
               const Text(
                 'Password Recovery',
                 style: TextStyle(
@@ -124,7 +107,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 ),
               ),
               const SizedBox(height: 12),
-
               const Text(
                 'Enter your email to recover your password',
                 style: TextStyle(
@@ -134,9 +116,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   color: Color(0xFF8AA0B2),
                 ),
               ),
-
               const SizedBox(height: 32),
-
+              // Email label + field
               const Padding(
                 padding: EdgeInsets.only(bottom: 8.0),
                 child: Text(
@@ -149,7 +130,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   ),
                 ),
               ),
-
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
@@ -180,9 +160,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 32),
-
+              // Reset Password button
               SizedBox(
                 width: double.infinity,
                 height: 64,
@@ -197,15 +176,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                     elevation: 0,
                   ),
                   child: _isLoading
-                      ? const SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
+                      ? const CircularProgressIndicator(color: Colors.white)
                       : const Text(
                           'Send Reset Password Link',
                           style: TextStyle(
