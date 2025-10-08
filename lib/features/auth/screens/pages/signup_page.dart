@@ -30,6 +30,10 @@ class _SignupPageState extends State<SignupPage> {
   bool _agreedToTerms = false;
   bool _isSubmitting = false;
 
+  final Color primaryBlue = const Color(0xFF4318FF);
+  final Color secondaryText = const Color(0xFF8AA0B2);
+  final Color titleText = const Color(0xFF0F2B46);
+
   @override
   void dispose() {
     _fullNameController.dispose();
@@ -60,6 +64,34 @@ class _SignupPageState extends State<SignupPage> {
     }
   }
 
+  // ✅ Popup error dialog (matches LoginPage style)
+  Future<void> _showErrorDialog(String message) async {
+    if (!mounted) return;
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Text(
+          'Signup Failed',
+          style: TextStyle(color: titleText, fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          message,
+          style: TextStyle(color: secondaryText, fontSize: 16),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(
+              'Okay',
+              style: TextStyle(color: primaryBlue, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ✅ Signup flow
   Future<void> _signUp() async {
     final fullName = _fullNameController.text.trim();
@@ -67,12 +99,12 @@ class _SignupPageState extends State<SignupPage> {
     final password = _passwordController.text.trim();
 
     if (fullName.isEmpty || email.isEmpty || password.isEmpty) {
-      _showSnackBar('Please fill all fields.');
+      _showErrorDialog('Please fill all fields.');
       return;
     }
 
     if (!_agreedToTerms) {
-      _showSnackBar('You must agree to the Terms of Service.');
+      _showErrorDialog('You must agree to the Terms of Service.');
       return;
     }
 
@@ -81,13 +113,13 @@ class _SignupPageState extends State<SignupPage> {
     final isRealEmail = await validateEmailWithAPI(email);
     if (!isRealEmail) {
       setState(() => _isSubmitting = false);
-      _showSnackBar('Please enter a valid, real email address.');
+      _showErrorDialog('Please enter a valid, real email address.');
       return;
     }
 
     if (password.length < 6) {
       setState(() => _isSubmitting = false);
-      _showSnackBar('Password must be at least 6 characters.');
+      _showErrorDialog('Password must be at least 6 characters.');
       return;
     }
 
@@ -115,25 +147,30 @@ class _SignupPageState extends State<SignupPage> {
         );
       }
     } on FirebaseAuthException catch (e) {
-      _showSnackBar(e.message ?? 'Signup failed');
+      String errorMessage;
+      switch (e.code) {
+        case 'email-already-in-use':
+          errorMessage = 'This email is already registered. Try logging in.';
+          break;
+        case 'invalid-email':
+          errorMessage = 'The email address is badly formatted.';
+          break;
+        case 'weak-password':
+          errorMessage = 'Password is too weak. Try something stronger.';
+          break;
+        default:
+          errorMessage = 'Signup failed. Please try again later.';
+      }
+      await _showErrorDialog(errorMessage);
+    } catch (e) {
+      await _showErrorDialog('An unexpected error occurred: $e');
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
-  void _showSnackBar(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
-  }
-
   @override
   Widget build(BuildContext context) {
-    const primaryBlue = Color(0xFF4318FF);
-    const secondaryText = Color(0xFF8AA0B2);
-    const titleText = Color(0xFF0F2B46);
-
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -164,7 +201,7 @@ class _SignupPageState extends State<SignupPage> {
                     child: const Icon(Icons.trending_up, color: Colors.white),
                   ),
                   const SizedBox(width: 12),
-                  const Text(
+                  Text(
                     'BullXchange',
                     style: TextStyle(
                       fontFamily: 'EudoxusSans',
@@ -183,7 +220,7 @@ class _SignupPageState extends State<SignupPage> {
                   fontFamily: 'EudoxusSans',
                   fontSize: 28,
                   fontWeight: FontWeight.w700,
-                  color: titleText,
+                  color: Color(0xFF0F2B46),
                 ),
               ),
               const SizedBox(height: 8),
@@ -194,7 +231,7 @@ class _SignupPageState extends State<SignupPage> {
                   fontFamily: 'EudoxusSans',
                   fontSize: 16,
                   fontWeight: FontWeight.w400,
-                  color: secondaryText,
+                  color: Color(0xFF8AA0B2),
                 ),
               ),
               const SizedBox(height: 40),
@@ -245,7 +282,7 @@ class _SignupPageState extends State<SignupPage> {
                   Expanded(
                     child: RichText(
                       text: TextSpan(
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'EudoxusSans',
                           fontSize: 14,
                           color: secondaryText,
@@ -254,17 +291,19 @@ class _SignupPageState extends State<SignupPage> {
                           const TextSpan(text: 'I agree to the '),
                           TextSpan(
                             text: 'Terms of Service',
-                            style: const TextStyle(
-                                color: primaryBlue,
-                                fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              color: primaryBlue,
+                              fontWeight: FontWeight.bold,
+                            ),
                             recognizer: TapGestureRecognizer()..onTap = () {},
                           ),
                           const TextSpan(text: ' and '),
                           TextSpan(
                             text: 'Privacy Policy',
-                            style: const TextStyle(
-                                color: primaryBlue,
-                                fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              color: primaryBlue,
+                              fontWeight: FontWeight.bold,
+                            ),
                             recognizer: TapGestureRecognizer()..onTap = () {},
                           ),
                         ],
@@ -284,7 +323,8 @@ class _SignupPageState extends State<SignupPage> {
                     backgroundColor: primaryBlue,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   child: _isSubmitting
                       ? const CircularProgressIndicator(
@@ -306,7 +346,7 @@ class _SignupPageState extends State<SignupPage> {
               Center(
                 child: RichText(
                   text: TextSpan(
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'EudoxusSans',
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -317,7 +357,9 @@ class _SignupPageState extends State<SignupPage> {
                       TextSpan(
                         text: 'Sign in',
                         style: const TextStyle(
-                            color: Colors.black, fontWeight: FontWeight.w700),
+                          color: Colors.black,
+                          fontWeight: FontWeight.w700,
+                        ),
                         recognizer: TapGestureRecognizer()
                           ..onTap = () {
                             Navigator.pushReplacement(
@@ -349,9 +391,10 @@ class _SignupPageState extends State<SignupPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style:
-                const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+        ),
         const SizedBox(height: 4),
         TextField(
           controller: controller,
@@ -359,11 +402,12 @@ class _SignupPageState extends State<SignupPage> {
           obscureText: obscureText,
           decoration: InputDecoration(
             hintText: hintText,
-            border:
-                OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             suffixIcon: suffixIcon,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
           ),
         ),
       ],

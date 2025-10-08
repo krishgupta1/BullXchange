@@ -42,10 +42,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       );
 
       // Optionally navigate back to login
-      Navigator.pushReplacement(
-        context,
-        slideLeftToRight(const LoginPage()),
-      );
+      Navigator.pushReplacement(context, slideLeftToRight(const LoginPage()));
     } on FirebaseAuthException catch (e) {
       String message = 'An error occurred. Please try again.';
       if (e.code == 'user-not-found') {
@@ -54,9 +51,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         message = 'Invalid email format.';
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     } finally {
       setState(() => _isLoading = false);
     }

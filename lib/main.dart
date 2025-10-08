@@ -1,11 +1,11 @@
+import 'package:bullxchange/features/homepage/homepage.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:bullxchange/firebase_options.dart';
-
-// Screens
-import 'package:bullxchange/features/auth/screens/onboarding/splash_screen.dart';
-import 'package:bullxchange/features/auth/screens/onboarding/onboarding_page_1.1.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+// --- (Import the new files) ---
+import 'package:bullxchange/features/auth/navigation/auth_wrapper.dart';
 
 Future<void> main() async {
   // Ensures all bindings are initialized before Firebase
@@ -20,70 +20,22 @@ Future<void> main() async {
   runApp(const MainApp());
 }
 
-class MainApp extends StatefulWidget {
+// --- (This widget is now much simpler) ---
+class MainApp extends StatelessWidget {
   const MainApp({super.key});
-
-  @override
-  State<MainApp> createState() => _MainAppState();
-}
-
-class _MainAppState extends State<MainApp> {
-  bool _showSplash = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _startSplashTimer();
-  }
-
-  void _startSplashTimer() {
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        setState(() => _showSplash = false);
-      }
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'BullXchange',
       debugShowCheckedModeBanner: false,
-      routes: {'/home': (_) => const _HomePage()},
-      home: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 500),
-        switchInCurve: Curves.easeOutCubic,
-        switchOutCurve: Curves.easeInCubic,
-        transitionBuilder: (child, animation) {
-          final curved = CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeInOutCubic,
-          );
-          final offset = Tween<Offset>(
-            begin: const Offset(0.1, 0),
-            end: Offset.zero,
-          ).animate(curved);
 
-          return FadeTransition(
-            opacity: curved,
-            child: SlideTransition(position: offset, child: child),
-          );
-        },
-        child: _showSplash ? const SplashScreen() : const OnboardingPage(),
-      ),
-    );
-  }
-}
+      // Define the /home route to point to your actual home screen
+      routes: {'/home': (_) => const HomePage()},
 
-/// Minimal home page placeholder. Replace with the actual app home.
-class _HomePage extends StatelessWidget {
-  const _HomePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Home')),
-      body: const Center(child: Text('Welcome!')),
+      // The AuthWrapper now controls what page is shown first.
+      // It handles loading, login status, and PIN checks automatically.
+      home: const AuthWrapper(),
     );
   }
 }

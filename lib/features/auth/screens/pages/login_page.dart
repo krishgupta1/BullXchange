@@ -1,12 +1,8 @@
 import 'package:bullxchange/features/auth/screens/onboarding/onboarding_page_1.2.dart';
 import 'package:bullxchange/features/auth/navigation/route_transitions.dart';
-import 'package:bullxchange/features/auth/services/pin_storage.dart';
-import 'package:bullxchange/features/auth/screens/pages/setup_pin_screen.dart'
-    as setup;
-import 'package:bullxchange/features/auth/screens/pages/verify_pin_screen.dart'
-    as verify;
 import 'package:bullxchange/features/auth/screens/pages/signup_page.dart';
 import 'package:bullxchange/features/auth/screens/pages/reset_password_page.dart';
+import 'package:bullxchange/features/auth/screens/pages/verify_pin_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -21,41 +17,59 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-
   bool _obscurePassword = true;
-  bool _isLoading = false;
 
   final RegExp _emailRegex = RegExp(
     r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
   );
 
-  void _showSnack(String message) {
+  // --- NEW: Function to show a pop-up dialog for errors ---
+  Future<void> _showErrorDialog(String message) async {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Text(
+          'Login Failed',
+          style: TextStyle(
+            color: Color(0xFF0F2B46),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          message,
+          style: TextStyle(color: Color(0xFF8AA0B2), fontSize: 16),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text(
+              'Okay',
+              style: TextStyle(
+                color: Color(0xFF4318FF),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _handleLogin() async {
     FocusScope.of(context).unfocus();
-
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
-      _showSnack('Please enter both email and password.');
+      await _showErrorDialog('Please enter both email and password.');
       return;
     }
     if (!_emailRegex.hasMatch(email)) {
-      _showSnack('Incorrect email format.');
+      await _showErrorDialog('Please enter a valid email address.');
       return;
     }
-    if (password.length < 8) {
-      _showSnack('Password should be at least 8 characters.');
-      return;
-    }
-
-    setState(() => _isLoading = true);
 
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
@@ -63,55 +77,33 @@ class _LoginPageState extends State<LoginPage> {
         password: password,
       );
 
-      if (!mounted) return;
-      _showSnack('Signed in successfully.');
-
-      // ✅ Check if a PIN has been set up
-      final pinService = PinStorageService();
-      final hasPin = await pinService.hasPin();
-
-      if (!mounted) return;
-
-      if (hasPin) {
-        Navigator.pushReplacement(
-          context,
-          slideRightToLeft(const verify.VerifyPinScreen()),
-        );
-      } else {
-        Navigator.pushReplacement(
-          context,
-          slideRightToLeft(const setup.SetupPinScreen()),
-        );
-      }
+      // Navigate to next screen after successful login
+      Navigator.pushReplacement(context, slideRightToLeft(VerifyPinScreen()));
     } on FirebaseAuthException catch (e) {
-      debugPrint('FirebaseAuthException: ${e.code} - ${e.message}');
+      String errorMessage;
+
       switch (e.code) {
+        case 'invalid-email':
+          errorMessage = 'The email address is badly formatted.';
+          break;
+        case 'user-disabled':
+          errorMessage =
+              'This account has been disabled. Please contact support.';
+          break;
         case 'user-not-found':
-          _showSnack('No account found for this email.');
+          errorMessage = 'No user found with this email.';
           break;
         case 'wrong-password':
-          _showSnack('Incorrect password.');
-          break;
-        case 'invalid-credential':
-        case 'invalid-login-credentials':
-          _showSnack('Invalid email or password.');
-          break;
-        case 'operation-not-allowed':
-          _showSnack('Email/Password sign-in is disabled.');
-          break;
-        case 'network-request-failed':
-          _showSnack('Network error. Check your connection.');
-          break;
-        case 'too-many-requests':
-          _showSnack('Too many attempts. Try again later.');
+          errorMessage = 'Incorrect password. Please try again.';
           break;
         default:
-          _showSnack('Login failed. (${e.code})');
+          errorMessage =
+              'Login failed. Please check your credentials and try again.';
       }
-    } catch (_) {
-      _showSnack('Something went wrong. Please try again.');
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+
+      await _showErrorDialog(errorMessage);
+    } catch (e) {
+      await _showErrorDialog('An unexpected error occurred: $e');
     }
   }
 
@@ -124,17 +116,16 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    // UI Code is unchanged
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-
-              // Back Button
               SizedBox(
                 width: 40,
                 height: 40,
@@ -154,8 +145,6 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               const SizedBox(height: 40),
-
-              // Logo
               Row(
                 children: [
                   Container(
@@ -180,7 +169,6 @@ class _LoginPageState extends State<LoginPage> {
                 ],
               ),
               const SizedBox(height: 40),
-
               const Text(
                 "Let's Sign You In",
                 style: TextStyle(
@@ -201,16 +189,12 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               const SizedBox(height: 40),
-
-              // Email Field
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: _inputDecoration('Email'),
               ),
               const SizedBox(height: 16),
-
-              // Password Field
               TextField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
@@ -227,8 +211,6 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               const SizedBox(height: 8),
-
-              // Reset Password link
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
@@ -239,14 +221,12 @@ class _LoginPageState extends State<LoginPage> {
                   child: const Text('Reset password?'),
                 ),
               ),
-              const SizedBox(height: 150),
-
-              // Login Button
+              const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _handleLogin,
+                  onPressed: _handleLogin,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF4318FF),
                     foregroundColor: Colors.white,
@@ -254,14 +234,10 @@ class _LoginPageState extends State<LoginPage> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('Login'),
+                  child: const Text('Login'),
                 ),
               ),
-              const Spacer(),
-
-              // Signup Link
+              const SizedBox(height: 150),
               Center(
                 child: RichText(
                   text: TextSpan(
@@ -278,9 +254,9 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         recognizer: TapGestureRecognizer()
                           ..onTap = () => Navigator.pushReplacement(
-                                context,
-                                slideRightToLeft(const SignupPage()),
-                              ),
+                            context,
+                            slideRightToLeft(const SignupPage()),
+                          ),
                       ),
                     ],
                   ),
@@ -295,17 +271,16 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   InputDecoration _inputDecoration(String hint) => InputDecoration(
-        hintText: hint,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE5E5E5)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF4318FF)),
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      );
+    hintText: hint,
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: Color(0xFFE5E5E5)),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: Color(0xFF4318FF)),
+    ),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+  );
 }

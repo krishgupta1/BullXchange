@@ -1,15 +1,11 @@
+import 'package:bullxchange/features/auth/screens/pages/password_confirmation_screen.dart';
+import 'package:bullxchange/features/homepage/homepage.dart';
 import 'package:flutter/material.dart';
 import 'package:pinput/pinput.dart';
-import 'package:local_auth/local_auth.dart';
 import 'package:bullxchange/features/auth/services/pin_storage.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:bullxchange/features/auth/screens/pages/login_page.dart';
 import 'package:bullxchange/features/auth/screens/pages/setup_pin_screen.dart';
 
-/// Screen to verify stored PIN on app launch or confirm PIN after setup.
 class VerifyPinScreen extends StatefulWidget {
-  /// If provided, the screen acts in confirmation mode: the user must
-  /// re-enter the same PIN. On success, the PIN is saved and user proceeds.
   final String? expectedPin;
   const VerifyPinScreen({super.key, this.expectedPin});
 
@@ -39,51 +35,30 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
 
     try {
       if (widget.expectedPin != null) {
-        // Confirmation mode: compare with expected, then store and flag.
         if (pin == widget.expectedPin) {
           await _pinStorage.setPin(pin);
-          // After setting PIN on first setup, sign out and force login
-          await FirebaseAuth.instance.signOut();
           if (!mounted) return;
           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const LoginPage()),
+            MaterialPageRoute(builder: (_) => const HomePage()),
             (route) => false,
           );
         } else {
-          setState(() => _error = 'PINs do not match');
+          setState(() => _error = 'PINs do not match. Please try again.');
         }
       } else {
-        // Normal unlock mode
-        final ok = await _pinStorage.verifyPin(pin);
-        if (ok) {
+        final isPinCorrect = await _pinStorage.verifyPin(pin);
+        if (isPinCorrect) {
           if (!mounted) return;
-          Navigator.of(context).pushReplacementNamed('/home');
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const HomePage()),
+            (route) => false,
+          );
         } else {
           setState(() => _error = 'Incorrect PIN');
         }
       }
     } finally {
       if (mounted) setState(() => _isVerifying = false);
-    }
-  }
-
-  // Optional biometric login
-  Future<void> _tryBiometric() async {
-    final auth = LocalAuthentication();
-    final canCheck = await auth.canCheckBiometrics;
-    final isSupported = await auth.isDeviceSupported();
-    if (!canCheck || !isSupported) return;
-
-    try {
-      final didAuth = await auth.authenticate(
-        localizedReason: 'Unlock with biometrics',
-        options: const AuthenticationOptions(biometricOnly: true),
-      );
-      if (didAuth && mounted) {
-        Navigator.of(context).pushReplacementNamed('/home');
-      }
-    } catch (_) {
-      // ignore errors
     }
   }
 
@@ -112,7 +87,6 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-              // Show back button only in confirmation mode
               if (widget.expectedPin != null)
                 SizedBox(
                   width: 40,
@@ -120,7 +94,6 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
                   child: Center(
                     child: IconButton(
                       onPressed: () {
-                        // Navigate back to setup pin screen
                         Navigator.of(context).pushReplacement(
                           MaterialPageRoute(
                             builder: (_) => const SetupPinScreen(),
@@ -133,7 +106,7 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
                   ),
                 )
               else
-                const SizedBox(height: 40), // keep spacing if no back button
+                const SizedBox(height: 40),
               const SizedBox(height: 24),
               Center(
                 child: Container(
@@ -155,7 +128,8 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
                 child: Text(
                   widget.expectedPin != null ? 'Confirm PIN' : 'Enter PIN',
                   style: const TextStyle(
-                    fontFamily: 'EudoxusSans',
+                    // --- DEBUG: Temporarily removed custom font ---
+                    // fontFamily: 'EudoxusSans',
                     fontSize: 28,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF0F2B46),
@@ -163,19 +137,22 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
                 ),
               ),
               const SizedBox(height: 8),
+
               Center(
                 child: Text(
                   widget.expectedPin != null
                       ? 'Re-enter to confirm'
                       : 'Unlock to continue',
                   style: const TextStyle(
-                    fontFamily: 'EudoxusSans',
+                    // --- DEBUG: Temporarily removed custom font ---
+                    // fontFamily: 'EudoxusSans',
                     fontSize: 16,
                     color: Color(0xFF8AA0B2),
                   ),
                 ),
               ),
               const SizedBox(height: 24),
+
               Center(
                 child: Pinput(
                   controller: _pinController,
@@ -187,6 +164,30 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
                   onCompleted: (_) => _verify(),
                 ),
               ),
+              if (widget.expectedPin == null)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const PasswordConfirmationScreen(),
+                        ),
+                      );
+                    },
+                    child: const Text(
+                      'Reset PIN?',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Color(
+                          0xFF4318FF,
+                        ), // same style as login page reset password
+                      ),
+                    ),
+                  ),
+                ),
               if (_error != null) ...[
                 const SizedBox(height: 8),
                 Center(
@@ -197,47 +198,33 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
                 ),
               ],
               const Spacer(),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: widget.expectedPin == null
-                          ? _tryBiometric
-                          : null,
-                      icon: const Icon(Icons.fingerprint),
-                      label: const Text('Use biometrics'),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: _isVerifying ? null : _verify,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4318FF),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  SizedBox(
-                    width: 140,
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: _isVerifying ? null : _verify,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF4318FF),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: _isVerifying
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
-                                ),
+                  child: _isVerifying
+                      ? Center(
+                          child: const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
                               ),
-                            )
-                          : Text(
-                              widget.expectedPin != null ? 'Confirm' : 'Unlock',
                             ),
-                    ),
-                  ),
-                ],
+                          ),
+                        )
+                      : Text(widget.expectedPin != null ? 'Confirm' : 'Unlock'),
+                ),
               ),
               const SizedBox(height: 24),
             ],
