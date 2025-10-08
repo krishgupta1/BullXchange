@@ -1,11 +1,11 @@
+import 'package:bullxchange/features/auth/provider/login_provider.dart';
 import 'package:bullxchange/features/auth/screens/onboarding/onboarding_page_1.2.dart';
 import 'package:bullxchange/features/auth/navigation/route_transitions.dart';
 import 'package:bullxchange/features/auth/screens/pages/signup_page.dart';
 import 'package:bullxchange/features/auth/screens/pages/reset_password_page.dart';
-import 'package:bullxchange/features/auth/screens/pages/verify_pin_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -19,94 +19,6 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
-  final RegExp _emailRegex = RegExp(
-    r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
-  );
-
-  // --- NEW: Function to show a pop-up dialog for errors ---
-  Future<void> _showErrorDialog(String message) async {
-    if (!mounted) return;
-    await showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text(
-          'Login Failed',
-          style: TextStyle(
-            color: Color(0xFF0F2B46),
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: Text(
-          message,
-          style: TextStyle(color: Color(0xFF8AA0B2), fontSize: 16),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text(
-              'Okay',
-              style: TextStyle(
-                color: Color(0xFF4318FF),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _handleLogin() async {
-    FocusScope.of(context).unfocus();
-    final email = _emailController.text.trim();
-    final password = _passwordController.text;
-
-    if (email.isEmpty || password.isEmpty) {
-      await _showErrorDialog('Please enter both email and password.');
-      return;
-    }
-    if (!_emailRegex.hasMatch(email)) {
-      await _showErrorDialog('Please enter a valid email address.');
-      return;
-    }
-
-    try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      // Navigate to next screen after successful login
-      Navigator.pushReplacement(context, slideRightToLeft(VerifyPinScreen()));
-    } on FirebaseAuthException catch (e) {
-      String errorMessage;
-
-      switch (e.code) {
-        case 'invalid-email':
-          errorMessage = 'The email address is badly formatted.';
-          break;
-        case 'user-disabled':
-          errorMessage =
-              'This account has been disabled. Please contact support.';
-          break;
-        case 'user-not-found':
-          errorMessage = 'No user found with this email.';
-          break;
-        case 'wrong-password':
-          errorMessage = 'Incorrect password. Please try again.';
-          break;
-        default:
-          errorMessage =
-              'Login failed. Please check your credentials and try again.';
-      }
-
-      await _showErrorDialog(errorMessage);
-    } catch (e) {
-      await _showErrorDialog('An unexpected error occurred: $e');
-    }
-  }
-
   @override
   void dispose() {
     _emailController.dispose();
@@ -116,7 +28,8 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    // UI Code is unchanged
+    final loginProvider = Provider.of<LoginProvider>(context);
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -226,7 +139,14 @@ class _LoginPageState extends State<LoginPage> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: _handleLogin,
+                  // The button is disabled when loading and calls the provider on press.
+                  onPressed: loginProvider.isLoading
+                      ? null
+                      : () => loginProvider.handleLogin(
+                          context,
+                          _emailController.text,
+                          _passwordController.text,
+                        ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF4318FF),
                     foregroundColor: Colors.white,
@@ -234,7 +154,10 @@ class _LoginPageState extends State<LoginPage> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text('Login'),
+                  // The button shows a spinner when loading.
+                  child: loginProvider.isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('Login'),
                 ),
               ),
               const SizedBox(height: 150),

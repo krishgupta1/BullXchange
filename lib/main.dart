@@ -1,41 +1,57 @@
+import 'package:bullxchange/features/auth/provider/login_provider.dart';
+import 'package:bullxchange/features/auth/screens/onboarding/splash_screen.dart';
 import 'package:bullxchange/features/homepage/homepage.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:bullxchange/firebase_options.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-
-// --- (Import the new files) ---
+import 'package:provider/provider.dart';
 import 'package:bullxchange/features/auth/navigation/auth_wrapper.dart';
 
 Future<void> main() async {
-  // Ensures all bindings are initialized before Firebase
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Initialize Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  // If you use .env for API keys, load it here:
   await dotenv.load(fileName: ".env");
 
-  runApp(const MainApp());
+  // By wrapping the entire app in the provider, we make it globally available.
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => LoginProvider(),
+      child: const MainApp(),
+    ),
+  );
 }
 
-// --- (This widget is now much simpler) ---
-class MainApp extends StatelessWidget {
+class MainApp extends StatefulWidget {
   const MainApp({super.key});
 
   @override
+  State<MainApp> createState() => _MainAppState();
+}
+
+class _MainAppState extends State<MainApp> {
+  bool _showSplashScreen = true;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        setState(() {
+          _showSplashScreen = false;
+        });
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // This MaterialApp and all its children can now access LoginProvider.
     return MaterialApp(
       title: 'BullXchange',
       debugShowCheckedModeBanner: false,
-
-      // Define the /home route to point to your actual home screen
       routes: {'/home': (_) => const HomePage()},
-
-      // The AuthWrapper now controls what page is shown first.
-      // It handles loading, login status, and PIN checks automatically.
-      home: const AuthWrapper(),
+      home: _showSplashScreen ? const SplashScreen() : const AuthWrapper(),
     );
   }
 }
