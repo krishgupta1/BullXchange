@@ -35,7 +35,6 @@ class _PasswordConfirmationScreenState
 
       await user.reauthenticateWithCredential(credential);
 
-      // ✅ If password is correct → go to SetupPinScreen
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
@@ -46,19 +45,19 @@ class _PasswordConfirmationScreenState
         _errorMessage = e.message ?? "Invalid password. Try again.";
       });
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // same as PIN screen
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
         centerTitle: true,
@@ -75,8 +74,26 @@ class _PasswordConfirmationScreenState
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              const SizedBox(height: 48), // Added spacing at the top
+              Center(
+                child: Container(
+                  width: 150,
+                  height: 150,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Color(0xFFF1EEFF),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(28.0),
+                    child: Image.asset(
+                      'assets/images/lock.png',
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
               const Text(
                 "Enter your account password\nto reset your PIN",
                 textAlign: TextAlign.center,
@@ -87,8 +104,6 @@ class _PasswordConfirmationScreenState
                 ),
               ),
               const SizedBox(height: 40),
-
-              // ✅ Password Input (styled like PIN field)
               TextField(
                 controller: _passwordController,
                 obscureText: true,
@@ -111,19 +126,13 @@ class _PasswordConfirmationScreenState
                   ),
                 ),
               ),
-
               const SizedBox(height: 12),
-
-              // Error message
               if (_errorMessage != null)
                 Text(
                   _errorMessage!,
                   style: const TextStyle(color: Colors.red, fontSize: 14),
                 ),
-
-              const SizedBox(height: 32),
-
-              // ✅ Verify Button (styled like PIN screen button)
+              const Spacer(), // Added Spacer to push button to the bottom
               SizedBox(
                 width: double.infinity,
                 height: 56,
@@ -147,6 +156,7 @@ class _PasswordConfirmationScreenState
                         ),
                 ),
               ),
+              const SizedBox(height: 24), // Added spacing at the bottom
             ],
           ),
         ),

@@ -110,16 +110,18 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
               const SizedBox(height: 24),
               Center(
                 child: Container(
-                  width: 120,
-                  height: 120,
+                  width: 150,
+                  height: 150,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     color: Color(0xFFF1EEFF),
                   ),
-                  child: const Icon(
-                    Icons.lock_open,
-                    size: 64,
-                    color: Color(0xFF4318FF),
+                  child: Padding(
+                    padding: const EdgeInsets.all(28.0),
+                    child: Image.asset(
+                      'assets/images/lock.png',
+                      fit: BoxFit.contain,
+                    ),
                   ),
                 ),
               ),
