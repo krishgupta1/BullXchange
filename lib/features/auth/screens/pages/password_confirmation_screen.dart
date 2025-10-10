@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'setup_pin_screen.dart';
 
 class PasswordConfirmationScreen extends StatefulWidget {
-  const PasswordConfirmationScreen({Key? key}) : super(key: key);
+  const PasswordConfirmationScreen({super.key});
 
   @override
   State<PasswordConfirmationScreen> createState() =>
@@ -50,7 +50,7 @@ class _PasswordConfirmationScreenState
         context,
         MaterialPageRoute(builder: (_) => const SetupPinScreen()),
       );
-    } on FirebaseAuthException catch (e) {
+    } on FirebaseAuthException {
       setState(() {
         _errorMessage = "Invalid password. Please try again.";
       });
