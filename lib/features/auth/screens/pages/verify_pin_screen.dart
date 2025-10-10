@@ -18,6 +18,7 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
   final TextEditingController _pinController = TextEditingController();
   bool _isVerifying = false;
   String? _error;
+  bool _obscurePin = true; // State to control PIN visibility
 
   @override
   void dispose() {
@@ -64,6 +65,7 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // --- UPDATE: Themed PinPut fields (copied from setup_pin_screen.dart) ---
     final defaultPinTheme = PinTheme(
       width: 56,
       height: 56,
@@ -75,8 +77,22 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFFF3F5F7),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.transparent), // Prevents layout shift
       ),
     );
+
+    final focusedPinTheme = defaultPinTheme.copyWith(
+      decoration: defaultPinTheme.decoration!.copyWith(
+        border: Border.all(color: const Color(0xFF4318FF), width: 2),
+      ),
+    );
+
+    final submittedPinTheme = defaultPinTheme.copyWith(
+      decoration: defaultPinTheme.decoration!.copyWith(
+        border: Border.all(color: const Color(0xFF4318FF), width: 2),
+      ),
+    );
+    // --- END OF UPDATE ---
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -130,8 +146,6 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
                 child: Text(
                   widget.expectedPin != null ? 'Confirm PIN' : 'Enter PIN',
                   style: const TextStyle(
-                    // --- DEBUG: Temporarily removed custom font ---
-                    // fontFamily: 'EudoxusSans',
                     fontSize: 28,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF0F2B46),
@@ -139,33 +153,53 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-
               Center(
                 child: Text(
                   widget.expectedPin != null
                       ? 'Re-enter to confirm'
                       : 'Unlock to continue',
                   style: const TextStyle(
-                    // --- DEBUG: Temporarily removed custom font ---
-                    // fontFamily: 'EudoxusSans',
                     fontSize: 16,
                     color: Color(0xFF8AA0B2),
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
-
+              const SizedBox(height: 40),
+              // --- UPDATE: Use a Row for Pinput and the eye icon ---
               Center(
-                child: Pinput(
-                  controller: _pinController,
-                  length: 4,
-                  defaultPinTheme: defaultPinTheme,
-                  obscureText: true,
-                  obscuringCharacter: '•',
-                  keyboardType: TextInputType.number,
-                  onCompleted: (_) => _verify(),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Pinput(
+                      controller: _pinController,
+                      length: 4,
+                      defaultPinTheme: defaultPinTheme,
+                      focusedPinTheme: focusedPinTheme,
+                      submittedPinTheme: submittedPinTheme,
+                      obscureText: _obscurePin,
+                      obscuringCharacter: '•',
+                      keyboardType: TextInputType.number,
+                      onCompleted: (_) => _verify(),
+                    ),
+                    const SizedBox(width: 16),
+                    IconButton(
+                      icon: Icon(
+                        _obscurePin
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        color: Colors.grey,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePin = !_obscurePin;
+                        });
+                      },
+                    ),
+                  ],
                 ),
               ),
+              // --- END OF UPDATE ---
               if (widget.expectedPin == null)
                 Align(
                   alignment: Alignment.centerRight,

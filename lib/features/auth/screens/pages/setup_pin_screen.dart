@@ -1,5 +1,3 @@
-// lib/features/auth/screens/pages/setup_pin_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:pinput/pinput.dart';
 import 'package:bullxchange/features/auth/screens/pages/verify_pin_screen.dart';
@@ -17,6 +15,7 @@ class _SetupPinScreenState extends State<SetupPinScreen> {
   final TextEditingController _pinController = TextEditingController();
   bool _isSubmitting = false;
   String? _error;
+  bool _obscurePin = true; // State to control PIN visibility
 
   @override
   void dispose() {
@@ -121,15 +120,42 @@ class _SetupPinScreenState extends State<SetupPinScreen> {
                 ),
               ),
               const SizedBox(height: 24),
+              // Stack to overlay the eye icon ---
               Center(
-                child: Pinput(
-                  controller: _pinController,
-                  length: 4,
-                  defaultPinTheme: defaultPinTheme,
-                  obscureText: true,
-                  obscuringCharacter: '•',
-                  keyboardType: TextInputType.number,
-                  onCompleted: (_) => _submit(),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8.0),
+                      child: Pinput(
+                        controller: _pinController,
+                        length: 4,
+                        defaultPinTheme: defaultPinTheme,
+                        obscureText: _obscurePin, // Use state variable
+                        obscuringCharacter: '•',
+                        keyboardType: TextInputType.number,
+                        onCompleted: (_) => _submit(),
+                      ),
+                    ),
+                    // Positioned widget can be used for more precise control if needed
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8.0),
+                      child: IconButton(
+                        icon: Icon(
+                          _obscurePin
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: Colors.grey,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePin = !_obscurePin;
+                          });
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ),
               if (_error != null) ...[

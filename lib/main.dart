@@ -13,15 +13,17 @@ Future<void> main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await dotenv.load(fileName: ".env");
 
-  // By wrapping the entire app in the provider, we make it globally available.
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => LoginProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => LoginProvider()),
+      ],
       child: const MainApp(),
     ),
   );
 }
 
+// --- The MainApp widget below is unchanged ---
 class MainApp extends StatefulWidget {
   const MainApp({super.key});
 
@@ -46,7 +48,6 @@ class _MainAppState extends State<MainApp> {
 
   @override
   Widget build(BuildContext context) {
-    // This MaterialApp and all its children can now access LoginProvider.
     return MaterialApp(
       title: 'BullXchange',
       debugShowCheckedModeBanner: false,

@@ -15,8 +15,18 @@ class _PasswordConfirmationScreenState
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
+  bool _obscurePassword = true; // State to control password visibility
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   Future<void> _verifyPassword() async {
+    // Hide keyboard
+    FocusScope.of(context).unfocus();
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -42,7 +52,11 @@ class _PasswordConfirmationScreenState
       );
     } on FirebaseAuthException catch (e) {
       setState(() {
-        _errorMessage = e.message ?? "Invalid password. Try again.";
+        _errorMessage = "Invalid password. Please try again.";
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = "An unexpected error occurred. Please try again.";
       });
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -75,7 +89,7 @@ class _PasswordConfirmationScreenState
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Column(
             children: [
-              const SizedBox(height: 48), // Added spacing at the top
+              const SizedBox(height: 48),
               Center(
                 child: Container(
                   width: 150,
@@ -104,9 +118,10 @@ class _PasswordConfirmationScreenState
                 ),
               ),
               const SizedBox(height: 40),
+              // --- UPDATE: TextField now has show/hide functionality ---
               TextField(
                 controller: _passwordController,
-                obscureText: true,
+                obscureText: _obscurePassword, // Use state variable
                 decoration: InputDecoration(
                   hintText: "Enter Password",
                   border: OutlineInputBorder(
@@ -124,6 +139,20 @@ class _PasswordConfirmationScreenState
                     horizontal: 16,
                     vertical: 16,
                   ),
+                  // Add the eye icon button here
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                      color: Colors.grey,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -132,7 +161,7 @@ class _PasswordConfirmationScreenState
                   _errorMessage!,
                   style: const TextStyle(color: Colors.red, fontSize: 14),
                 ),
-              const Spacer(), // Added Spacer to push button to the bottom
+              const Spacer(),
               SizedBox(
                 width: double.infinity,
                 height: 56,
@@ -146,7 +175,14 @@ class _PasswordConfirmationScreenState
                     ),
                   ),
                   child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
+                      ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
                       : const Text(
                           "Verify",
                           style: TextStyle(
@@ -156,7 +192,7 @@ class _PasswordConfirmationScreenState
                         ),
                 ),
               ),
-              const SizedBox(height: 24), // Added spacing at the bottom
+              const SizedBox(height: 24),
             ],
           ),
         ),
