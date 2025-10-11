@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bullxchange/features/auth/navigation/route_transitions.dart';
-import 'package:bullxchange/features/auth/screens/pages/verify_pin_screen.dart';
+import 'package:bullxchange/features/auth/screens/verify_pin_screen.dart';
 
 // This class handles all the business logic for the login process.
 class LoginProvider with ChangeNotifier {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:bullxchange/features/auth/screens/pages/login_page.dart';
+import 'package:bullxchange/features/auth/screens/login_page.dart';
 import 'package:bullxchange/features/auth/navigation/route_transitions.dart';
 
 class ResetPasswordPage extends StatefulWidget {

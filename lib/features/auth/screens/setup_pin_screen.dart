@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pinput/pinput.dart';
-import 'package:bullxchange/features/auth/screens/pages/verify_pin_screen.dart';
+import 'package:bullxchange/features/auth/screens/verify_pin_screen.dart';
 
 /// Screen to set a new PIN. After entering a PIN this navigates to
 /// VerifyPinScreen(expectedPin: pin) where the user confirms it.

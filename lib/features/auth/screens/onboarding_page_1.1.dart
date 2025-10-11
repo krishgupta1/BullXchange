@@ -1,12 +1,9 @@
-import 'package:bullxchange/features/auth/screens/onboarding/onboarding_page_1.1.dart';
-import 'package:bullxchange/features/auth/screens/pages/login_page.dart';
-import 'package:bullxchange/features/auth/screens/pages/signup_page.dart';
+import 'package:bullxchange/features/auth/screens/onboarding_page_1.2.dart';
 import 'package:bullxchange/features/auth/navigation/route_transitions.dart';
 import 'package:flutter/material.dart';
-import 'package:bullxchange/features/auth/widgets/app_back_button.dart';
 
-class OnboardingPage12 extends StatelessWidget {
-  const OnboardingPage12({super.key});
+class OnboardingPage extends StatelessWidget {
+  const OnboardingPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -20,27 +17,14 @@ class OnboardingPage12 extends StatelessWidget {
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: IntrinsicHeight(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 16,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const SizedBox(height: 20),
-                        // Back Button (match auth pages position)
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: AppBackButton(
-                            onPressed: () {
-                              if (Navigator.of(context).canPop()) {
-                                Navigator.of(context).pop();
-                              } else {
-                                Navigator.of(context).pushReplacement(
-                                  _slideLeftToRight(const OnboardingPage()),
-                                );
-                              }
-                            },
-                          ),
-                        ),
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 80),
                         // Illustration
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -48,16 +32,16 @@ class OnboardingPage12 extends StatelessWidget {
                             aspectRatio: 1.2,
                             child: Center(
                               child: Image.asset(
-                                'assets/images/splashBottom.png',
+                                'assets/images/onboarding.png',
                                 fit: BoxFit.contain,
                               ),
                             ),
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 60),
                         // Title
                         Text(
-                          'Get Started  with BullXchange',
+                          'Buy & Trade Top Stock and F&O',
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.headlineMedium
                               ?.copyWith(
@@ -66,10 +50,10 @@ class OnboardingPage12 extends StatelessWidget {
                                 color: const Color(0xFF0F2B46),
                               ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 60),
                         // Description
                         Text(
-                          "Discover India’s top stocks and F&O to trade and learn.",
+                          "A platform to practice trading India’s top stocks and F&O with zero risk.",
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.bodyLarge
                               ?.copyWith(
@@ -77,35 +61,34 @@ class OnboardingPage12 extends StatelessWidget {
                                 height: 1.4,
                               ),
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 60),
                         // Page indicators
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
+                            const _Dot(active: true),
+                            const SizedBox(width: 8),
                             InkWell(
                               borderRadius: BorderRadius.circular(8),
                               onTap: () {
-                                Navigator.of(context).pushReplacement(
-                                  _slideLeftToRight(const OnboardingPage()),
+                                Navigator.of(context).push(
+                                  slideRightToLeft(const OnboardingPage12()),
                                 );
                               },
-                              child: const _Dot(active: false),
+                              child: const _Dot(active: false, isLong: true),
                             ),
-                            const SizedBox(width: 8),
-                            const _Dot(active: true, isLong: true),
                           ],
                         ),
                         const Spacer(),
-                        // Get Started button
+                        // Next button
                         ElevatedButton(
                           onPressed: () {
-                            Navigator.pushReplacement(
+                            Navigator.of(
                               context,
-                              slideRightToLeft(SignupPage()),
-                            );
+                            ).push(slideRightToLeft(const OnboardingPage12()));
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1541D5),
+                            backgroundColor: const Color(0xFF4318FF),
                             foregroundColor: Colors.white,
                             minimumSize: const Size.fromHeight(64),
                             shape: RoundedRectangleBorder(
@@ -114,33 +97,7 @@ class OnboardingPage12 extends StatelessWidget {
                             elevation: 0,
                           ),
                           child: const Text(
-                            'Get Started',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        // Sign in button (outlined, white background)
-                        OutlinedButton(
-                          onPressed: () {
-                            Navigator.pushReplacement(
-                              context,
-                              slideRightToLeft(LoginPage()),
-                            );
-                          },
-                          style: OutlinedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: const Color(0xFF0F2B46),
-                            side: const BorderSide(color: Color(0xFFFD4BC3)),
-                            minimumSize: const Size.fromHeight(64),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                          ),
-                          child: const Text(
-                            'Sign in',
+                            'Next',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
@@ -161,23 +118,7 @@ class OnboardingPage12 extends StatelessWidget {
   }
 }
 
-Route _slideLeftToRight(Widget page) {
-  return PageRouteBuilder(
-    pageBuilder: (context, animation, secondaryAnimation) => page,
-    transitionDuration: const Duration(milliseconds: 400),
-    reverseTransitionDuration: const Duration(milliseconds: 400),
-    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      const begin = Offset(-1.0, 0.0); // from left
-      const end = Offset.zero;
-      const curve = Curves.easeInOutCubic;
-      final tween = Tween(
-        begin: begin,
-        end: end,
-      ).chain(CurveTween(curve: curve));
-      return SlideTransition(position: animation.drive(tween), child: child);
-    },
-  );
-}
+// Using shared transitions from route_transitions.dart
 
 class _Dot extends StatelessWidget {
   const _Dot({required this.active, this.isLong = false});

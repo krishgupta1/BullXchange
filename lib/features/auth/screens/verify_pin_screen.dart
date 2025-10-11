@@ -1,9 +1,9 @@
-import 'package:bullxchange/features/auth/screens/pages/password_confirmation_screen.dart';
-import 'package:bullxchange/features/homepage/homepage.dart';
+import 'package:bullxchange/features/auth/screens/password_confirmation_screen.dart';
+import 'package:bullxchange/features/home/screens/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:pinput/pinput.dart';
-import 'package:bullxchange/features/auth/services/pin_storage.dart';
-import 'package:bullxchange/features/auth/screens/pages/setup_pin_screen.dart';
+import 'package:bullxchange/services/firebase/pin_storage.dart';
+import 'package:bullxchange/features/auth/screens/setup_pin_screen.dart';
 
 class VerifyPinScreen extends StatefulWidget {
   final String? expectedPin;

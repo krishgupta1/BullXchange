@@ -1,8 +1,8 @@
-import 'package:bullxchange/features/auth/provider/login_provider.dart';
-import 'package:bullxchange/features/auth/screens/onboarding/onboarding_page_1.2.dart';
+import 'package:bullxchange/provider/auth_provider.dart';
+import 'package:bullxchange/features/auth/screens/onboarding_page_1.2.dart';
 import 'package:bullxchange/features/auth/navigation/route_transitions.dart';
-import 'package:bullxchange/features/auth/screens/pages/signup_page.dart';
-import 'package:bullxchange/features/auth/screens/pages/reset_password_page.dart';
+import 'package:bullxchange/features/auth/screens/signup_page.dart';
+import 'package:bullxchange/features/auth/screens/reset_password_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:provider/provider.dart';

@@ -1,8 +1,8 @@
-import 'package:bullxchange/features/auth/screens/onboarding/onboarding_page_1.1.dart';
-import 'package:bullxchange/features/auth/screens/onboarding/splash_screen.dart';
-import 'package:bullxchange/features/auth/screens/pages/setup_pin_screen.dart';
-import 'package:bullxchange/features/auth/screens/pages/verify_pin_screen.dart';
-import 'package:bullxchange/features/auth/services/pin_storage.dart';
+import 'package:bullxchange/features/auth/screens/onboarding_page_1.1.dart';
+import 'package:bullxchange/features/auth/screens/splash_screen.dart';
+import 'package:bullxchange/features/auth/screens/setup_pin_screen.dart';
+import 'package:bullxchange/features/auth/screens/verify_pin_screen.dart';
+import 'package:bullxchange/services/firebase/pin_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
