@@ -18,14 +18,6 @@ class _StockPageState extends State<StockPage>
   bool get wantKeepAlive => true;
   int _selectedActionIndex = 0;
 
-  final List<Widget> _actionPages = [
-    const ExplorePage(),
-    const HoldingsPage(),
-    const PositionPage(),
-    const OrderPage(),
-    const WatchlistPage(),
-  ];
-
   @override
   Widget build(BuildContext context) {
     super.build(context);
