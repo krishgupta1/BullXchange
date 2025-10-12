@@ -49,6 +49,12 @@ class _MainAppState extends State<MainApp> {
     return MaterialApp(
       title: 'BullXchange',
       debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        fontFamily: 'EudoxusSans',
+        scaffoldBackgroundColor: Colors.white,
+        primaryColor: const Color(0xFF4318FF),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF4318FF)),
+      ),
       routes: {'/home': (_) => const HomePage()},
       home: _showSplashScreen ? const SplashScreen() : const AuthWrapper(),
     );
