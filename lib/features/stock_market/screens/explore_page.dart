@@ -9,22 +9,17 @@ class ExplorePage extends StatelessWidget {
   Widget build(BuildContext context) {
     // You can build your detailed Explore UI here.
     // For now, it's a placeholder with some text and an icon.
-    return Container(
+    return ListView(
       padding: const EdgeInsets.all(16.0),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildSectionHeader("Top Stocks"),
-            const SizedBox(height: 10),
-            _buildStockList(),
-            const SizedBox(height: 30),
-            _buildSectionHeader("Tools"),
-            const SizedBox(height: 10),
-            _buildToolsGrid(),
-          ],
-        ),
-      ),
+      children: [
+        _buildSectionHeader("Top Stocks"),
+        const SizedBox(height: 10),
+        _buildStockList(),
+        const SizedBox(height: 30),
+        _buildSectionHeader("Tools"),
+        const SizedBox(height: 10),
+        _buildToolsGrid(),
+      ],
     );
   }
 }
@@ -254,7 +249,11 @@ Widget _buildToolsGrid() {
     children: [
       _buildToolItem(Icons.campaign, "IPO", const Color(0xFFE3D9FF)),
       _buildToolItem(Icons.newspaper, "NEWS", const Color(0xFFD9EFFF)),
-      _buildToolItem(Icons.newspaper, "NEWS", const Color(0xFFD9EFFF)),
+      _buildToolItem(
+        Icons.broadcast_on_home,
+        "Community",
+        const Color(0xFFD9EFFF),
+      ),
       _buildToolItem(Icons.star, "EVENT", const Color(0xFFFFDDC4)),
       _buildToolItem(Icons.calculate, "CHARGES", const Color(0xFFD0F2E3)),
     ],

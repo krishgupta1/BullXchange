@@ -1,5 +1,3 @@
-// File: lib/widgets/bottom_nav_bar.dart
-
 import 'package:flutter/material.dart';
 
 class BottomNavBar extends StatelessWidget {
@@ -14,29 +12,55 @@ class BottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ✨ FIX: Define the selected color to match the screenshot
+    const Color selectedColor = Color(0xFF3500D4);
+
     return BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
       currentIndex: selectedIndex,
       onTap: onItemTapped,
-      selectedItemColor: const Color(0xFFDB1B57),
+      // Use the new selected color for the text
+      selectedItemColor: selectedColor,
       unselectedItemColor: Colors.grey[600],
       selectedFontSize: 12,
       unselectedFontSize: 12,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.show_chart), label: 'Stocks'),
+      // Remove the default icon size to have more control
+      iconSize: 24,
+      items: [
+        // ✨ FIX: Use the `activeIcon` property for a custom selected state
         BottomNavigationBarItem(
-          icon: Icon(Icons.swap_horiz_rounded),
+          icon: const Icon(Icons.ssid_chart),
+          activeIcon: _buildActiveIcon(Icons.ssid_chart, selectedColor),
+          label: 'Stocks',
+        ),
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.widgets_outlined),
+          activeIcon: _buildActiveIcon(Icons.widgets_outlined, selectedColor),
           label: 'F&O',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.pie_chart),
+          icon: const Icon(Icons.pie_chart_outline),
+          activeIcon: _buildActiveIcon(Icons.pie_chart, selectedColor),
           label: 'Portfolio',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.auto_awesome),
+          icon: const Icon(Icons.auto_awesome_outlined),
+          activeIcon: _buildActiveIcon(Icons.auto_awesome, selectedColor),
           label: 'AI Stats',
         ),
       ],
     );
   }
+}
+
+/// Helper widget to create the blue container for the active icon
+Widget _buildActiveIcon(IconData icon, Color color) {
+  return Container(
+    padding: const EdgeInsets.all(5.0),
+    decoration: BoxDecoration(
+      color: color,
+      borderRadius: BorderRadius.circular(8.0),
+    ),
+    child: Icon(icon, color: Colors.white),
+  );
 }

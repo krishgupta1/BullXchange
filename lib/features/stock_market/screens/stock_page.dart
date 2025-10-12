@@ -3,22 +3,21 @@ import 'package:bullxchange/features/stock_market/screens/order_page.dart';
 import 'package:bullxchange/features/stock_market/screens/position_page.dart';
 import 'package:bullxchange/features/stock_market/screens/watchlist_page.dart';
 import 'package:flutter/material.dart';
-import 'explore_page.dart'; // Import the new explore page
+import 'explore_page.dart';
 
 class StockPage extends StatefulWidget {
-  const StockPage({super.key});
+  const StockPage({Key? key}) : super(key: key);
 
   @override
   State<StockPage> createState() => _StockPageState();
 }
 
-class _StockPageState extends State<StockPage> {
-  // 1. STATE MANAGEMENT
-  // This variable will keep track of which page to show.
-  // 0 = Explore, 1 = Holdings, 2 = Position, 3 = Orders, 4 = Watchlist
+class _StockPageState extends State<StockPage>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   int _selectedActionIndex = 0;
 
-  // This list holds the different page widgets to be displayed.
   final List<Widget> _actionPages = [
     const ExplorePage(),
     const HoldingsPage(),
@@ -29,15 +28,19 @@ class _StockPageState extends State<StockPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
+    // ✨ FIX 1: Removed SingleChildScrollView.
+    // The main layout is now a Column that fills the screen.
     return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+      child: Padding(
+        // Use Padding instead of padding on a ScrollView.
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- COMMON UI WIDGETS ---
-            // These widgets will always be visible on the StockPage.
-            const SizedBox(height: 10),
+            // --- STATIC TOP CONTENT ---
+            // These widgets will always be visible.
+            const SizedBox(height: 16),
             _buildHeader(),
             const SizedBox(height: 30),
             _buildIndexCards(),
@@ -46,15 +49,30 @@ class _StockPageState extends State<StockPage> {
             const SizedBox(height: 20),
 
             // --- DYNAMIC CONTENT AREA ---
-            // This is where the content will change based on the selected button.
-            IndexedStack(index: _selectedActionIndex, children: _actionPages),
+            // ✨ FIX 2: Wrap IndexedStack with Expanded.
+            // This tells the IndexedStack to fill all remaining vertical space in the Column.
+            // This gives it a finite, bounded height, which solves the error.
+            Expanded(
+              child: IndexedStack(
+                index: _selectedActionIndex,
+                children: [
+                  const ExplorePage(),
+                  const HoldingsPage(),
+                  const PositionPage(),
+                  const OrderPage(),
+                  const WatchlistPage(),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  // No changes to _buildHeader() and _buildIndexCard()
+  // No changes needed for your builder methods (_buildHeader, _buildIndexCards, etc.)
+  // They are perfectly fine.
+
   Widget _buildHeader() {
     return Row(
       children: [
@@ -68,7 +86,7 @@ class _StockPageState extends State<StockPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Hi, Kitsbase!",
+              "Hi, User!",
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 2),
@@ -158,19 +176,21 @@ class _StockPageState extends State<StockPage> {
     );
   }
 
-  // 2. UPDATED ACTION BUTTONS
-  // Now includes tap handling to update the state.
   Widget _buildActionButtons() {
+    // This is fine, but make sure your pages are created for each button.
+    final buttonLabels = [
+      "Explore",
+      "Holdings",
+      "Position",
+      "Orders",
+      "Watchlist",
+    ];
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
-        children: [
-          _buildActionButton("Explore", 0),
-          _buildActionButton("Holdings", 1),
-          _buildActionButton("Position", 2),
-          _buildActionButton("Orders", 3),
-          _buildActionButton("Watchlist", 4),
-        ],
+        children: List.generate(buttonLabels.length, (index) {
+          return _buildActionButton(buttonLabels[index], index);
+        }),
       ),
     );
   }
@@ -179,7 +199,6 @@ class _StockPageState extends State<StockPage> {
     bool isSelected = _selectedActionIndex == index;
     return GestureDetector(
       onTap: () {
-        // When a button is tapped, update the state to the new index.
         setState(() {
           _selectedActionIndex = index;
         });
