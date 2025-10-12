@@ -29,6 +29,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       // ✨ FIX 2: Use IndexedStack to preserve the state of each tab.
       // This widget keeps all children mounted but only shows the one at the current index.
       body: IndexedStack(index: _selectedIndex, children: _widgetOptions),

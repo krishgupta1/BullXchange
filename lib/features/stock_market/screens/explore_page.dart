@@ -13,11 +13,11 @@ class ExplorePage extends StatelessWidget {
       padding: const EdgeInsets.all(16.0),
       children: [
         _buildSectionHeader("Top Stocks"),
-        const SizedBox(height: 10),
+        // const SizedBox(height: 5),
         _buildStockList(),
-        const SizedBox(height: 30),
+        const SizedBox(height: 20),
         _buildSectionHeader("Tools"),
-        const SizedBox(height: 10),
+        const SizedBox(height: 20),
         _buildToolsGrid(),
       ],
     );
@@ -245,17 +245,30 @@ Widget _buildMiniChart(List<double> data, Color color) {
 
 Widget _buildToolsGrid() {
   return Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
     children: [
-      _buildToolItem(Icons.campaign, "IPO", const Color(0xFFE3D9FF)),
-      _buildToolItem(Icons.newspaper, "NEWS", const Color(0xFFD9EFFF)),
-      _buildToolItem(
-        Icons.broadcast_on_home,
-        "Community",
-        const Color(0xFFD9EFFF),
+      Expanded(
+        child: _buildToolItem(Icons.campaign, "IPO", const Color(0xFFE3D9FF)),
       ),
-      _buildToolItem(Icons.star, "EVENT", const Color(0xFFFFDDC4)),
-      _buildToolItem(Icons.calculate, "CHARGES", const Color(0xFFD0F2E3)),
+      Expanded(
+        child: _buildToolItem(Icons.newspaper, "NEWS", const Color(0xFFD9EFFF)),
+      ),
+      Expanded(
+        child: _buildToolItem(
+          Icons.broadcast_on_home,
+          "COMMUNITY",
+          const Color(0xFFD9EFFF),
+        ),
+      ),
+      Expanded(
+        child: _buildToolItem(Icons.star, "EVENT", const Color(0xFFFFDDC4)),
+      ),
+      Expanded(
+        child: _buildToolItem(
+          Icons.calculate,
+          "CHARGES",
+          const Color(0xFFD0F2E3),
+        ),
+      ),
     ],
   );
 }
@@ -272,7 +285,12 @@ Widget _buildToolItem(IconData icon, String label, Color bgColor) {
         child: Icon(icon, color: Colors.black87, size: 24),
       ),
       const SizedBox(height: 8),
-      Text(label, style: TextStyle(color: Colors.grey[700], fontSize: 12)),
+      // ✨ FIX: Wrap the Text widget in a SizedBox with a fixed height.
+      Text(
+        label,
+        style: TextStyle(color: Colors.grey[700], fontSize: 10),
+        textAlign: TextAlign.center,
+      ),
     ],
   );
 }

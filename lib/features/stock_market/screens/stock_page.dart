@@ -38,7 +38,6 @@ class _StockPageState extends State<StockPage>
             _buildIndexCards(),
             const SizedBox(height: 20),
             _buildActionButtons(),
-            const SizedBox(height: 20),
 
             // --- DYNAMIC CONTENT AREA ---
             // ✨ FIX 2: Wrap IndexedStack with Expanded.
