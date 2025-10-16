@@ -84,7 +84,7 @@ class PositionPage extends StatelessWidget {
             changeColor: p['trendColor'],
             data: p['data'],
           );
-        }).toList(),
+        }),
       ],
     );
   }

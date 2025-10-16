@@ -104,7 +104,7 @@ class OrderPage extends StatelessWidget {
             data: order['data'],
             color: order['trendColor'],
           );
-        }).toList(),
+        }),
       ],
     );
   }

@@ -75,7 +75,7 @@ class WatchlistPage extends StatelessWidget {
             changeColor: stock['trendColor'],
             data: stock['data'],
           );
-        }).toList(),
+        }),
       ],
     );
   }
