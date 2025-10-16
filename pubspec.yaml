@@ -31,6 +31,7 @@ dependencies:
   fl_chart: ^1.1.1
   flutter_svg: ^2.2.1
   auto_size_text: ^3.0.0
+  path_provider: ^2.1.5
 
 dev_dependencies:
   flutter_test:
@@ -47,6 +48,7 @@ flutter:
     - assets/images/splashBottom.png
     - assets/icon/
     - assets/BullXchange Design-PNG/
+    - assets/OpenAPIScripMaster.json
 
   fonts:
     - family: EudoxusSans
