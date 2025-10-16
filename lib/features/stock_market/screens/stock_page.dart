@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'explore_page.dart';
 
 class StockPage extends StatefulWidget {
-  const StockPage({Key? key}) : super(key: key);
+  const StockPage({super.key});
 
   @override
   State<StockPage> createState() => _StockPageState();

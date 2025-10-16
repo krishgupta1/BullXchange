@@ -76,7 +76,7 @@ class HoldingsPage extends StatelessWidget {
             changeColor: h['trendColor'],
             data: h['data'],
           );
-        }).toList(),
+        }),
       ],
     );
   }
