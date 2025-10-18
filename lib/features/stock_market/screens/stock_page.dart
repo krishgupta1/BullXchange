@@ -1,8 +1,13 @@
+// lib/features/stock_market/screens/stock_page.dart
+
 import 'package:bullxchange/features/stock_market/screens/holdings_page.dart';
 import 'package:bullxchange/features/stock_market/screens/order_page.dart';
 import 'package:bullxchange/features/stock_market/screens/position_page.dart';
 import 'package:bullxchange/features/stock_market/screens/watchlist_page.dart';
+import 'package:bullxchange/models/instrument_model.dart';
+import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'explore_page.dart';
 
 class StockPage extends StatefulWidget {
@@ -21,48 +26,67 @@ class _StockPageState extends State<StockPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    // ✨ FIX 1: Removed SingleChildScrollView.
-    // The main layout is now a Column that fills the screen.
-    return SafeArea(
-      child: Padding(
-        // Use Padding instead of padding on a ScrollView.
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // --- STATIC TOP CONTENT ---
-            // These widgets will always be visible.
-            const SizedBox(height: 16),
-            _buildHeader(),
-            const SizedBox(height: 30),
-            _buildIndexCards(),
-            const SizedBox(height: 20),
-            _buildActionButtons(),
 
-            // --- DYNAMIC CONTENT AREA ---
-            // ✨ FIX 2: Wrap IndexedStack with Expanded.
-            // This tells the IndexedStack to fill all remaining vertical space in the Column.
-            // This gives it a finite, bounded height, which solves the error.
-            Expanded(
-              child: IndexedStack(
-                index: _selectedActionIndex,
-                children: [
-                  const ExplorePage(),
-                  const HoldingsPage(),
-                  const PositionPage(),
-                  const OrderPage(),
-                  const WatchlistPage(),
-                ],
+    return Consumer<InstrumentProvider>(
+      builder: (context, provider, child) {
+        // ✨ FIX: Show a loading spinner for the entire page
+        // until the initial data fetch is complete.
+        if (provider.isLoading) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // Show an error message if something went wrong
+        if (provider.errorMessage != null) {
+          return Scaffold(
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'Error: ${provider.errorMessage}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.red),
+                ),
               ),
             ),
-          ],
-        ),
-      ),
+          );
+        }
+
+        // Once loaded, build the main UI
+        return Scaffold(
+          body: SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              children: [
+                // All content is now part of one scrollable list
+                const SizedBox(height: 16),
+                _buildHeader(),
+                const SizedBox(height: 30),
+                _buildIndexCards(provider.nifty50, provider.bankNifty),
+                const SizedBox(height: 20),
+                _buildActionButtons(),
+                const SizedBox(height: 20), // Add spacing
+                // The content of the selected tab
+                IndexedStack(
+                  index: _selectedActionIndex,
+                  children: const [
+                    ExplorePage(),
+                    HoldingsPage(),
+                    PositionPage(),
+                    OrderPage(),
+                    WatchlistPage(),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
-  // No changes needed for your builder methods (_buildHeader, _buildIndexCards, etc.)
-  // They are perfectly fine.
+  // All your helper methods below this point remain exactly the same.
 
   Widget _buildHeader() {
     return Row(
@@ -82,7 +106,7 @@ class _StockPageState extends State<StockPage>
             ),
             SizedBox(height: 2),
             Text(
-              "Welcome to Tradebase",
+              "Welcome to Bullxchange",
               style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
           ],
@@ -93,36 +117,28 @@ class _StockPageState extends State<StockPage>
     );
   }
 
-  Widget _buildIndexCards() {
+  Widget _buildIndexCards(Instrument? nifty50, Instrument? bankNifty) {
     return Row(
       children: [
-        Expanded(
-          child: _buildIndexCard(
-            name: "NIFTY 50",
-            value: "2202.42",
-            change: "-27.40 (0.11%)",
-            changeColor: Colors.red,
-          ),
-        ),
+        Expanded(child: _buildIndexCard(instrument: nifty50)),
         const SizedBox(width: 16),
-        Expanded(
-          child: _buildIndexCard(
-            name: "BANK NIFTY",
-            value: "2202.42",
-            change: "-27.40 (0.11%)",
-            changeColor: Colors.red,
-          ),
-        ),
+        Expanded(child: _buildIndexCard(instrument: bankNifty)),
       ],
     );
   }
 
-  Widget _buildIndexCard({
-    required String name,
-    required String value,
-    required String change,
-    required Color changeColor,
-  }) {
+  Widget _buildIndexCard({required Instrument? instrument}) {
+    final name =
+        instrument?.name.toUpperCase().replaceFirst("NIFTY ", "") ??
+        "LOADING...";
+    final value = instrument?.liveData["ltp"]?.toString() ?? "--";
+    final netChange = instrument?.liveData["netChange"]?.toString() ?? "0";
+    final percentChange =
+        instrument?.liveData["percentChange"]?.toString() ?? "0";
+    final double changeValue = num.tryParse(netChange)?.toDouble() ?? 0.0;
+    final changeColor = changeValue >= 0 ? Colors.green : Colors.red;
+    final changeText = "$netChange ($percentChange%)";
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -150,12 +166,12 @@ class _StockPageState extends State<StockPage>
           ),
           const SizedBox(height: 8),
           Text(
-            "\$$value",
+            value != "--" ? "₹$value" : value,
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
           Text(
-            change,
+            changeText,
             style: TextStyle(
               color: changeColor,
               fontSize: 12,
@@ -168,7 +184,6 @@ class _StockPageState extends State<StockPage>
   }
 
   Widget _buildActionButtons() {
-    // This is fine, but make sure your pages are created for each button.
     final buttonLabels = [
       "Explore",
       "Holdings",

@@ -1,47 +1,20 @@
-import 'package:fl_chart/fl_chart.dart';
+import 'package:bullxchange/models/instrument_model.dart';
+import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:provider/provider.dart';
+import 'dart:math';
 
-// Using the same data structure for the watchlist
-final List<Map<String, dynamic>> watchlistStocks = [
-  {
-    'logo': 'twitter',
-    'stockName': 'Twitter Inc.',
-    'shares': 5,
-    'price': '₹1,720.98',
-    'priceChange': '₹1,540.90',
-    'trendColor': Colors.blue,
-    'data': const [2.0, 3.0, 2.0, 4.0, 3.0, 5.0, 3.0],
-  },
-  {
-    'logo': 'google',
-    'isGoogle': true,
-    'stockName': 'Alphabet Inc.',
-    'shares': 5,
-    'price': '₹1,720.98',
-    'priceChange': '₹1,540.90',
-    'trendColor': Colors.green,
-    'data': const [2.0, 3.0, 5.0, 4.0, 6.0, 7.0, 8.0],
-  },
-  {
-    'logo': 'microsoft',
-    'isMicrosoft': true,
-    'stockName': 'Microsoft',
-    'shares': 5,
-    'price': '₹1,720.98',
-    'priceChange': '₹1,598.23',
-    'trendColor': Colors.green,
-    'data': const [5.0, 4.0, 6.0, 3.0, 5.0, 4.0, 2.0],
-  },
-  {
-    'logo': 'nike',
-    'stockName': 'Nike, Inc.',
-    'shares': 5,
-    'price': '₹1,720.98',
-    'priceChange': '₹1,342.76',
-    'trendColor': Colors.orange,
-    'data': const [4.0, 5.0, 3.0, 4.0, 2.0, 3.0, 1.0],
-  },
+// --- Mock Data for User's Watchlist ---
+// In a real app, this list of tokens would be saved in user preferences.
+final List<String> userWatchlistTokens = [
+  '547', // AXISBANK-EQ
+  '13538', // SPUL-EQ
+  '11723', // IGL-EQ
+  '1727', // KRBL-EQ
+  '10184', // INDIAMART-EQ
+  '3456', // TATASTEEL-EQ
 ];
 
 class WatchlistPage extends StatelessWidget {
@@ -49,45 +22,82 @@ class WatchlistPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16.0),
-      children: [
-        // --- Header with stock count and actions ---
-        _buildWatchlistHeader(),
-        const SizedBox(height: 16),
-        // --- Sort controls ---
-        _buildSortHeader(),
-        const Divider(height: 24),
+    return Consumer<InstrumentProvider>(
+      builder: (context, provider, child) {
+        // --- Data Processing ---
+        final watchlistStocks = provider.allNSEStocks
+            .where((stock) => userWatchlistTokens.contains(stock.token))
+            .toList();
 
-        // --- Watchlist stocks (reuses _buildStockItem) ---
-        ...watchlistStocks.map((stock) {
-          return _buildStockItem(
-            logo: _buildLogoContainer(
-              stock['logo'] == 'twitter' ? Colors.blue.shade700 : Colors.black,
-              stock['logo'].substring(0, 1).toUpperCase(),
-              isGoogle: stock['isGoogle'] ?? false,
-              isMicrosoft: stock['isMicrosoft'] ?? false,
+        // Handle case where the watchlist is empty
+        if (watchlistStocks.isEmpty) {
+          return const _EmptyState();
+        }
+
+        // ✨ FIX: Use a Column to prevent nested scrolling errors.
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  // --- Header with stock count and actions ---
+                  _buildWatchlistHeader(watchlistStocks.length),
+                  const SizedBox(height: 16),
+                  // --- Sort controls ---
+                  _buildSortHeader(),
+                ],
+              ),
             ),
-            company: stock['stockName'],
-            shares: '${stock['shares']} shares',
-            price: stock['price'],
-            change: stock['priceChange'],
-            changeColor: stock['trendColor'],
-            data: stock['data'],
-          );
-        }),
-      ],
+            const Divider(height: 1, thickness: 1),
+
+            // --- Watchlist stocks ---
+            ...watchlistStocks.map((instrument) {
+              return _buildStockItem(instrument: instrument);
+            }),
+          ],
+        );
+      },
     );
   }
 }
 
 // --- Reusable Widgets ---
 
-Widget _buildWatchlistHeader() {
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      children: [
+        SizedBox(height: 20),
+        Icon(
+          Icons.star_border_purple500_outlined,
+          size: 48,
+          color: Colors.grey,
+        ),
+        SizedBox(height: 16),
+        Text(
+          "Your Watchlist is Empty",
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        SizedBox(height: 8),
+        Text(
+          "Add stocks to your watchlist to track them easily.",
+          style: TextStyle(color: Colors.grey),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+}
+
+Widget _buildWatchlistHeader(int stockCount) {
   return Row(
     children: [
       Text(
-        "${watchlistStocks.length} stocks",
+        "$stockCount stocks",
         style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
       ),
       const Spacer(),
@@ -107,43 +117,40 @@ Widget _buildSortHeader() {
       ),
       const Spacer(),
       Text(
-        "<> Mkt price / 1D",
+        "Mkt price / 1D <>",
         style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.w500),
       ),
     ],
   );
 }
 
-// Copied from holdings_page.dart (it's a perfect match)
-Widget _buildStockItem({
-  required Widget logo,
-  required String company,
-  required String shares,
-  required String price,
-  required String change,
-  required Color changeColor,
-  required List<double> data,
-}) {
+Widget _buildStockItem({required Instrument instrument}) {
+  final ltp = (instrument.liveData['ltp'] as num?)?.toDouble() ?? 0.0;
+  final netChange =
+      (instrument.liveData['netChange'] as num?)?.toDouble() ?? 0.0;
+  final changeColor = netChange >= 0 ? Colors.green : Colors.red;
+
   return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 12.0),
+    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
     child: Row(
       children: [
-        logo,
+        _buildLogoContainer(instrument.name),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                company,
+                instrument.symbol,
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                 ),
               ),
               Text(
-                shares,
+                instrument.name,
                 style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
@@ -151,18 +158,18 @@ Widget _buildStockItem({
         SizedBox(
           width: 60,
           height: 30,
-          child: _buildMiniChart(data, changeColor),
+          child: _buildMiniChart(instrument, changeColor),
         ),
         const SizedBox(width: 12),
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              price,
+              "₹${ltp.toStringAsFixed(2)}",
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             Text(
-              "($change)",
+              "(${netChange.toStringAsFixed(2)})",
               style: TextStyle(color: changeColor, fontSize: 12),
             ),
           ],
@@ -172,31 +179,26 @@ Widget _buildStockItem({
   );
 }
 
-// Copied from previous pages
-Widget _buildLogoContainer(
-  Color bgColor,
-  String letter, {
-  bool isGoogle = false,
-  bool isMicrosoft = false,
-}) {
-  if (isGoogle) {
+Widget _buildLogoContainer(String name) {
+  if (name.toLowerCase().contains('google'))
     return SvgPicture.network(
       'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg',
       width: 40,
       height: 40,
     );
-  }
-  if (isMicrosoft) {
+  if (name.toLowerCase().contains('microsoft'))
     return Image.network(
       'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Microsoft_logo.svg/240px-Microsoft_logo.svg.png',
       width: 40,
       height: 40,
     );
-  }
+
+  final letter = name.isNotEmpty ? name[0].toUpperCase() : '?';
+  final color = Colors.primaries[name.hashCode % Colors.primaries.length];
   return Container(
     width: 40,
     height: 40,
-    decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
+    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     child: Center(
       child: Text(
         letter,
@@ -210,8 +212,27 @@ Widget _buildLogoContainer(
   );
 }
 
-// Copied from previous pages
-Widget _buildMiniChart(List<double> data, Color color) {
+Widget _buildMiniChart(Instrument instrument, Color color) {
+  final ltp = (instrument.liveData['ltp'] as num?)?.toDouble() ?? 0.0;
+  final netChange =
+      (instrument.liveData['netChange'] as num?)?.toDouble() ?? 0.0;
+  if (ltp == 0.0) return Container();
+
+  final startPrice = ltp - netChange;
+  final points = <FlSpot>[];
+  final random = Random(instrument.symbol.hashCode);
+
+  for (int i = 0; i < 15; i++) {
+    if (i == 14) {
+      points.add(FlSpot(i.toDouble(), ltp));
+    } else {
+      double progress = i / 14.0;
+      double priceAtProgress = startPrice + (netChange * progress);
+      double variance = ltp * 0.01 * (random.nextDouble() - 0.5);
+      points.add(FlSpot(i.toDouble(), priceAtProgress + variance));
+    }
+  }
+
   return LineChart(
     LineChartData(
       gridData: const FlGridData(show: false),
@@ -224,11 +245,7 @@ Widget _buildMiniChart(List<double> data, Color color) {
       borderData: FlBorderData(show: false),
       lineBarsData: [
         LineChartBarData(
-          spots: data
-              .asMap()
-              .entries
-              .map((e) => FlSpot(e.key.toDouble(), e.value))
-              .toList(),
+          spots: points,
           isCurved: true,
           color: color,
           barWidth: 2,

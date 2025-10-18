@@ -1,0 +1,63 @@
+import 'package:dio/dio.dart';
+import '../constants/api_constants.dart';
+
+class AngelOneApiService {
+  // 2. Create a Dio instance for network requests
+  final Dio _dio = Dio();
+
+  Future<List<dynamic>> fetchLiveMarketData(
+    Map<String, List<String>> tokensByExchange,
+  ) async {
+    if (tokensByExchange.isEmpty) {
+      return [];
+    }
+    try {
+      final url =
+          "https://apiconnect.angelone.in/rest/secure/angelbroking/market/v1/quote/";
+
+      // Note: In Dio, headers are passed via an `Options` object.
+      final options = Options(
+        headers: {
+          "Authorization": "Bearer ${ApiConstants.jwtToken}",
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "X-UserType": "USER",
+          "X-SourceID": "WEB",
+          "X-ClientLocalIP": ApiConstants.clientIP,
+          "X-ClientPublicIP": ApiConstants.clientIP,
+          "X-MACAddress": "00:00:00:00:00:00",
+          "X-PrivateKey": ApiConstants.apiKey,
+        },
+      );
+
+      // The JSON body is passed to the `data` parameter.
+      final data = {"mode": "FULL", "exchangeTokens": tokensByExchange};
+
+      // 3. Make the POST request using dio
+      final response = await _dio.post(url, data: data, options: options);
+
+      // 4. Dio automatically decodes the JSON response body.
+      // We access it directly via `response.data`.
+      final decoded = response.data;
+
+      if (response.statusCode == 200 &&
+          decoded["status"] == true &&
+          decoded["data"]?["fetched"] is List) {
+        return decoded["data"]["fetched"] as List<dynamic>;
+      } else {
+        print("API Error: ${decoded['message'] ?? 'Unknown error'}");
+        return [];
+      }
+    } on DioException catch (e) {
+      // 5. Dio has a dedicated exception type for better error handling.
+      print("Error in AngelOneApiService (Dio): ${e.message}");
+      if (e.response != null) {
+        print("Dio Response Error Data: ${e.response?.data}");
+      }
+      return [];
+    } catch (e) {
+      print("An unexpected error occurred: $e");
+      return [];
+    }
+  }
+}

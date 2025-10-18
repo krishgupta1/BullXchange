@@ -1,31 +1,77 @@
-import 'package:bullxchange/features/stock_market/screens/view_all_page.dart';
+import 'dart:math';
+import 'package:bullxchange/models/instrument_model.dart';
+import 'package:bullxchange/provider/instrument_provider.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
+import 'view_all_page.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 
 class ExplorePage extends StatelessWidget {
   const ExplorePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // You can build your detailed Explore UI here.
-    // For now, it's a placeholder with some text and an icon.
-    return ListView(
-      padding: const EdgeInsets.all(16.0),
-      children: [
-        _buildSectionHeader(context, "Top Stocks"),
-        // const SizedBox(height: 5),
-        _buildStockList(),
-        const SizedBox(height: 20),
-        _buildSectionHeader(context, "Tools"),
-        const SizedBox(height: 20),
-        _buildToolsGrid(),
-      ],
+    return Consumer<InstrumentProvider>(
+      builder: (context, provider, child) {
+        if (provider.isLoading && provider.topGainers.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (provider.errorMessage != null) {
+          return Center(
+            child: Text(
+              provider.errorMessage!,
+              style: const TextStyle(color: Colors.red),
+            ),
+          );
+        }
+
+        return Column(
+          children: [
+            // --- Top Gainers Section ---
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: _buildSectionHeader(context, "Top Gainers"),
+            ),
+            const SizedBox(height: 10),
+            _buildStockList(provider.topGainers.take(4).toList()),
+            const SizedBox(height: 24),
+
+            // --- Top Losers Section ---
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: _buildSectionHeader(context, "Top Losers"),
+            ),
+            const SizedBox(height: 10),
+            _buildStockList(provider.topLosers.take(4).toList()),
+            const SizedBox(height: 24),
+
+            // --- Tools Section ---
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: _buildSectionHeader(context, "Tools"),
+            ),
+            const SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: _buildToolsGrid(),
+            ),
+          ],
+        );
+      },
     );
   }
 }
 
+// Helper widgets below are fully corrected and self-contained.
+
 Widget _buildSectionHeader(BuildContext context, String title) {
+  final stockCategories = [
+    "Top Gainers",
+    "Top Losers",
+    "Most Active by Volume",
+  ];
+
   return Row(
     mainAxisAlignment: MainAxisAlignment.spaceBetween,
     children: [
@@ -33,14 +79,12 @@ Widget _buildSectionHeader(BuildContext context, String title) {
         title,
         style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
       ),
-      if (title == "Top Stocks")
+      if (stockCategories.contains(title))
         TextButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => ViewAllPage()),
-            );
-          },
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ViewAllPage()),
+          ),
           child: const Text(
             "View all",
             style: TextStyle(color: Color(0xFFDB1B57), fontSize: 14),
@@ -50,86 +94,65 @@ Widget _buildSectionHeader(BuildContext context, String title) {
   );
 }
 
-Widget _buildStockList() {
+Widget _buildStockList(List<Instrument> topStocks) {
   return Column(
-    children: [
-      _buildStockItem(
-        logo: _buildLogoContainer(const Color(0xFF1DA1F2), 'T'), // Twitter Blue
-        ticker: 'TWTR',
-        company: 'Twitter Inc.',
-        price: '63.98',
-        change: '-0.23%',
-        changeColor: Colors.red,
-        data: const [1, 3, 2, 4, 3, 5, 2],
-      ),
-      _buildStockItem(
-        logo: _buildLogoContainer(
-          Colors.transparent,
-          'G',
-          isGoogle: true,
-        ), // Google
-        ticker: 'GOOGLE',
-        company: 'Alphabet Inc.',
-        price: '2.84K',
-        change: '+0.58%',
-        changeColor: Colors.green,
-        data: const [2, 3, 5, 4, 6, 7, 8],
-      ),
-      _buildStockItem(
-        logo: _buildLogoContainer(
-          Colors.transparent,
-          'M',
-          isMicrosoft: true,
-        ), // MSFT
-        ticker: 'MSFT',
-        company: 'Microsoft',
-        price: '302.1',
-        change: '-0.23%',
-        changeColor: Colors.red,
-        data: const [5, 4, 6, 3, 5, 4, 2],
-      ),
-      _buildStockItem(
-        logo: _buildLogoContainer(Colors.black, 'N'), // Nike
-        ticker: 'NIKE',
-        company: 'Nike, Inc.',
-        price: '169.8',
-        change: '-0.082%',
-        changeColor: Colors.red,
-        data: const [4, 3, 2, 4, 3, 2, 1],
-      ),
-    ],
+    children: topStocks
+        .map((instrument) => _buildStockItem(instrument))
+        .toList(),
   );
 }
 
-Widget _buildLogoContainer(
-  Color bgColor,
-  String letter, {
-  bool isGoogle = false,
-  bool isMicrosoft = false,
-}) {
-  // Use SvgPicture.network for the Google SVG logo
-  if (isGoogle) {
+List<double> _createSimulatedChartData(Instrument instrument) {
+  final ltp =
+      num.tryParse(instrument.liveData['ltp'].toString())?.toDouble() ?? 0.0;
+  final netChange =
+      num.tryParse(instrument.liveData['netChange'].toString())?.toDouble() ??
+      0.0;
+
+  if (ltp == 0.0) return List<double>.generate(15, (_) => 1.0);
+  final startPrice = ltp - netChange;
+  final points = <double>[];
+  final random = Random(instrument.symbol.hashCode);
+
+  for (int i = 0; i < 15; i++) {
+    if (i == 14) {
+      points.add(ltp);
+    } else {
+      double progress = i / 14.0;
+      double priceAtProgress = startPrice + (netChange * progress);
+      double variance = ltp * 0.01 * (random.nextDouble() - 0.5);
+      points.add(priceAtProgress + variance);
+    }
+  }
+  return points;
+}
+
+Widget _buildLogoContainer(String name) {
+  if (name.toLowerCase().contains('google'))
     return SvgPicture.network(
       'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg',
       width: 40,
       height: 40,
-      placeholderBuilder: (BuildContext context) =>
-          const CircularProgressIndicator(), // Optional: show a loader
     );
-  }
-  // The Microsoft logo is a PNG, so Image.network is correct here
-  if (isMicrosoft) {
+  if (name.toLowerCase().contains('microsoft'))
     return Image.network(
       'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Microsoft_logo.svg/512px-Microsoft_logo.svg.png',
       width: 40,
       height: 40,
     );
-  }
-  // Placeholder for others
+  if (name.toLowerCase().contains('nike'))
+    return Image.network(
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Logo_NIKE.svg/1200px-Logo_NIKE.svg.png',
+      width: 40,
+      height: 40,
+      color: Colors.black,
+    );
+  final letter = name.isNotEmpty ? name[0].toUpperCase() : '?';
+  final color = Colors.primaries[name.hashCode % Colors.primaries.length];
   return Container(
     width: 40,
     height: 40,
-    decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
+    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     child: Center(
       child: Text(
         letter,
@@ -143,68 +166,65 @@ Widget _buildLogoContainer(
   );
 }
 
-Widget _buildStockItem({
-  required Widget logo,
-  required String ticker,
-  required String company,
-  required String price,
-  required String change,
-  required Color changeColor,
-  required List<double> data,
-}) {
+Widget _buildStockItem(Instrument instrument) {
+  final ltp = instrument.liveData["ltp"]?.toString() ?? "--";
+  final percentChange =
+      num.tryParse(
+        instrument.liveData["percentChange"].toString(),
+      )?.toDouble() ??
+      0.0;
+  final changeColor = percentChange >= 0 ? const Color(0xFF1EAB58) : Colors.red;
+  final List<double> chartData = _createSimulatedChartData(instrument);
+
   return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 12.0),
+    padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
     child: Row(
       children: [
-        logo,
+        _buildLogoContainer(instrument.name),
         const SizedBox(width: 12),
-        // THIS IS THE FIX: Wrap the Column in an Expanded widget
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                ticker,
+                instrument.symbol,
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                 ),
               ),
               Text(
-                company,
+                instrument.name,
                 style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                overflow:
-                    TextOverflow.ellipsis, // Prevents long text from wrapping
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
         ),
-        // The Spacer is no longer needed when using Expanded here.
-        // const Spacer(),
         SizedBox(
           width: 80,
           height: 40,
-          child: _buildMiniChart(data, changeColor),
+          child: _buildMiniChart(chartData, changeColor),
         ),
         const SizedBox(width: 12),
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              "\$$price",
+              "₹$ltp",
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             Row(
               children: [
                 Icon(
-                  change.startsWith('+')
+                  percentChange >= 0
                       ? Icons.arrow_drop_up
                       : Icons.arrow_drop_down,
                   color: changeColor,
                   size: 20,
                 ),
                 Text(
-                  change.replaceAll(RegExp(r'[+-]'), ''),
+                  "${percentChange.abs().toStringAsFixed(2)}%",
                   style: TextStyle(color: changeColor, fontSize: 12),
                 ),
               ],
@@ -219,18 +239,31 @@ Widget _buildStockItem({
 Widget _buildMiniChart(List<double> data, Color color) {
   return LineChart(
     LineChartData(
-      // The old way of hiding grid data still works, but you can be more explicit.
+      clipData: FlClipData.none(),
+      lineTouchData: LineTouchData(
+        touchTooltipData: LineTouchTooltipData(
+          getTooltipColor: (touchedSpot) => Colors.black87,
+          getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
+            return touchedBarSpots.map((barSpot) {
+              return LineTooltipItem(
+                '₹${barSpot.y.toStringAsFixed(2)}',
+                const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              );
+            }).toList();
+          },
+        ),
+      ),
       gridData: const FlGridData(show: false),
-
-      // THIS IS THE FIX: The `show` property is replaced by this new structure.
-      // We are explicitly telling each axis not to show its titles.
       titlesData: const FlTitlesData(
         leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
         rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
         topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
         bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
       ),
-
       borderData: FlBorderData(show: false),
       lineBarsData: [
         LineChartBarData(
@@ -291,7 +324,6 @@ Widget _buildToolItem(IconData icon, String label, Color bgColor) {
         child: Icon(icon, color: Colors.black87, size: 24),
       ),
       const SizedBox(height: 8),
-      // ✨ FIX: Wrap the Text widget in a SizedBox with a fixed height.
       Text(
         label,
         style: TextStyle(color: Colors.grey[700], fontSize: 10),

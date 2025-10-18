@@ -14,7 +14,7 @@ class _HomePageState extends State<HomePage> {
 
   // ✨ FIX 1: Remove `static const` to allow for stateful instances of widgets.
   final List<Widget> _widgetOptions = <Widget>[
-    const StockPage(), // Assuming StockPage can be a const constructor
+    const StockPage(),
     const Center(child: Text('F&O', style: TextStyle(fontSize: 24))),
     const Center(child: Text('Portfolio Page', style: TextStyle(fontSize: 24))),
     const Center(child: Text('AI Stats Page', style: TextStyle(fontSize: 24))),
