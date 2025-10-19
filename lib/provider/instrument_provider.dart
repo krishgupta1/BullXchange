@@ -1,5 +1,3 @@
-// lib/providers/instrument_provider.dart
-
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
@@ -12,6 +10,7 @@ List<dynamic> _parseJson(String jsonString) {
 }
 
 class InstrumentProvider with ChangeNotifier {
+  // This instance is now your dio-based service
   final AngelOneApiService _apiService = AngelOneApiService();
 
   List<Instrument> _allInstruments = [];
@@ -22,14 +21,33 @@ class InstrumentProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  List<Instrument> get allNSEStocks => _allInstruments
-      .where(
-        (inst) =>
-            inst.exchSeg == 'NSE' &&
-            inst.symbol.endsWith('-EQ') &&
-            inst.name.isNotEmpty,
-      )
-      .toList();
+  List<Instrument> get allNSEStocks {
+    return _allInstruments.where((stock) {
+      if (stock.exchSeg != 'NSE' ||
+          !stock.symbol.endsWith('-EQ') ||
+          stock.name.isEmpty) {
+        return false;
+      }
+      final baseSymbol = stock.symbol.replaceAll('-EQ', '');
+      final lowerCaseName = stock.name.toLowerCase();
+      if (baseSymbol.contains(RegExp(r'[0-9]'))) return false;
+      const excludedKeywords = [
+        'etf',
+        'bees',
+        'nifty',
+        'gold',
+        'bond',
+        'debenture',
+        'index',
+        'pref',
+      ];
+      if (excludedKeywords.any((keyword) => lowerCaseName.contains(keyword)))
+        return false;
+      if (!RegExp(r'^[A-Z]+$').hasMatch(baseSymbol) || baseSymbol.length < 3)
+        return false;
+      return true;
+    }).toList();
+  }
 
   Instrument? get nifty50 => _allInstruments.firstWhere(
     (inst) => inst.symbol == 'Nifty 50',
@@ -64,10 +82,7 @@ class InstrumentProvider with ChangeNotifier {
     return stocks;
   }
 
-  /// ✨ THIS IS THE CORRECTED GETTER ✨
-  /// It now safely checks for and parses the volume data.
   List<Instrument> get mostActiveByVolume {
-    // First, filter stocks that actually have the volume key.
     final stocks = allNSEStocks
         .where(
           (inst) =>
@@ -75,8 +90,6 @@ class InstrumentProvider with ChangeNotifier {
               inst.liveData['totalTradedVolume'] != null,
         )
         .toList();
-
-    // Then, sort them using safe parsing, which handles both numbers and strings.
     stocks.sort((a, b) {
       final aVolume =
           num.tryParse(a.liveData['totalTradedVolume'].toString()) ?? 0;
@@ -119,13 +132,12 @@ class InstrumentProvider with ChangeNotifier {
     });
   }
 
-  /// Fetches indices and stocks in separate, safe API calls.
   Future<void> _fetchEssentialData() async {
     // Call 1: For indices
     await _updateInstruments([nifty50, bankNifty]);
 
-    // Call 2: For stocks (a safe number to avoid API limits)
-    await _updateInstruments(allNSEStocks.take(50).toList());
+    // Call 2: For stocks
+    await _updateInstruments(allNSEStocks.take(200).toList());
   }
 
   Future<void> _updateInstruments(List<Instrument?> instruments) async {
@@ -133,13 +145,12 @@ class InstrumentProvider with ChangeNotifier {
         .whereType<Instrument>()
         .toSet()
         .toList();
+    if (uniqueInstruments.isEmpty) return;
+
     final Map<String, List<String>> tokensByExchange = {};
     for (var inst in uniqueInstruments) {
-      if (inst.token.isNotEmpty) {
-        tokensByExchange.putIfAbsent(inst.exchSeg, () => []).add(inst.token);
-      }
+      tokensByExchange.putIfAbsent(inst.exchSeg, () => []).add(inst.token);
     }
-    if (tokensByExchange.isEmpty) return;
 
     final liveDataList = await _apiService.fetchLiveMarketData(
       tokensByExchange,

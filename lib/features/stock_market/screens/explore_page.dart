@@ -1,7 +1,7 @@
 import 'dart:math';
+import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'view_all_page.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -44,6 +44,15 @@ class ExplorePage extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             _buildStockList(provider.topLosers.take(4).toList()),
+            const SizedBox(height: 24),
+
+            // --- Most Active Section ---
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: _buildSectionHeader(context, "Most Active by Volume"),
+            ),
+            const SizedBox(height: 10),
+            _buildStockList(provider.mostActiveByVolume.take(4).toList()),
             const SizedBox(height: 24),
 
             // --- Tools Section ---
@@ -102,73 +111,6 @@ Widget _buildStockList(List<Instrument> topStocks) {
   );
 }
 
-List<double> _createSimulatedChartData(Instrument instrument) {
-  final ltp =
-      num.tryParse(instrument.liveData['ltp'].toString())?.toDouble() ?? 0.0;
-  final netChange =
-      num.tryParse(instrument.liveData['netChange'].toString())?.toDouble() ??
-      0.0;
-
-  if (ltp == 0.0) return List<double>.generate(15, (_) => 1.0);
-  final startPrice = ltp - netChange;
-  final points = <double>[];
-  final random = Random(instrument.symbol.hashCode);
-
-  for (int i = 0; i < 15; i++) {
-    if (i == 14) {
-      points.add(ltp);
-    } else {
-      double progress = i / 14.0;
-      double priceAtProgress = startPrice + (netChange * progress);
-      double variance = ltp * 0.01 * (random.nextDouble() - 0.5);
-      points.add(priceAtProgress + variance);
-    }
-  }
-  return points;
-}
-
-Widget _buildLogoContainer(String name) {
-  if (name.toLowerCase().contains('google')) {
-    return SvgPicture.network(
-      'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg',
-      width: 40,
-      height: 40,
-    );
-  }
-  if (name.toLowerCase().contains('microsoft')) {
-    return Image.network(
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Microsoft_logo.svg/512px-Microsoft_logo.svg.png',
-      width: 40,
-      height: 40,
-    );
-  }
-  if (name.toLowerCase().contains('nike')) {
-    return Image.network(
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Logo_NIKE.svg/1200px-Logo_NIKE.svg.png',
-      width: 40,
-      height: 40,
-      color: Colors.black,
-    );
-  }
-  final letter = name.isNotEmpty ? name[0].toUpperCase() : '?';
-  final color = Colors.primaries[name.hashCode % Colors.primaries.length];
-  return Container(
-    width: 40,
-    height: 40,
-    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-    child: Center(
-      child: Text(
-        letter,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    ),
-  );
-}
-
 Widget _buildStockItem(Instrument instrument) {
   final ltp = instrument.liveData["ltp"]?.toString() ?? "--";
   final percentChange =
@@ -183,7 +125,7 @@ Widget _buildStockItem(Instrument instrument) {
     padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
     child: Row(
       children: [
-        _buildLogoContainer(instrument.name),
+        SmartLogo(instrument: instrument),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -237,6 +179,29 @@ Widget _buildStockItem(Instrument instrument) {
       ],
     ),
   );
+}
+
+List<double> _createSimulatedChartData(Instrument instrument) {
+  final ltp =
+      num.tryParse(instrument.liveData['ltp'].toString())?.toDouble() ?? 0.0;
+  final netChange =
+      num.tryParse(instrument.liveData['netChange'].toString())?.toDouble() ??
+      0.0;
+  if (ltp == 0.0) return List<double>.generate(15, (_) => 1.0);
+  final startPrice = ltp - netChange;
+  final points = <double>[];
+  final random = Random(instrument.symbol.hashCode);
+  for (int i = 0; i < 15; i++) {
+    if (i == 14) {
+      points.add(ltp);
+    } else {
+      double progress = i / 14.0;
+      double priceAtProgress = startPrice + (netChange * progress);
+      double variance = ltp * 0.01 * (random.nextDouble() - 0.5);
+      points.add(priceAtProgress + variance);
+    }
+  }
+  return points;
 }
 
 Widget _buildMiniChart(List<double> data, Color color) {

@@ -1,9 +1,9 @@
 import 'dart:math';
+import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import 'package:bullxchange/features/auth/widgets/app_back_button.dart';
 
@@ -21,19 +21,41 @@ class _ViewAllPageState extends State<ViewAllPage> {
   final int batchSize = 50;
   bool isLoadingMore = false;
 
-  final ScrollController scrollController = ScrollController();
+  final ScrollController _scrollController = ScrollController();
   final TextEditingController searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     final provider = Provider.of<InstrumentProvider>(context, listen: false);
-    allStocks = provider.allNSEStocks;
+
+    allStocks = provider.allNSEStocks.where((stock) {
+      final baseSymbol = stock.symbol.replaceAll('-EQ', '');
+      final lowerCaseName = stock.name.toLowerCase();
+      if (baseSymbol.contains(RegExp(r'[0-9]'))) return false;
+      const excludedKeywords = [
+        'etf',
+        'bees',
+        'nifty',
+        'gold',
+        'bond',
+        'debenture',
+        'pref',
+        'index',
+      ];
+      if (excludedKeywords.any((keyword) => lowerCaseName.contains(keyword)))
+        return false;
+      if (baseSymbol.length < 3 || baseSymbol.length > 12) return false;
+      if (!RegExp(r'^[A-Z]+$').hasMatch(baseSymbol)) return false;
+      return true;
+    }).toList();
+
     filteredStocks = allStocks;
     _loadMoreItems();
-    scrollController.addListener(() {
-      if (scrollController.position.pixels >=
-              scrollController.position.maxScrollExtent - 300 &&
+
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >=
+              _scrollController.position.maxScrollExtent - 300 &&
           !isLoadingMore &&
           displayedStocks.length < filteredStocks.length) {
         _loadMoreItems();
@@ -43,7 +65,7 @@ class _ViewAllPageState extends State<ViewAllPage> {
 
   @override
   void dispose() {
-    scrollController.dispose();
+    _scrollController.dispose();
     searchController.dispose();
     super.dispose();
   }
@@ -100,37 +122,41 @@ class _ViewAllPageState extends State<ViewAllPage> {
           ),
           const SizedBox(height: 10),
           Expanded(
-            child: Consumer<InstrumentProvider>(
-              builder: (context, provider, child) {
-                if (provider.isLoading && displayedStocks.isEmpty) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (filteredStocks.isEmpty) {
-                  return const Center(child: Text("No stocks found."));
-                }
-                // ✨ WRAP WITH SCROLLBAR WIDGET ✨
-                return Scrollbar(
-                  child: ListView.builder(
-                    // ✨ ADD BOUNCING PHYSICS FOR SMOOTHER SCROLLING ✨
-                    physics: const BouncingScrollPhysics(),
-                    // Prevent children from painting outside list bounds (fix overlap)
-                    clipBehavior: Clip.hardEdge,
-
-                    controller: scrollController,
-                    itemCount: displayedStocks.length + (isLoadingMore ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (index >= displayedStocks.length) {
-                        return const Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: Center(child: CircularProgressIndicator()),
-                        );
-                      }
-                      final instrument = displayedStocks[index];
-                      return _buildStockItem(instrument);
-                    },
-                  ),
-                );
-              },
+            // ✨ THIS IS THE FIX ✨
+            // Wrap the list in a ClipRect to prevent its content from drawing
+            // outside of the Expanded area.
+            child: ClipRect(
+              child: Consumer<InstrumentProvider>(
+                builder: (context, provider, child) {
+                  if (provider.isLoading && displayedStocks.isEmpty) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (filteredStocks.isEmpty) {
+                    return const Center(child: Text("No stocks found."));
+                  }
+                  return Scrollbar(
+                    controller: _scrollController,
+                    child: ListView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      // This is still needed for the tooltips to work correctly.
+                      clipBehavior: Clip.none,
+                      controller: _scrollController,
+                      itemCount:
+                          displayedStocks.length + (isLoadingMore ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (index >= displayedStocks.length) {
+                          return const Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: Center(child: CircularProgressIndicator()),
+                          );
+                        }
+                        final instrument = displayedStocks[index];
+                        return _buildStockItem(instrument);
+                      },
+                    ),
+                  );
+                },
+              ),
             ),
           ),
         ],
@@ -169,72 +195,6 @@ class _ViewAllPageState extends State<ViewAllPage> {
   }
 }
 
-// Helper widgets below do not need changes.
-List<double> _createSimulatedChartData(Instrument instrument) {
-  final ltp =
-      num.tryParse(instrument.liveData['ltp'].toString())?.toDouble() ?? 0.0;
-  final netChange =
-      num.tryParse(instrument.liveData['netChange'].toString())?.toDouble() ??
-      0.0;
-  if (ltp == 0.0) return List<double>.generate(15, (_) => 1.0);
-  final startPrice = ltp - netChange;
-  final points = <double>[];
-  final random = Random(instrument.symbol.hashCode);
-  for (int i = 0; i < 15; i++) {
-    if (i == 14) {
-      points.add(ltp);
-    } else {
-      double progress = i / 14.0;
-      double priceAtProgress = startPrice + (netChange * progress);
-      double variance = ltp * 0.01 * (random.nextDouble() - 0.5);
-      points.add(priceAtProgress + variance);
-    }
-  }
-  return points;
-}
-
-Widget _buildLogoContainer(String name) {
-  if (name.toLowerCase().contains('google')) {
-    return SvgPicture.network(
-      'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg',
-      width: 40,
-      height: 40,
-    );
-  }
-  if (name.toLowerCase().contains('microsoft')) {
-    return Image.network(
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Microsoft_logo.svg/512px-Microsoft_logo.svg.png',
-      width: 40,
-      height: 40,
-    );
-  }
-  if (name.toLowerCase().contains('nike')) {
-    return Image.network(
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Logo_NIKE.svg/1200px-Logo_NIKE.svg.png',
-      width: 40,
-      height: 40,
-      color: Colors.black,
-    );
-  }
-  final letter = name.isNotEmpty ? name[0].toUpperCase() : '?';
-  final color = Colors.primaries[name.hashCode % Colors.primaries.length];
-  return Container(
-    width: 40,
-    height: 40,
-    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-    child: Center(
-      child: Text(
-        letter,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    ),
-  );
-}
-
 Widget _buildStockItem(Instrument instrument) {
   final ltp = instrument.liveData["ltp"]?.toString() ?? "--";
   final percentChange =
@@ -248,7 +208,7 @@ Widget _buildStockItem(Instrument instrument) {
     padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
     child: Row(
       children: [
-        _buildLogoContainer(instrument.name),
+        SmartLogo(instrument: instrument),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -302,6 +262,29 @@ Widget _buildStockItem(Instrument instrument) {
       ],
     ),
   );
+}
+
+List<double> _createSimulatedChartData(Instrument instrument) {
+  final ltp =
+      num.tryParse(instrument.liveData['ltp'].toString())?.toDouble() ?? 0.0;
+  final netChange =
+      num.tryParse(instrument.liveData['netChange'].toString())?.toDouble() ??
+      0.0;
+  if (ltp == 0.0) return List<double>.generate(15, (_) => 1.0);
+  final startPrice = ltp - netChange;
+  final points = <double>[];
+  final random = Random(instrument.symbol.hashCode);
+  for (int i = 0; i < 15; i++) {
+    if (i == 14) {
+      points.add(ltp);
+    } else {
+      double progress = i / 14.0;
+      double priceAtProgress = startPrice + (netChange * progress);
+      double variance = ltp * 0.01 * (random.nextDouble() - 0.5);
+      points.add(priceAtProgress + variance);
+    }
+  }
+  return points;
 }
 
 Widget _buildMiniChart(List<double> data, Color color) {
