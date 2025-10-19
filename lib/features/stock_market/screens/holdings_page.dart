@@ -174,7 +174,7 @@ Widget _buildSummaryColumn(
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                "${sign}${percent.toStringAsFixed(2)}%",
+                "$sign${percent.toStringAsFixed(2)}%",
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 12,
@@ -245,18 +245,20 @@ Widget _buildStockItem({required Instrument instrument, required int shares}) {
 }
 
 Widget _buildLogoContainer(String name) {
-  if (name.toLowerCase().contains('google'))
+  if (name.toLowerCase().contains('google')) {
     return SvgPicture.network(
       'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg',
       width: 40,
       height: 40,
     );
-  if (name.toLowerCase().contains('microsoft'))
+  }
+  if (name.toLowerCase().contains('microsoft')) {
     return Image.network(
       'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Microsoft_logo.svg/240px-Microsoft_logo.svg.png',
       width: 40,
       height: 40,
     );
+  }
 
   final letter = name.isNotEmpty ? name[0].toUpperCase() : '?';
   final color = Colors.primaries[name.hashCode % Colors.primaries.length];

@@ -128,25 +128,28 @@ List<double> _createSimulatedChartData(Instrument instrument) {
 }
 
 Widget _buildLogoContainer(String name) {
-  if (name.toLowerCase().contains('google'))
+  if (name.toLowerCase().contains('google')) {
     return SvgPicture.network(
       'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg',
       width: 40,
       height: 40,
     );
-  if (name.toLowerCase().contains('microsoft'))
+  }
+  if (name.toLowerCase().contains('microsoft')) {
     return Image.network(
       'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Microsoft_logo.svg/512px-Microsoft_logo.svg.png',
       width: 40,
       height: 40,
     );
-  if (name.toLowerCase().contains('nike'))
+  }
+  if (name.toLowerCase().contains('nike')) {
     return Image.network(
       'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Logo_NIKE.svg/1200px-Logo_NIKE.svg.png',
       width: 40,
       height: 40,
       color: Colors.black,
     );
+  }
   final letter = name.isNotEmpty ? name[0].toUpperCase() : '?';
   final color = Colors.primaries[name.hashCode % Colors.primaries.length];
   return Container(
