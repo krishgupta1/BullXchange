@@ -113,8 +113,8 @@ class _ViewAllPageState extends State<ViewAllPage> {
                   child: ListView.builder(
                     // ✨ ADD BOUNCING PHYSICS FOR SMOOTHER SCROLLING ✨
                     physics: const BouncingScrollPhysics(),
-                    // ✨ THIS LINE FIXES THE TOOLTIP OVERLAP ✨
-                    clipBehavior: Clip.none,
+                    // Prevent children from painting outside list bounds (fix overlap)
+                    clipBehavior: Clip.hardEdge,
 
                     controller: scrollController,
                     itemCount: displayedStocks.length + (isLoadingMore ? 1 : 0),
