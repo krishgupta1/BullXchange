@@ -1,4 +1,5 @@
-import 'package:bullxchange/features/home/screens/home_page.dart';
+
+import 'package:bullxchange/features/stock_market/screens/StockDetailPage.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -20,11 +21,12 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'TradeSim AI',
         theme: ThemeData(
+        fontFamily: 'EudoxusSans',
           primarySwatch: Colors.deepPurple,
           scaffoldBackgroundColor: Colors.grey[100],
         ),
         // Your app's home screen.
-        home: HomePage(),
+        home: StockDetailPage(),
       ),
     );
   }
