@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:bullxchange/features/stock_market/screens/StockDetailPage.dart';
 import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
@@ -43,8 +44,9 @@ class _ViewAllPageState extends State<ViewAllPage> {
         'pref',
         'index',
       ];
-      if (excludedKeywords.any((keyword) => lowerCaseName.contains(keyword)))
+      if (excludedKeywords.any((keyword) => lowerCaseName.contains(keyword))) {
         return false;
+      }
       if (baseSymbol.length < 3 || baseSymbol.length > 12) return false;
       if (!RegExp(r'^[A-Z]+$').hasMatch(baseSymbol)) return false;
       return true;
@@ -122,9 +124,6 @@ class _ViewAllPageState extends State<ViewAllPage> {
           ),
           const SizedBox(height: 10),
           Expanded(
-            // ✨ THIS IS THE FIX ✨
-            // Wrap the list in a ClipRect to prevent its content from drawing
-            // outside of the Expanded area.
             child: ClipRect(
               child: Consumer<InstrumentProvider>(
                 builder: (context, provider, child) {
@@ -138,7 +137,6 @@ class _ViewAllPageState extends State<ViewAllPage> {
                     controller: _scrollController,
                     child: ListView.builder(
                       physics: const BouncingScrollPhysics(),
-                      // This is still needed for the tooltips to work correctly.
                       clipBehavior: Clip.none,
                       controller: _scrollController,
                       itemCount:
@@ -151,7 +149,8 @@ class _ViewAllPageState extends State<ViewAllPage> {
                           );
                         }
                         final instrument = displayedStocks[index];
-                        return _buildStockItem(instrument);
+                        // MODIFIED: Pass context to _buildStockItem
+                        return _buildStockItem(context, instrument);
                       },
                     ),
                   );
@@ -195,7 +194,8 @@ class _ViewAllPageState extends State<ViewAllPage> {
   }
 }
 
-Widget _buildStockItem(Instrument instrument) {
+// MODIFIED: Function now accepts BuildContext
+Widget _buildStockItem(BuildContext context, Instrument instrument) {
   final ltp = instrument.liveData["ltp"]?.toString() ?? "--";
   final percentChange =
       num.tryParse(
@@ -204,62 +204,78 @@ Widget _buildStockItem(Instrument instrument) {
       0.0;
   final changeColor = percentChange >= 0 ? const Color(0xFF1EAB58) : Colors.red;
   final List<double> chartData = _createSimulatedChartData(instrument);
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-    child: Row(
-      children: [
-        SmartLogo(instrument: instrument),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+
+  // WRAPPED with InkWell for tap functionality
+  return InkWell(
+    onTap: () {
+      // ADDED: Navigation logic
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => StockDetailPage(instrument: instrument),
+        ),
+      );
+    },
+    child: Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+      child: Row(
+        children: [
+          SmartLogo(instrument: instrument),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  instrument.symbol.replaceAll('-EQ', ''), // Clean up symbol
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                Text(
+                  instrument.name,
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          SizedBox(
+            width: 80,
+            height: 40,
+            child: _buildMiniChart(chartData, changeColor),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                instrument.symbol,
+                "₹$ltp",
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                 ),
               ),
-              Text(
-                instrument.name,
-                style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                overflow: TextOverflow.ellipsis,
+              Row(
+                children: [
+                  Icon(
+                    percentChange >= 0
+                        ? Icons.arrow_drop_up
+                        : Icons.arrow_drop_down,
+                    color: changeColor,
+                    size: 20,
+                  ),
+                  Text(
+                    "${percentChange.abs().toStringAsFixed(2)}%",
+                    style: TextStyle(color: changeColor, fontSize: 12),
+                  ),
+                ],
               ),
             ],
           ),
-        ),
-        SizedBox(
-          width: 80,
-          height: 40,
-          child: _buildMiniChart(chartData, changeColor),
-        ),
-        const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              "₹$ltp",
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            Row(
-              children: [
-                Icon(
-                  percentChange >= 0
-                      ? Icons.arrow_drop_up
-                      : Icons.arrow_drop_down,
-                  color: changeColor,
-                  size: 20,
-                ),
-                Text(
-                  "${percentChange.abs().toStringAsFixed(2)}%",
-                  style: TextStyle(color: changeColor, fontSize: 12),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ],
+        ],
+      ),
     ),
   );
 }
@@ -292,21 +308,7 @@ Widget _buildMiniChart(List<double> data, Color color) {
     LineChartData(
       clipData: FlClipData.none(),
       lineTouchData: LineTouchData(
-        touchTooltipData: LineTouchTooltipData(
-          getTooltipColor: (touchedSpot) => Colors.black87,
-          getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
-            return touchedBarSpots.map((barSpot) {
-              return LineTooltipItem(
-                '₹${barSpot.y.toStringAsFixed(2)}',
-                const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              );
-            }).toList();
-          },
-        ),
+        enabled: false, // Disable touch events on the mini chart
       ),
       gridData: const FlGridData(show: false),
       titlesData: const FlTitlesData(

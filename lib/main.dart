@@ -20,6 +20,7 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'TradeSim AI',
         theme: ThemeData(
+          fontFamily: 'EudoxusSans',
           primarySwatch: Colors.deepPurple,
           scaffoldBackgroundColor: Colors.grey[100],
         ),
