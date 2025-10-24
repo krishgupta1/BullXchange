@@ -1,4 +1,5 @@
 
+import 'package:bullxchange/features/home/screens/home_page.dart';
 import 'package:bullxchange/features/stock_market/screens/StockDetailPage.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:flutter/material.dart';
@@ -26,7 +27,7 @@ class MyApp extends StatelessWidget {
           scaffoldBackgroundColor: Colors.grey[100],
         ),
         // Your app's home screen.
-        home: StockDetailPage(),
+        home: HomePage(),
       ),
     );
   }
