@@ -1,6 +1,7 @@
 import 'package:bullxchange/provider/auth_provider.dart';
 import 'package:bullxchange/features/auth/screens/splash_screen.dart';
 import 'package:bullxchange/features/home/screens/home_page.dart';
+import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:bullxchange/firebase_options.dart';
@@ -15,7 +16,10 @@ Future<void> main() async {
 
   runApp(
     MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => LoginProvider())],
+      providers: [
+        ChangeNotifierProvider(create: (_) => LoginProvider()),
+        ChangeNotifierProvider(create: (_) => InstrumentProvider()),
+      ],
       child: const MainApp(),
     ),
   );
