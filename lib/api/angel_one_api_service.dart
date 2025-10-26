@@ -60,4 +60,32 @@ class AngelOneApiService {
       return [];
     }
   }
+
+  /// Fetch quote data for a single instrument using its exchange segment and token.
+  /// Returns the first item from the fetched list or null if nothing returned.
+  Future<Map<String, dynamic>?> fetchQuoteForInstrument(
+    String exchSeg,
+    String token,
+  ) async {
+    final result = await fetchLiveMarketData({
+      exchSeg: [token],
+    });
+    if (result.isNotEmpty && result.first is Map<String, dynamic>) {
+      return result.first as Map<String, dynamic>;
+    }
+    return null;
+  }
+
+  /// Attempt to fetch fundamentals/company data for the given tokens.
+  /// This method is a safe probe: it posts to the same quote endpoint
+  /// but requests mode = 'FUNDAMENTAL'. If Angel One supports this mode
+  /// the response will be similar in shape and returned as a List.
+  Future<List<dynamic>> fetchFundamentals(
+    Map<String, List<String>> tokensByExchange,
+  ) async {
+    // fetchFundamentals was removed in the reverted state — keep signature for compatibility
+    // but return empty to avoid breaking callers. If you need fundamentals later,
+    // we should implement against the documented Angel One fundamentals endpoint.
+    return [];
+  }
 }

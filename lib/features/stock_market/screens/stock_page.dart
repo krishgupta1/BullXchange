@@ -1,5 +1,4 @@
-// lib/features/stock_market/screens/stock_page.dart
-
+import 'package:bullxchange/features/stock_market/screens/explore_page.dart';
 import 'package:bullxchange/features/stock_market/screens/holdings_page.dart';
 import 'package:bullxchange/features/stock_market/screens/order_page.dart';
 import 'package:bullxchange/features/stock_market/screens/position_page.dart';
@@ -8,7 +7,6 @@ import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'explore_page.dart';
 
 class StockPage extends StatefulWidget {
   const StockPage({super.key});
@@ -70,12 +68,12 @@ class _StockPageState extends State<StockPage>
                 // The content of the selected tab
                 IndexedStack(
                   index: _selectedActionIndex,
-                  children: const [
+                  children: [
                     ExplorePage(),
-                    HoldingsPage(),
-                    PositionPage(),
-                    OrderPage(),
-                    WatchlistPage(),
+                    const HoldingsPage(),
+                    const PositionPage(),
+                    const OrderPage(),
+                    const WatchlistPage(),
                   ],
                 ),
               ],

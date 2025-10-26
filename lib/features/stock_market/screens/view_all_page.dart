@@ -1,9 +1,10 @@
 import 'dart:math';
+import 'package:bullxchange/features/stock_market/screens/StockDetailPage.dart';
+import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import 'package:bullxchange/features/auth/widgets/app_back_button.dart';
 
@@ -21,19 +22,42 @@ class _ViewAllPageState extends State<ViewAllPage> {
   final int batchSize = 50;
   bool isLoadingMore = false;
 
-  final ScrollController scrollController = ScrollController();
+  final ScrollController _scrollController = ScrollController();
   final TextEditingController searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     final provider = Provider.of<InstrumentProvider>(context, listen: false);
-    allStocks = provider.allNSEStocks;
+
+    allStocks = provider.allNSEStocks.where((stock) {
+      final baseSymbol = stock.symbol.replaceAll('-EQ', '');
+      final lowerCaseName = stock.name.toLowerCase();
+      if (baseSymbol.contains(RegExp(r'[0-9]'))) return false;
+      const excludedKeywords = [
+        'etf',
+        'bees',
+        'nifty',
+        'gold',
+        'bond',
+        'debenture',
+        'pref',
+        'index',
+      ];
+      if (excludedKeywords.any((keyword) => lowerCaseName.contains(keyword))) {
+        return false;
+      }
+      if (baseSymbol.length < 3 || baseSymbol.length > 12) return false;
+      if (!RegExp(r'^[A-Z]+$').hasMatch(baseSymbol)) return false;
+      return true;
+    }).toList();
+
     filteredStocks = allStocks;
     _loadMoreItems();
-    scrollController.addListener(() {
-      if (scrollController.position.pixels >=
-              scrollController.position.maxScrollExtent - 300 &&
+
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >=
+              _scrollController.position.maxScrollExtent - 300 &&
           !isLoadingMore &&
           displayedStocks.length < filteredStocks.length) {
         _loadMoreItems();
@@ -43,7 +67,7 @@ class _ViewAllPageState extends State<ViewAllPage> {
 
   @override
   void dispose() {
-    scrollController.dispose();
+    _scrollController.dispose();
     searchController.dispose();
     super.dispose();
   }
@@ -100,37 +124,38 @@ class _ViewAllPageState extends State<ViewAllPage> {
           ),
           const SizedBox(height: 10),
           Expanded(
-            child: Consumer<InstrumentProvider>(
-              builder: (context, provider, child) {
-                if (provider.isLoading && displayedStocks.isEmpty) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (filteredStocks.isEmpty) {
-                  return const Center(child: Text("No stocks found."));
-                }
-                // ✨ WRAP WITH SCROLLBAR WIDGET ✨
-                return Scrollbar(
-                  child: ListView.builder(
-                    // ✨ ADD BOUNCING PHYSICS FOR SMOOTHER SCROLLING ✨
-                    physics: const BouncingScrollPhysics(),
-                    // Prevent children from painting outside list bounds (fix overlap)
-                    clipBehavior: Clip.hardEdge,
-
-                    controller: scrollController,
-                    itemCount: displayedStocks.length + (isLoadingMore ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (index >= displayedStocks.length) {
-                        return const Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: Center(child: CircularProgressIndicator()),
-                        );
-                      }
-                      final instrument = displayedStocks[index];
-                      return _buildStockItem(instrument);
-                    },
-                  ),
-                );
-              },
+            child: ClipRect(
+              child: Consumer<InstrumentProvider>(
+                builder: (context, provider, child) {
+                  if (provider.isLoading && displayedStocks.isEmpty) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (filteredStocks.isEmpty) {
+                    return const Center(child: Text("No stocks found."));
+                  }
+                  return Scrollbar(
+                    controller: _scrollController,
+                    child: ListView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      clipBehavior: Clip.none,
+                      controller: _scrollController,
+                      itemCount:
+                          displayedStocks.length + (isLoadingMore ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (index >= displayedStocks.length) {
+                          return const Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: Center(child: CircularProgressIndicator()),
+                          );
+                        }
+                        final instrument = displayedStocks[index];
+                        // MODIFIED: Pass context to _buildStockItem
+                        return _buildStockItem(context, instrument);
+                      },
+                    ),
+                  );
+                },
+              ),
             ),
           ),
         ],
@@ -169,7 +194,92 @@ class _ViewAllPageState extends State<ViewAllPage> {
   }
 }
 
-// Helper widgets below do not need changes.
+// MODIFIED: Function now accepts BuildContext
+Widget _buildStockItem(BuildContext context, Instrument instrument) {
+  final ltp = instrument.liveData["ltp"]?.toString() ?? "--";
+  final percentChange =
+      num.tryParse(
+        instrument.liveData["percentChange"].toString(),
+      )?.toDouble() ??
+      0.0;
+  final changeColor = percentChange >= 0 ? const Color(0xFF1EAB58) : Colors.red;
+  final List<double> chartData = _createSimulatedChartData(instrument);
+
+  // WRAPPED with InkWell for tap functionality
+  return InkWell(
+    onTap: () {
+      // ADDED: Navigation logic
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => StockDetailPage(instrument: instrument),
+        ),
+      );
+    },
+    child: Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+      child: Row(
+        children: [
+          SmartLogo(instrument: instrument),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  instrument.symbol.replaceAll('-EQ', ''), // Clean up symbol
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                Text(
+                  instrument.name,
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          SizedBox(
+            width: 80,
+            height: 40,
+            child: _buildMiniChart(chartData, changeColor),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                "₹$ltp",
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              Row(
+                children: [
+                  Icon(
+                    percentChange >= 0
+                        ? Icons.arrow_drop_up
+                        : Icons.arrow_drop_down,
+                    color: changeColor,
+                    size: 20,
+                  ),
+                  Text(
+                    "${percentChange.abs().toStringAsFixed(2)}%",
+                    style: TextStyle(color: changeColor, fontSize: 12),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 List<double> _createSimulatedChartData(Instrument instrument) {
   final ltp =
       num.tryParse(instrument.liveData['ltp'].toString())?.toDouble() ?? 0.0;
@@ -193,137 +303,12 @@ List<double> _createSimulatedChartData(Instrument instrument) {
   return points;
 }
 
-Widget _buildLogoContainer(String name) {
-  if (name.toLowerCase().contains('google')) {
-    return SvgPicture.network(
-      'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg',
-      width: 40,
-      height: 40,
-    );
-  }
-  if (name.toLowerCase().contains('microsoft')) {
-    return Image.network(
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Microsoft_logo.svg/512px-Microsoft_logo.svg.png',
-      width: 40,
-      height: 40,
-    );
-  }
-  if (name.toLowerCase().contains('nike')) {
-    return Image.network(
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Logo_NIKE.svg/1200px-Logo_NIKE.svg.png',
-      width: 40,
-      height: 40,
-      color: Colors.black,
-    );
-  }
-  final letter = name.isNotEmpty ? name[0].toUpperCase() : '?';
-  final color = Colors.primaries[name.hashCode % Colors.primaries.length];
-  return Container(
-    width: 40,
-    height: 40,
-    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-    child: Center(
-      child: Text(
-        letter,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    ),
-  );
-}
-
-Widget _buildStockItem(Instrument instrument) {
-  final ltp = instrument.liveData["ltp"]?.toString() ?? "--";
-  final percentChange =
-      num.tryParse(
-        instrument.liveData["percentChange"].toString(),
-      )?.toDouble() ??
-      0.0;
-  final changeColor = percentChange >= 0 ? const Color(0xFF1EAB58) : Colors.red;
-  final List<double> chartData = _createSimulatedChartData(instrument);
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-    child: Row(
-      children: [
-        _buildLogoContainer(instrument.name),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                instrument.symbol,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              Text(
-                instrument.name,
-                style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ),
-        SizedBox(
-          width: 80,
-          height: 40,
-          child: _buildMiniChart(chartData, changeColor),
-        ),
-        const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              "₹$ltp",
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            Row(
-              children: [
-                Icon(
-                  percentChange >= 0
-                      ? Icons.arrow_drop_up
-                      : Icons.arrow_drop_down,
-                  color: changeColor,
-                  size: 20,
-                ),
-                Text(
-                  "${percentChange.abs().toStringAsFixed(2)}%",
-                  style: TextStyle(color: changeColor, fontSize: 12),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
-}
-
 Widget _buildMiniChart(List<double> data, Color color) {
   return LineChart(
     LineChartData(
       clipData: FlClipData.none(),
       lineTouchData: LineTouchData(
-        touchTooltipData: LineTouchTooltipData(
-          getTooltipColor: (touchedSpot) => Colors.black87,
-          getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
-            return touchedBarSpots.map((barSpot) {
-              return LineTooltipItem(
-                '₹${barSpot.y.toStringAsFixed(2)}',
-                const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              );
-            }).toList();
-          },
-        ),
+        enabled: false, // Disable touch events on the mini chart
       ),
       gridData: const FlGridData(show: false),
       titlesData: const FlTitlesData(
