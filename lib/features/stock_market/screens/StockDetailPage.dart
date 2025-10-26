@@ -92,7 +92,7 @@ class StockDetailPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 20),
                     TradingViewChart(symbol: instrument.symbol),
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 18),
                     const Text(
                       "Statistics",
                       style: TextStyle(
@@ -101,7 +101,7 @@ class StockDetailPage extends StatelessWidget {
                         color: darkTextColor,
                       ),
                     ),
-                    const SizedBox(height: 15),
+                    const SizedBox(height: 10),
                     Consumer<InstrumentProvider>(
                       builder: (context, prov, child) {
                         final matched =
@@ -174,7 +174,7 @@ class StockDetailPage extends StatelessWidget {
       bottomNavigationBar: SafeArea(
         top: false,
         child: SizedBox(
-          height: 88.0,
+          height: 72.0,
           child: _buildBottomButtons(context, primaryPink, primaryBlue),
         ),
       ),
@@ -330,7 +330,8 @@ class StockDetailPage extends StatelessWidget {
     ];
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      // reduced padding to tighten vertical space inside the stats card
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
         color: lightGreyBg,
         borderRadius: BorderRadius.circular(15),
@@ -341,9 +342,10 @@ class StockDetailPage extends StatelessWidget {
         itemCount: stats.length,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 3,
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 15, // A little more vertical space between rows
-          mainAxisExtent: 70.0, // <-- THIS IS THE FIX: Increased from 60 to 70
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 8, // reduced vertical spacing between rows
+          mainAxisExtent:
+              62.0, // slightly smaller row height to compact the grid
         ),
         itemBuilder: (context, index) {
           final stat = stats[index];
@@ -386,7 +388,8 @@ class StockDetailPage extends StatelessWidget {
   ) {
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.all(16.0),
+      // reduce padding to bring buttons closer to content above
+      padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
       child: Row(
         children: [
           Expanded(
@@ -395,7 +398,7 @@ class StockDetailPage extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: buyColor,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -414,7 +417,7 @@ class StockDetailPage extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: sellColor,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
