@@ -17,6 +17,7 @@ class InstrumentProvider with ChangeNotifier {
   List<Instrument> _allInstruments = [];
   bool _isLoading = true;
   String? _errorMessage;
+
   Timer? _refreshTimer;
 
   bool get isLoading => _isLoading;
@@ -145,21 +146,81 @@ class InstrumentProvider with ChangeNotifier {
       tokensByExchange,
     );
 
+    // DEBUG: Log requested tokensByExchange for diagnosis
+    try {
+      print(
+        '🔎 _updateInstruments: requested tokensByExchange = $tokensByExchange',
+      );
+    } catch (_) {}
+
     if (liveDataList.isNotEmpty) {
-      final liveDataMap = {
-        for (var stock in liveDataList)
-          if (stock['symbolToken'] is String)
-            stock['symbolToken'] as String: stock,
-      };
+      // DEBUG: Log response size and sample keys to help mapping issues
+      try {
+        print(
+          '✅ _updateInstruments: liveDataList.length = ${liveDataList.length}',
+        );
+        if (liveDataList.isNotEmpty) {
+          final sample = liveDataList.take(3).toList();
+          for (var i = 0; i < sample.length; i++) {
+            final item = sample[i];
+            if (item is Map<String, dynamic>) {
+              print('  sample[$i] keys = ${item.keys.toList()}');
+              // attempt to log common token fields if present
+              for (var k in [
+                'symbolToken',
+                'symboltoken',
+                'symbol_token',
+                'token',
+              ]) {
+                if (item.containsKey(k)) print('    $k = ${item[k]}');
+              }
+            } else {
+              print('  sample[$i] is ${item.runtimeType}');
+            }
+          }
+        }
+      } catch (e) {
+        print('Error while logging liveDataList sample: $e');
+      }
+
+      // Build a map keyed by the instrument token. The API may return different
+      // token key names depending on version/endpoint, so check several aliases.
+      final Map<String, Map<String, dynamic>> liveDataMap = {};
+      for (var stock in liveDataList) {
+        if (stock is Map<String, dynamic>) {
+          String? token;
+          if (stock['symbolToken'] != null) {
+            token = stock['symbolToken'].toString();
+          } else if (stock['symboltoken'] != null) {
+            token = stock['symboltoken'].toString();
+          } else if (stock['symbol_token'] != null) {
+            token = stock['symbol_token'].toString();
+          } else if (stock['token'] != null) {
+            token = stock['token'].toString();
+          }
+
+          if (token != null && token.isNotEmpty) {
+            liveDataMap[token] = Map<String, dynamic>.from(stock);
+          }
+        }
+      }
 
       for (var instrument in _allInstruments) {
-        if (liveDataMap.containsKey(instrument.token)) {
-          instrument.liveData = _sanitizeLiveData(
-            liveDataMap[instrument.token]!,
-          );
+        final mapped = liveDataMap[instrument.token];
+        if (mapped != null) {
+          instrument.liveData = _sanitizeLiveData(mapped);
         }
       }
       notifyListeners();
+    }
+  }
+
+  /// Lookup helper to find an instrument by its exchange token.
+  Instrument? getInstrumentByToken(String token) {
+    try {
+      return _allInstruments.firstWhere((i) => i.token == token);
+    } catch (_) {
+      return null;
     }
   }
 
@@ -169,11 +230,60 @@ class InstrumentProvider with ChangeNotifier {
 
   Map<String, dynamic> _sanitizeLiveData(Map<String, dynamic> rawData) {
     final sanitizedData = Map<String, dynamic>.from(rawData);
+    // Normalize common alternate keys returned by different API variants.
+    final Map<String, List<String>> aliases = {
+      'totalTradedVolume': [
+        'ttlTrdQty',
+        'totalTradedQty',
+        'volume',
+        'tradedVolume',
+        'tradeVolume',
+      ],
+      'open': ['openPrice', 'open_price', 'o'],
+      'high': ['highPrice', 'high_price', 'h'],
+      'low': ['lowPrice', 'low_price', 'l'],
+      'ltp': ['lastPrice', 'last_traded_price', 'lastTradedPrice'],
+      'netChange': ['change', 'net_change', 'changeValue'],
+      'percentChange': ['pChange', 'pchg', 'percent_change'],
+      'close': ['closePrice', 'close_price'],
+      'avgPrice': ['avg_price', 'averagePrice'],
+      // Avg. volume and market cap aliases (not always provided by every API)
+      'avgVolume': [
+        'avgTradedQty',
+        'avg_trd_qty',
+        'avg_volume',
+        'avgVol',
+        'avgtrdqty',
+      ],
+      'marketCap': [
+        'marketCap',
+        'mktCap',
+        'market_cap',
+        'mcap',
+        'marketCapitalization',
+      ],
+    };
+
+    for (var target in aliases.keys) {
+      if ((!sanitizedData.containsKey(target) ||
+          sanitizedData[target] == null)) {
+        for (var alt in aliases[target]!) {
+          if (sanitizedData.containsKey(alt) && sanitizedData[alt] != null) {
+            sanitizedData[target] = sanitizedData[alt];
+            break;
+          }
+        }
+      }
+    }
+
+    // Now coerce numeric values to numbers for keys we expect as numeric.
     const numericKeys = [
       'ltp',
       'netChange',
       'percentChange',
       'totalTradedVolume',
+      'avgVolume',
+      'marketCap',
       'open',
       'high',
       'low',
@@ -186,6 +296,7 @@ class InstrumentProvider with ChangeNotifier {
         if (parsedValue != null) sanitizedData[key] = parsedValue;
       }
     }
+
     return sanitizedData;
   }
 

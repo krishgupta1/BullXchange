@@ -3,6 +3,8 @@ import 'package:bullxchange/models/instrument_model.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:provider/provider.dart';
+import 'package:bullxchange/provider/instrument_provider.dart';
 
 class StockDetailPage extends StatelessWidget {
   final Instrument instrument;
@@ -94,8 +96,6 @@ class StockDetailPage extends StatelessWidget {
                       darkTextColor,
                     ),
                     const SizedBox(height: 20),
-                    _buildTimeRangeSelector(primaryPink),
-                    const SizedBox(height: 20),
                     TradingViewChart(symbol: instrument.symbol),
                     const SizedBox(height: 30),
                     const Text(
@@ -107,13 +107,44 @@ class StockDetailPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 15),
-                    _buildStatisticsCard(
-                      open,
-                      high,
-                      low,
-                      volume,
-                      lightGreyBg,
-                      darkTextColor,
+                    // Read the provider-populated live data so the card updates when provider refreshes.
+                    Consumer<InstrumentProvider>(
+                      builder: (context, prov, child) {
+                        final matched =
+                            prov.getInstrumentByToken(instrument.token) ??
+                            instrument;
+
+                        final apiOpen =
+                            (matched.liveData['open'] as num?)?.toDouble() ??
+                            open;
+                        final apiHigh =
+                            (matched.liveData['high'] as num?)?.toDouble() ??
+                            high;
+                        final apiLow =
+                            (matched.liveData['low'] as num?)?.toDouble() ??
+                            low;
+                        final apiVolume =
+                            (matched.liveData['totalTradedVolume'] as num?)
+                                ?.toInt() ??
+                            (matched.liveData['volume'] as num?)?.toInt() ??
+                            volume;
+
+                        final apiAvgVolume =
+                            (matched.liveData['avgVolume'] as num?)?.toInt();
+                        final apiMarketCap =
+                            (matched.liveData['marketCap'] as num?)?.toDouble();
+
+                        return _buildStatisticsCard(
+                          apiOpen,
+                          apiHigh,
+                          apiLow,
+                          apiVolume,
+                          apiAvgVolume,
+                          apiMarketCap,
+                          lightGreyBg,
+                          darkTextColor,
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -130,6 +161,18 @@ class StockDetailPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatMarketCap(double value) {
+    try {
+      final fmt = NumberFormat.compact(locale: 'en_US');
+      return fmt.format(value);
+    } catch (_) {
+      if (value >= 1e9) return '${(value / 1e9).toStringAsFixed(2)}B';
+      if (value >= 1e6) return '${(value / 1e6).toStringAsFixed(2)}M';
+      if (value >= 1e3) return '${(value / 1e3).toStringAsFixed(2)}K';
+      return value.toStringAsFixed(0);
+    }
   }
 
   // --- UI Component Builders ---
@@ -241,60 +284,33 @@ class StockDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildTimeRangeSelector(Color selectedColor) {
-    const List<String> ranges = ["12H", "1D", "1W", "1M", "1Y"];
-    const String selectedRange = "1W";
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: ranges.map((range) {
-        final bool isSelected = range == selectedRange;
-        return Padding(
-          padding: const EdgeInsets.only(right: 20.0),
-          child: Column(
-            children: [
-              Text(
-                range,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected ? Colors.black : Colors.grey,
-                ),
-              ),
-              const SizedBox(height: 4),
-              if (isSelected)
-                Container(
-                  width: 25,
-                  height: 3,
-                  decoration: BoxDecoration(
-                    color: selectedColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-            ],
-          ),
-        );
-      }).toList(),
-    );
-  }
+  // Time range selector removed per request.
 
   Widget _buildStatisticsCard(
     double open,
     double high,
     double low,
     int volume,
+    int? avgVolume,
+    double? marketCap,
     Color lightGreyBg,
     Color darkTextColor,
   ) {
     // Format the volume number with commas
     final volumeFormatter = NumberFormat.decimalPattern('en_US');
+    String avgVolText = 'N/A';
+    if (avgVolume != null) avgVolText = volumeFormatter.format(avgVolume);
+
+    String marketCapText = 'N/A';
+    if (marketCap != null) marketCapText = _formatMarketCap(marketCap);
 
     final List<Map<String, String>> stats = [
       {"label": "Open", "value": "₹${open.toStringAsFixed(2)}"},
       {"label": "High", "value": "₹${high.toStringAsFixed(2)}"},
       {"label": "Low", "value": "₹${low.toStringAsFixed(2)}"},
       {"label": "Volume", "value": volumeFormatter.format(volume)},
-      {"label": "Avg. Volume", "value": "N/A"},
-      {"label": "Market Cap", "value": "N/A"},
+      {"label": "Avg. Volume", "value": avgVolText},
+      {"label": "Market Cap", "value": marketCapText},
     ];
     return Container(
       padding: const EdgeInsets.all(20),
@@ -310,8 +326,7 @@ class StockDetailPage extends StatelessWidget {
           crossAxisCount: 3,
           crossAxisSpacing: 10,
           mainAxisSpacing: 10,
-          // ⬇️ CHANGE THIS LINE
-          mainAxisExtent: 80.0, // Was 60.0, increased to 80.0
+          mainAxisExtent: 60.0,
         ),
         itemBuilder: (context, index) {
           final stat = stats[index];
@@ -407,8 +422,6 @@ class _TradingViewChartState extends State<TradingViewChart> {
     super.initState();
     final sanitizedSymbol = widget.symbol.replaceAll('-EQ', '');
 
-    // --- MODIFICATION ---
-    // Try using the BSE prefix for better compatibility with the free widget.
     final String tradingViewUrl =
         '''
       https://s.tradingview.com/widgetembed/?frameElementId=tradingview_7a905&symbol=BSE%3A$sanitizedSymbol&interval=D&hidesidetoolbar=1&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=[]&theme=light&style=1&timezone=Etc%2FUTC&studies_overrides=%7B%7D&overrides=%7B%7D&enabled_features=[]&disabled_features=[]&locale=en&utm_source=www.tradingview.com&utm_medium=widget_new&utm_campaign=chart&utm_term=BSE%3A$sanitizedSymbol
