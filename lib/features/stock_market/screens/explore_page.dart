@@ -84,7 +84,7 @@ Widget _buildSectionHeader(BuildContext context, String title) {
     children: [
       Text(
         title,
-        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
       ),
       if (stockCategories.contains(title))
         TextButton(
@@ -94,7 +94,7 @@ Widget _buildSectionHeader(BuildContext context, String title) {
           ),
           child: const Text(
             "View all",
-            style: TextStyle(color: Color(0xFFDB1B57), fontSize: 14),
+            style: TextStyle(color: Color(0xFFDB1B57), fontSize: 13),
           ),
         ),
     ],
@@ -146,7 +146,7 @@ Widget _buildStockItem(Instrument instrument, BuildContext context) {
                   instrument.symbol,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                    fontSize: 12,
                   ),
                 ),
                 Text(
@@ -170,7 +170,7 @@ Widget _buildStockItem(Instrument instrument, BuildContext context) {
                 "₹$ltp",
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
+                  fontSize: 12,
                 ),
               ),
               Row(

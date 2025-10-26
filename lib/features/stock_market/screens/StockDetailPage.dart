@@ -63,7 +63,7 @@ class StockDetailPage extends StatelessWidget {
           style: const TextStyle(
             color: darkTextColor,
             fontWeight: FontWeight.bold,
-            fontSize: 20,
+            fontSize: 16,
           ),
         ),
         centerTitle: true,
@@ -96,7 +96,7 @@ class StockDetailPage extends StatelessWidget {
                     const Text(
                       "Statistics",
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: darkTextColor,
                       ),
@@ -200,14 +200,18 @@ class StockDetailPage extends StatelessWidget {
               Text(
                 instrument.symbol.replaceAll('-EQ', ''),
                 style: TextStyle(
-                  fontSize: 22,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: darkTextColor,
                 ),
               ),
               Text(
                 instrument.name,
-                style: const TextStyle(fontSize: 14, color: Colors.grey),
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w500,
+                ),
                 overflow: TextOverflow.ellipsis,
               ),
             ],
@@ -233,7 +237,7 @@ class StockDetailPage extends StatelessWidget {
                 style: TextStyle(
                   color: changeColor,
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
+                  fontSize: 12,
                 ),
               ),
             ],
@@ -260,7 +264,7 @@ class StockDetailPage extends StatelessWidget {
               Text(
                 "₹${priceParts[0]}",
                 style: TextStyle(
-                  fontSize: 40,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: darkTextColor,
                 ),
@@ -268,7 +272,7 @@ class StockDetailPage extends StatelessWidget {
               Text(
                 ".${priceParts.length > 1 ? priceParts[1] : '00'}",
                 style: TextStyle(
-                  fontSize: 28,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: darkTextColor,
                 ),
@@ -278,7 +282,7 @@ class StockDetailPage extends StatelessWidget {
                 child: Text(
                   "${netChange >= 0 ? '+' : ''}${netChange.toStringAsFixed(2)}",
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: changeColor,
                   ),
@@ -348,7 +352,11 @@ class StockDetailPage extends StatelessWidget {
             children: [
               Text(
                 stat['label']!,
-                style: const TextStyle(color: Colors.grey, fontSize: 14),
+                style: const TextStyle(
+                  color: Colors.grey,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               const SizedBox(height: 4),
               // Wrapping with FittedBox prevents overflow on smaller screens
@@ -358,7 +366,7 @@ class StockDetailPage extends StatelessWidget {
                   stat['value']!,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 18,
+                    fontSize: 14,
                     color: darkTextColor,
                   ),
                 ),

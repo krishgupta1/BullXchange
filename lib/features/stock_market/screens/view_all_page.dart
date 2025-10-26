@@ -105,9 +105,9 @@ class _ViewAllPageState extends State<ViewAllPage> {
     return Scaffold(
       appBar: AppBar(
         leading: AppBackButton(onPressed: () => Navigator.pop(context)),
-        title: const Text(
+        title: Text(
           "Select Stocks",
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         centerTitle: true,
         backgroundColor: Colors.white,
@@ -169,7 +169,7 @@ class _ViewAllPageState extends State<ViewAllPage> {
       onChanged: _searchStocks,
       decoration: InputDecoration(
         hintText: "Search company, stocks...",
-        hintStyle: TextStyle(color: Colors.grey[600], fontSize: 16),
+        hintStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
         prefixIcon: const Padding(
           padding: EdgeInsets.only(left: 16.0, right: 12.0),
           child: Icon(Icons.circle, color: Color(0xFFDB1B57), size: 16),
@@ -230,7 +230,7 @@ Widget _buildStockItem(BuildContext context, Instrument instrument) {
                   instrument.symbol.replaceAll('-EQ', ''), // Clean up symbol
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                    fontSize: 12,
                   ),
                 ),
                 Text(
@@ -254,7 +254,7 @@ Widget _buildStockItem(BuildContext context, Instrument instrument) {
                 "₹$ltp",
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
+                  fontSize: 12,
                 ),
               ),
               Row(

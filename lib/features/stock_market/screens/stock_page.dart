@@ -165,7 +165,7 @@ class _StockPageState extends State<StockPage>
           const SizedBox(height: 8),
           Text(
             value != "--" ? "₹$value" : value,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
           Text(
