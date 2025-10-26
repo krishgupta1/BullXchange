@@ -1,32 +1,62 @@
+import 'package:bullxchange/provider/auth_provider.dart';
+import 'package:bullxchange/features/auth/screens/splash_screen.dart';
 import 'package:bullxchange/features/home/screens/home_page.dart';
-import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:bullxchange/firebase_options.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
+import 'package:bullxchange/features/auth/navigation/auth_wrapper.dart';
 
-void main() {
-  runApp(const MyApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await dotenv.load(fileName: ".env");
+
+  runApp(
+    MultiProvider(
+      providers: [ChangeNotifierProvider(create: (_) => LoginProvider())],
+      child: const MainApp(),
+    ),
+  );
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+// --- The MainApp widget below is unchanged ---
+class MainApp extends StatefulWidget {
+  const MainApp({super.key});
+
+  @override
+  State<MainApp> createState() => _MainAppState();
+}
+
+class _MainAppState extends State<MainApp> {
+  bool _showSplashScreen = true;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        setState(() {
+          _showSplashScreen = false;
+        });
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    // This is the widget that "provides" the InstrumentProvider to the whole app.
-    return ChangeNotifierProvider(
-      // The 'create' function builds the instance of your provider.
-      // This happens only once.
-      create: (context) => InstrumentProvider(),
-      child: MaterialApp(
-        title: 'TradeSim AI',
-        theme: ThemeData(
-          fontFamily: 'EudoxusSans',
-          primarySwatch: Colors.deepPurple,
-          scaffoldBackgroundColor: Colors.grey[100],
-        ),
-        // Your app's home screen.
-        home: HomePage(),
+    return MaterialApp(
+      title: 'BullXchange',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        fontFamily: 'EudoxusSans',
+        scaffoldBackgroundColor: Colors.white,
+        primaryColor: const Color(0xFF4318FF),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF4318FF)),
       ),
+      routes: {'/home': (_) => const HomePage()},
+      home: _showSplashScreen ? const SplashScreen() : const AuthWrapper(),
     );
   }
 }

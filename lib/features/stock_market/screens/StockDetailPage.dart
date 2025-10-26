@@ -23,11 +23,6 @@ class StockDetailPage extends StatelessWidget {
         (instrument.liveData['netChange'] as num?)?.toDouble() ?? 0.0;
     final percentChange =
         (instrument.liveData['percentChange'] as num?)?.toDouble() ?? 0.0;
-    final open = (instrument.liveData['open'] as num?)?.toDouble() ?? 0.0;
-    final high = (instrument.liveData['high'] as num?)?.toDouble() ?? 0.0;
-    final low = (instrument.liveData['low'] as num?)?.toDouble() ?? 0.0;
-    final volume =
-        (instrument.liveData['totalTradedVolume'] as num?)?.toInt() ?? 0;
 
     final changeColor = netChange >= 0 ? const Color(0xFF1EAB58) : primaryPink;
     final priceParts = ltp.toStringAsFixed(2).split('.');
@@ -107,43 +102,66 @@ class StockDetailPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 15),
-                    // Read the provider-populated live data so the card updates when provider refreshes.
                     Consumer<InstrumentProvider>(
                       builder: (context, prov, child) {
                         final matched =
                             prov.getInstrumentByToken(instrument.token) ??
                             instrument;
 
+                        // --- START: MODIFIED SECTION ---
+                        // Extracting all data available from the API
+
                         final apiOpen =
                             (matched.liveData['open'] as num?)?.toDouble() ??
-                            open;
+                            0.0;
                         final apiHigh =
                             (matched.liveData['high'] as num?)?.toDouble() ??
-                            high;
+                            0.0;
                         final apiLow =
                             (matched.liveData['low'] as num?)?.toDouble() ??
-                            low;
+                            0.0;
+                        // Use 'tradeVolume' for consistency from the API response
                         final apiVolume =
-                            (matched.liveData['totalTradedVolume'] as num?)
+                            (matched.liveData['tradeVolume'] as num?)
                                 ?.toInt() ??
-                            (matched.liveData['volume'] as num?)?.toInt() ??
-                            volume;
+                            0;
 
-                        final apiAvgVolume =
-                            (matched.liveData['avgVolume'] as num?)?.toInt();
-                        final apiMarketCap =
-                            (matched.liveData['marketCap'] as num?)?.toDouble();
+                        // New data points from the Angel One API
+                        final apiAvgPrice =
+                            (matched.liveData['avgPrice'] as num?)
+                                ?.toDouble() ??
+                            0.0;
+                        final apiUpperCircuit =
+                            (matched.liveData['upperCircuit'] as num?)
+                                ?.toDouble() ??
+                            0.0;
+                        final apiLowerCircuit =
+                            (matched.liveData['lowerCircuit'] as num?)
+                                ?.toDouble() ??
+                            0.0;
+                        final api52WkHigh =
+                            (matched.liveData['52WeekHigh'] as num?)
+                                ?.toDouble() ??
+                            0.0;
+                        final api52WkLow =
+                            (matched.liveData['52WeekLow'] as num?)
+                                ?.toDouble() ??
+                            0.0;
 
                         return _buildStatisticsCard(
-                          apiOpen,
-                          apiHigh,
-                          apiLow,
-                          apiVolume,
-                          apiAvgVolume,
-                          apiMarketCap,
-                          lightGreyBg,
-                          darkTextColor,
+                          open: apiOpen,
+                          high: apiHigh,
+                          low: apiLow,
+                          volume: apiVolume,
+                          avgPrice: apiAvgPrice,
+                          upperCircuit: apiUpperCircuit,
+                          lowerCircuit: apiLowerCircuit,
+                          fiftyTwoWeekHigh: api52WkHigh,
+                          fiftyTwoWeekLow: api52WkLow,
+                          lightGreyBg: lightGreyBg,
+                          darkTextColor: darkTextColor,
                         );
+                        // --- END: MODIFIED SECTION ---
                       },
                     ),
                   ],
@@ -163,19 +181,8 @@ class StockDetailPage extends StatelessWidget {
     );
   }
 
-  String _formatMarketCap(double value) {
-    try {
-      final fmt = NumberFormat.compact(locale: 'en_US');
-      return fmt.format(value);
-    } catch (_) {
-      if (value >= 1e9) return '${(value / 1e9).toStringAsFixed(2)}B';
-      if (value >= 1e6) return '${(value / 1e6).toStringAsFixed(2)}M';
-      if (value >= 1e3) return '${(value / 1e3).toStringAsFixed(2)}K';
-      return value.toStringAsFixed(0);
-    }
-  }
+  // --- UI Component Builders (No changes below this line, except _buildStatisticsCard) ---
 
-  // --- UI Component Builders ---
   Widget _buildCompanyHeader(
     Instrument instrument,
     double percentChange,
@@ -284,34 +291,40 @@ class StockDetailPage extends StatelessWidget {
     );
   }
 
-  // Time range selector removed per request.
-
-  Widget _buildStatisticsCard(
-    double open,
-    double high,
-    double low,
-    int volume,
-    int? avgVolume,
-    double? marketCap,
-    Color lightGreyBg,
-    Color darkTextColor,
-  ) {
-    // Format the volume number with commas
+  // --- START: MODIFIED WIDGET ---
+  Widget _buildStatisticsCard({
+    required double open,
+    required double high,
+    required double low,
+    required int volume,
+    required double avgPrice,
+    required double upperCircuit,
+    required double lowerCircuit,
+    required double fiftyTwoWeekHigh,
+    required double fiftyTwoWeekLow,
+    required Color lightGreyBg,
+    required Color darkTextColor,
+  }) {
     final volumeFormatter = NumberFormat.decimalPattern('en_US');
-    String avgVolText = 'N/A';
-    if (avgVolume != null) avgVolText = volumeFormatter.format(avgVolume);
-
-    String marketCapText = 'N/A';
-    if (marketCap != null) marketCapText = _formatMarketCap(marketCap);
 
     final List<Map<String, String>> stats = [
       {"label": "Open", "value": "₹${open.toStringAsFixed(2)}"},
       {"label": "High", "value": "₹${high.toStringAsFixed(2)}"},
       {"label": "Low", "value": "₹${low.toStringAsFixed(2)}"},
       {"label": "Volume", "value": volumeFormatter.format(volume)},
-      {"label": "Avg. Volume", "value": avgVolText},
-      {"label": "Market Cap", "value": marketCapText},
+      {"label": "Avg. Price", "value": "₹${avgPrice.toStringAsFixed(2)}"},
+      {
+        "label": "Upper Circuit",
+        "value": "₹${upperCircuit.toStringAsFixed(2)}",
+      },
+      {"label": "52W High", "value": "₹${fiftyTwoWeekHigh.toStringAsFixed(2)}"},
+      {"label": "52W Low", "value": "₹${fiftyTwoWeekLow.toStringAsFixed(2)}"},
+      {
+        "label": "Lower Circuit",
+        "value": "₹${lowerCircuit.toStringAsFixed(2)}",
+      },
     ];
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -325,8 +338,8 @@ class StockDetailPage extends StatelessWidget {
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 3,
           crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
-          mainAxisExtent: 60.0,
+          mainAxisSpacing: 15, // A little more vertical space between rows
+          mainAxisExtent: 70.0, // <-- THIS IS THE FIX: Increased from 60 to 70
         ),
         itemBuilder: (context, index) {
           final stat = stats[index];
@@ -338,12 +351,16 @@ class StockDetailPage extends StatelessWidget {
                 style: const TextStyle(color: Colors.grey, fontSize: 14),
               ),
               const SizedBox(height: 4),
-              Text(
-                stat['value']!,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: darkTextColor,
+              // Wrapping with FittedBox prevents overflow on smaller screens
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  stat['value']!,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: darkTextColor,
+                  ),
                 ),
               ),
             ],
@@ -352,6 +369,7 @@ class StockDetailPage extends StatelessWidget {
       ),
     );
   }
+  // --- END: MODIFIED WIDGET ---
 
   Widget _buildBottomButtons(
     BuildContext context,
