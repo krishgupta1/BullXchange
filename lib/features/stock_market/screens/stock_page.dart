@@ -1,3 +1,4 @@
+import 'package:bullxchange/features/auth/screens/onboarding_page_1.1.dart';
 import 'package:bullxchange/features/stock_market/screens/explore_page.dart';
 import 'package:bullxchange/features/stock_market/screens/holdings_page.dart';
 import 'package:bullxchange/features/stock_market/screens/order_page.dart';
@@ -5,6 +6,7 @@ import 'package:bullxchange/features/stock_market/screens/position_page.dart';
 import 'package:bullxchange/features/stock_market/screens/watchlist_page.dart';
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -110,7 +112,10 @@ class _StockPageState extends State<StockPage>
           ],
         ),
         const Spacer(),
-        IconButton(onPressed: () {}, icon: const Icon(Icons.more_horiz)),
+        IconButton(onPressed: () {
+          FirebaseAuth.instance.signOut();
+          Navigator.push(context,MaterialPageRoute(builder: (context)=>OnboardingPage()));
+        }, icon: const Icon(Icons.more_horiz)),
       ],
     );
   }

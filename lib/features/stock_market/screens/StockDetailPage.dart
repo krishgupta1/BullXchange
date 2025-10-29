@@ -5,10 +5,17 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+// Import the UserService and the updated Model
+import 'package:bullxchange/services/firebase/user_service.dart'; 
+import 'package:bullxchange/models/stock_holding_model.dart'; 
 
 class StockDetailPage extends StatelessWidget {
   final Instrument instrument;
-  const StockDetailPage({super.key, required this.instrument});
+   StockDetailPage({super.key, required this.instrument});
+
+  // Instantiate the service for use in the bottom buttons
+  final UserService _userService = UserService();
 
   @override
   Widget build(BuildContext context) {
@@ -161,11 +168,57 @@ class StockDetailPage extends StatelessWidget {
         top: false,
         child: SizedBox(
           height: 72.0,
-          child: _buildBottomButtons(context, primaryPink, primaryBlue),
+          child: _buildBottomButtons(context, primaryPink, primaryBlue, ltp),
         ),
       ),
     );
   }
+
+  // --- BUY LOGIC IMPLEMENTATION ---
+
+  Future<void> _handleBuy(BuildContext context, double currentLTP) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error: User not logged in.')),
+      );
+      return;
+    }
+
+    // Since there are no input fields, we mock quantity and other details.
+    const mockQuantity = 1;
+    const mockCharges = 20.0;
+    final totalAmount = (currentLTP * mockQuantity) + mockCharges;
+
+    final newTransaction = StockHoldingModel(
+      stockName: instrument.name,
+      stockSymbol: instrument.symbol.replaceAll('-EQ', ''),
+      quantity: mockQuantity,
+      transactionPrice: currentLTP, // The price at the time of transaction
+      buyingTime: DateTime.now(),
+      charges: mockCharges,
+      totalAmount: totalAmount,
+      exchange: 'NSE', // Mock Exchange
+      transactionType: 'DELIVERY', // Mock Transaction Type
+    );
+
+    try {
+      // Call the UserService to append the new transaction record
+      await _userService.updateStockHolding(uid, newTransaction);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(
+                'Successfully recorded 1 share of ${newTransaction.stockSymbol} at ₹${currentLTP.toStringAsFixed(2)}.')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to save transaction: $e')),
+      );
+    }
+  }
+
+  // --- Widget Builders (Updated to include ltp and service) ---
 
   Widget _buildCompanyHeader(
     Instrument instrument,
@@ -374,16 +427,17 @@ class StockDetailPage extends StatelessWidget {
     BuildContext context,
     Color buyColor,
     Color sellColor,
+    double ltp, // Passed current Live Price
   ) {
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
       child: Row(
         children: [
-          // --- FIXED: ADDED MISSING "BUY" BUTTON ---
+          // --- BUY BUTTON WITH FIREBASE LOGIC ---
           Expanded(
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () => _handleBuy(context, ltp), // Call the new handler
               style: ElevatedButton.styleFrom(
                 backgroundColor: buyColor, // Use buyColor
                 foregroundColor: Colors.white,
@@ -402,7 +456,9 @@ class StockDetailPage extends StatelessWidget {
           const SizedBox(width: 15), // Added spacer
           Expanded(
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                // Sell functionality would be implemented here
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: sellColor, // Use sellColor
                 foregroundColor: Colors.white,

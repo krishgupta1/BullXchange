@@ -4,11 +4,10 @@ import 'package:bullxchange/features/auth/screens/setup_pin_screen.dart';
 import 'package:bullxchange/features/auth/navigation/route_transitions.dart';
 import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:bullxchange/features/auth/widgets/app_back_button.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class SignupPage extends StatefulWidget {
@@ -21,10 +20,14 @@ class SignupPage extends StatefulWidget {
 class _SignupPageState extends State<SignupPage> {
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
+  // 1. Add Mobile Number Controller
+  final _mobileController = TextEditingController(); 
   final _passwordController = TextEditingController();
+  
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final UsersService _usersService = UsersService();
+  // Use the updated model-based UserService
+  final UserService _usersService = UserService(); 
 
   bool _obscurePassword = true;
   bool _agreedToTerms = false;
@@ -38,6 +41,8 @@ class _SignupPageState extends State<SignupPage> {
   void dispose() {
     _fullNameController.dispose();
     _emailController.dispose();
+    // 2. Dispose Mobile Number Controller
+    _mobileController.dispose(); 
     _passwordController.dispose();
     super.dispose();
   }
@@ -96,12 +101,20 @@ class _SignupPageState extends State<SignupPage> {
   Future<void> _signUp() async {
     final fullName = _fullNameController.text.trim();
     final email = _emailController.text.trim();
+    final mobileNo = _mobileController.text.trim(); // 3a. Get mobile number
     final password = _passwordController.text.trim();
 
-    if (fullName.isEmpty || email.isEmpty || password.isEmpty) {
-      _showErrorDialog('Please fill all fields.');
+    if (fullName.isEmpty || email.isEmpty || mobileNo.isEmpty || password.isEmpty) {
+      _showErrorDialog('Please fill all fields, including your mobile number.');
       return;
     }
+    
+    // Simple mobile number validation (10 digits)
+    if (mobileNo.length != 10 || int.tryParse(mobileNo) == null) {
+      _showErrorDialog('Please enter a valid 10-digit mobile number.');
+      return;
+    }
+
 
     if (!_agreedToTerms) {
       _showErrorDialog('You must agree to the Terms of Service.');
@@ -131,12 +144,14 @@ class _SignupPageState extends State<SignupPage> {
 
       final user = credential.user;
       if (user != null) {
-        await _usersService.addUser(user.uid, {
-          'name': fullName,
-          'email': email,
-          'createdAt': FieldValue.serverTimestamp(),
-          'hasPin': false,
-        });
+        
+        // Call the model-based addUserProfile method
+        await _usersService.addUserProfile(
+          uid: user.uid,
+          name: fullName, 
+          emailId: email,
+          mobileNo: mobileNo, // 3b. Pass actual mobile number
+        );
 
         if (!mounted) return;
 
@@ -251,6 +266,16 @@ class _SignupPageState extends State<SignupPage> {
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 16),
+              
+              // 4. Mobile Number Text Field
+              _buildTextFieldWithLabel(
+                label: 'Mobile Number',
+                controller: _mobileController,
+                hintText: '10-digit Mobile Number',
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 16),
+
 
               _buildTextFieldWithLabel(
                 label: 'Password',
