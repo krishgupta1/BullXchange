@@ -167,28 +167,6 @@ class StockDetailPage extends StatelessWidget {
     );
   }
 
-  // --- HELPER FUNCTIONS for formatting large numbers ---
-  String _formatLargeNumber(double number) {
-    if (number >= 10000000) {
-      return '₹${(number / 10000000).toStringAsFixed(2)} Cr';
-    } else if (number >= 100000) {
-      return '₹${(number / 100000).toStringAsFixed(2)} L';
-    } else {
-      return '₹${number.toStringAsFixed(2)}';
-    }
-  }
-
-  String _formatVolume(double number) {
-    if (number >= 10000000) {
-      return '${(number / 10000000).toStringAsFixed(2)} Cr';
-    } else if (number >= 100000) {
-      return '${(number / 100000).toStringAsFixed(2)} L';
-    } else {
-      return NumberFormat.decimalPattern('en_US').format(number);
-    }
-  }
-  // --- END HELPER FUNCTIONS ---
-
   Widget _buildCompanyHeader(
     Instrument instrument,
     double percentChange,
