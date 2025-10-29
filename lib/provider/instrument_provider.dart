@@ -156,9 +156,6 @@ class InstrumentProvider with ChangeNotifier {
     if (liveDataList.isNotEmpty) {
       // DEBUG: Log response size and sample keys to help mapping issues
       try {
-        print(
-          '✅ _updateInstruments: liveDataList.length = ${liveDataList.length}',
-        );
         if (liveDataList.isNotEmpty) {
           final sample = liveDataList.take(3).toList();
           for (var i = 0; i < sample.length; i++) {
