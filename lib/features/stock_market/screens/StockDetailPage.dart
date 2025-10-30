@@ -1,21 +1,21 @@
+import 'package:bullxchange/features/stock_market/screens/buy_stock_page.dart';
+import 'package:bullxchange/features/stock_market/screens/sell_stock_page.dart';
 import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
 import 'package:bullxchange/models/instrument_model.dart';
+import 'package:bullxchange/models/stock_holding_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
+import 'package:bullxchange/services/firebase/user_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-// Import the UserService and the updated Model
-import 'package:bullxchange/services/firebase/user_service.dart'; 
-import 'package:bullxchange/models/stock_holding_model.dart'; 
 
 class StockDetailPage extends StatelessWidget {
   final Instrument instrument;
-   StockDetailPage({super.key, required this.instrument});
+  const StockDetailPage({super.key, required this.instrument});
 
   // Instantiate the service for use in the bottom buttons
-  final UserService _userService = UserService();
 
   @override
   Widget build(BuildContext context) {
@@ -172,50 +172,6 @@ class StockDetailPage extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  // --- BUY LOGIC IMPLEMENTATION ---
-
-  Future<void> _handleBuy(BuildContext context, double currentLTP) async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error: User not logged in.')),
-      );
-      return;
-    }
-
-    // Since there are no input fields, we mock quantity and other details.
-    const mockQuantity = 1;
-    const mockCharges = 20.0;
-    final totalAmount = (currentLTP * mockQuantity) + mockCharges;
-
-    final newTransaction = StockHoldingModel(
-      stockName: instrument.name,
-      stockSymbol: instrument.symbol.replaceAll('-EQ', ''),
-      quantity: mockQuantity,
-      transactionPrice: currentLTP, // The price at the time of transaction
-      buyingTime: DateTime.now(),
-      charges: mockCharges,
-      totalAmount: totalAmount,
-      exchange: 'NSE', // Mock Exchange
-      transactionType: 'DELIVERY', // Mock Transaction Type
-    );
-
-    try {
-      // Call the UserService to append the new transaction record
-      await _userService.updateStockHolding(uid, newTransaction);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(
-                'Successfully recorded 1 share of ${newTransaction.stockSymbol} at ₹${currentLTP.toStringAsFixed(2)}.')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to save transaction: $e')),
-      );
-    }
   }
 
   // --- Widget Builders (Updated to include ltp and service) ---
@@ -437,7 +393,12 @@ class StockDetailPage extends StatelessWidget {
           // --- BUY BUTTON WITH FIREBASE LOGIC ---
           Expanded(
             child: ElevatedButton(
-              onPressed: () => _handleBuy(context, ltp), // Call the new handler
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => BuyStockPage(instrument: instrument),
+                ),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: buyColor, // Use buyColor
                 foregroundColor: Colors.white,
@@ -456,8 +417,72 @@ class StockDetailPage extends StatelessWidget {
           const SizedBox(width: 15), // Added spacer
           Expanded(
             child: ElevatedButton(
-              onPressed: () {
-                // Sell functionality would be implemented here
+              onPressed: () async {
+                // 1. Get the current user's ID
+                final uid = FirebaseAuth.instance.currentUser?.uid;
+                if (uid == null) {
+                  // Handle case where user is not logged in
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Please log in to sell stocks."),
+                      ),
+                    );
+                  }
+                  return;
+                }
+
+                // 2. Fetch the user's profile which contains their stock holdings
+                // NOTE: You'll need an instance of UserService in your StockDetailPage class
+                final userService = UserService();
+                final userProfile = await userService.readUserProfile(uid);
+
+                if (userProfile == null || userProfile.stocks.isEmpty) {
+                  // Handle case where user has no holdings
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("You do not own this stock."),
+                      ),
+                    );
+                  }
+                  return;
+                }
+
+                // 3. Find the specific stock holding that matches the current instrument
+                StockHoldingModel? holdingToSell;
+                try {
+                  final symbolToFind = instrument.symbol.replaceAll('-EQ', '');
+                  holdingToSell = userProfile.stocks.firstWhere(
+                    (holding) => holding.stockSymbol == symbolToFind,
+                  );
+                } catch (e) {
+                  // This catches the error if .firstWhere finds no matching element
+                  holdingToSell = null;
+                }
+
+                // 4. Navigate to the SellStockPage if the holding was found
+                if (context.mounted) {
+                  if (holdingToSell != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SellStockPage(
+                          instrument: instrument,
+                          userHolding:
+                              holdingToSell!, // Pass the found holding here
+                        ),
+                      ),
+                    );
+                  } else {
+                    // Handle case where the user owns other stocks, but not this one
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("You do not own this stock."),
+                      ),
+                    );
+                  }
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: sellColor, // Use sellColor
