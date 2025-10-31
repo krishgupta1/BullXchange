@@ -7,6 +7,7 @@ import 'package:bullxchange/features/stock_market/screens/watchlist_page.dart';
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -22,6 +23,37 @@ class _StockPageState extends State<StockPage>
   @override
   bool get wantKeepAlive => true;
   int _selectedActionIndex = 0;
+  String? _userName;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserName();
+  }
+
+  Future<void> _loadUserName() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null &&
+          user.displayName != null &&
+          user.displayName!.trim().isNotEmpty) {
+        setState(() => _userName = user.displayName);
+        return;
+      }
+
+      final uid = user?.uid;
+      if (uid != null) {
+        final profile = await UserService().readUserProfile(uid);
+        if (profile != null && profile.name.trim().isNotEmpty) {
+          if (!mounted) return;
+          setState(() => _userName = profile.name);
+          return;
+        }
+      }
+    } catch (_) {
+      // Ignore errors; we'll fall back to generic label
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -97,16 +129,16 @@ class _StockPageState extends State<StockPage>
           child: Icon(Icons.person, color: Color(0xFF7A4DFF), size: 28),
         ),
         const SizedBox(width: 12),
-        const Column(
+        Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Hi, User!",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              'Hi, ${_userName ?? 'User'}!',
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 2),
-            Text(
-              "Welcome to Bullxchange",
+            const SizedBox(height: 2),
+            const Text(
+              'Welcome to BullXchange',
               style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
           ],

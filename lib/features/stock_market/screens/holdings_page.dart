@@ -419,6 +419,7 @@ class _PortfolioStockItemState extends State<PortfolioStockItem> {
   @override
   Widget build(BuildContext context) {
     final h = widget.holding;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       child: Row(
@@ -429,6 +430,7 @@ class _PortfolioStockItemState extends State<PortfolioStockItem> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // --- THIS IS THE RESOLVED CODE ---
                 Text(
                   h.stockSymbol,
                   style: const TextStyle(
@@ -436,6 +438,7 @@ class _PortfolioStockItemState extends State<PortfolioStockItem> {
                     fontSize: 16,
                   ),
                 ),
+                // --- END OF RESOLVED CODE ---
                 Text(
                   "${h.quantity} shares",
                   style: TextStyle(color: Colors.grey[600], fontSize: 12),

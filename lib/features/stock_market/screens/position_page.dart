@@ -199,14 +199,15 @@ Widget _buildStockItem({required Instrument instrument, required int shares}) {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                instrument.symbol,
+                instrument.symbol, // restored: show symbol in bold
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                 ),
+                overflow: TextOverflow.ellipsis,
               ),
               Text(
-                "$shares Qty",
+                instrument.name, // restored: faded short name below symbol
                 style: TextStyle(color: Colors.grey[600], fontSize: 12),
               ),
             ],
