@@ -3,7 +3,7 @@ import 'package:bullxchange/models/stock_holding_model.dart';
 import 'package:bullxchange/models/user_profile_data_model.dart';
 import 'package:bullxchange/models/transaction_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
+import 'package:bullxchange/utils/logger.dart';
 
 class UserService {
   final CollectionReference usersRef = FirebaseFirestore.instance.collection(
@@ -29,9 +29,9 @@ class UserService {
     );
     try {
       await usersRef.doc(uid).set(profile.toJson());
-      if (kDebugMode) print('User profile created for UID: $uid');
+      AppLog.i('User profile created for UID: $uid');
     } catch (e) {
-      if (kDebugMode) print('Error creating user profile: $e');
+      AppLog.e('Error creating user profile: $e');
       rethrow;
     }
   }
@@ -117,9 +117,9 @@ class UserService {
         firestoreTransaction.set(newTransactionRef, transaction.toJson());
       });
 
-      if (kDebugMode) print("Trade executed successfully!");
+      AppLog.i("Trade executed successfully!");
     } catch (e) {
-      if (kDebugMode) print("Failed to execute trade: $e");
+      AppLog.e("Failed to execute trade: $e");
       rethrow; // This is now valid because it's inside a 'catch' block
     }
   }

@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:bullxchange/utils/logger.dart';
 import '../constants/api_constants.dart';
 
 class AngelOneApiService {
@@ -45,18 +46,18 @@ class AngelOneApiService {
           decoded["data"]?["fetched"] is List) {
         return decoded["data"]["fetched"] as List<dynamic>;
       } else {
-        print("API Error: ${decoded['message'] ?? 'Unknown error'}");
+        AppLog.e("API Error: ${decoded['message'] ?? 'Unknown error'}");
         return [];
       }
     } on DioException catch (e) {
       // 5. Dio has a dedicated exception type for better error handling.
-      print("Error in AngelOneApiService (Dio): ${e.message}");
+      AppLog.e("Error in AngelOneApiService (Dio): ${e.message}");
       if (e.response != null) {
-        print("Dio Response Error Data: ${e.response?.data}");
+        AppLog.d("Dio Response Error Data: ${e.response?.data}");
       }
       return [];
     } catch (e) {
-      print("An unexpected error occurred: $e");
+      AppLog.e("An unexpected error occurred: $e");
       return [];
     }
   }

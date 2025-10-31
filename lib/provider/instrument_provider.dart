@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:bullxchange/models/stock_holding_model.dart'; // Import for the new method
 import 'package:flutter/foundation.dart';
+import 'package:bullxchange/utils/logger.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import '../api/angel_one_api_service.dart';
 import '../models/instrument_model.dart';
@@ -103,7 +104,7 @@ class InstrumentProvider with ChangeNotifier {
 
       await _startPeriodicFetches();
     } catch (e, stackTrace) {
-      print("❌ ERROR in _initialize: $e\n$stackTrace");
+      AppLog.e("❌ ERROR in _initialize: $e\n$stackTrace");
       _errorMessage = "Failed to load initial data.";
     } finally {
       _isLoading = false;
@@ -144,7 +145,7 @@ class InstrumentProvider with ChangeNotifier {
         .toList();
 
     if (instrumentsToFetch.isNotEmpty) {
-      print("🚀 Fetching live data specifically for user holdings...");
+      AppLog.i("🚀 Fetching live data specifically for user holdings...");
       await _updateInstruments(instrumentsToFetch);
     }
   }
@@ -169,7 +170,7 @@ class InstrumentProvider with ChangeNotifier {
 
     // DEBUG: Log requested tokensByExchange for diagnosis
     try {
-      print(
+      AppLog.d(
         '🔎 _updateInstruments: requested tokensByExchange = $tokensByExchange',
       );
     } catch (_) {}
@@ -182,7 +183,7 @@ class InstrumentProvider with ChangeNotifier {
           for (var i = 0; i < sample.length; i++) {
             final item = sample[i];
             if (item is Map<String, dynamic>) {
-              print('  sample[$i] keys = ${item.keys.toList()}');
+              AppLog.d('  sample[$i] keys = ${item.keys.toList()}');
               // attempt to log common token fields if present
               for (var k in [
                 'symbolToken',
@@ -190,15 +191,17 @@ class InstrumentProvider with ChangeNotifier {
                 'symbol_token',
                 'token',
               ]) {
-                if (item.containsKey(k)) print('    $k = ${item[k]}');
+                if (item.containsKey(k)) {
+                  AppLog.d('    $k = ${item[k]}');
+                }
               }
             } else {
-              print('  sample[$i] is ${item.runtimeType}');
+              AppLog.d('  sample[$i] is ${item.runtimeType}');
             }
           }
         }
       } catch (e) {
-        print('Error while logging liveDataList sample: $e');
+        AppLog.w('Error while logging liveDataList sample: $e');
       }
 
       // Build a map keyed by the instrument token. The API may return different
