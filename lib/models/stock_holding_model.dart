@@ -6,7 +6,7 @@ class StockHoldingModel {
   final String stockSymbol; // SYMBOL
   final int quantity; // QUNTATITY (Transaction Quantity)
   final double transactionPrice; // BUYING PRICE
-  
+
   // --- Detailed Transaction Fields ---
   final DateTime buyingTime; // CURR BUYING TIME
   final double charges; // CHARGES
@@ -27,16 +27,16 @@ class StockHoldingModel {
   });
 
   Map<String, dynamic> toJson() => {
-        'stockName': stockName,
-        'stockSymbol': stockSymbol,
-        'quantity': quantity,
-        'transactionPrice': transactionPrice, 
-        'buyingTime': buyingTime.toIso8601String(),
-        'charges': charges,
-        'totalAmount': totalAmount,
-        'exchange': exchange,
-        'transactionType': transactionType,
-      };
+    'stockName': stockName,
+    'stockSymbol': stockSymbol,
+    'quantity': quantity,
+    'transactionPrice': transactionPrice,
+    'buyingTime': buyingTime.toIso8601String(),
+    'charges': charges,
+    'totalAmount': totalAmount,
+    'exchange': exchange,
+    'transactionType': transactionType,
+  };
 
   factory StockHoldingModel.fromJson(Map<String, dynamic> json) {
     return StockHoldingModel(

@@ -1,7 +1,6 @@
-// lib/providers/instrument_provider.dart
-
 import 'dart:async';
 import 'dart:convert';
+import 'package:bullxchange/models/stock_holding_model.dart'; // Import for the new method
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import '../api/angel_one_api_service.dart';
@@ -128,6 +127,28 @@ class InstrumentProvider with ChangeNotifier {
     // Call 2: For stocks (a safe number to avoid API limits)
     await _updateInstruments(allNSEStocks.take(50).toList());
   }
+
+  //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  // ✨ NEW METHOD ADDED FOR HOLDINGS ✨
+  /// Takes a list of user holdings and fetches live data specifically for them.
+  Future<void> fetchLiveDataForHoldings(
+    List<StockHoldingModel> holdings,
+  ) async {
+    // Find the full Instrument objects that match the symbols in the user's holdings.
+    final symbolsToFetch = holdings.map((h) => h.stockSymbol).toSet();
+
+    final instrumentsToFetch = _allInstruments
+        .where(
+          (inst) => symbolsToFetch.contains(inst.symbol.replaceAll('-EQ', '')),
+        )
+        .toList();
+
+    if (instrumentsToFetch.isNotEmpty) {
+      print("🚀 Fetching live data specifically for user holdings...");
+      await _updateInstruments(instrumentsToFetch);
+    }
+  }
+  //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
   Future<void> _updateInstruments(List<Instrument?> instruments) async {
     final uniqueInstruments = instruments

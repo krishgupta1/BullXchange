@@ -72,7 +72,7 @@ class _StockPageState extends State<StockPage>
                   index: _selectedActionIndex,
                   children: [
                     ExplorePage(),
-                    const HoldingsPage(),
+                    HoldingsPage(),
                     const PositionPage(),
                     const OrderPage(),
                     const WatchlistPage(),
@@ -112,10 +112,16 @@ class _StockPageState extends State<StockPage>
           ],
         ),
         const Spacer(),
-        IconButton(onPressed: () {
-          FirebaseAuth.instance.signOut();
-          Navigator.push(context,MaterialPageRoute(builder: (context)=>OnboardingPage()));
-        }, icon: const Icon(Icons.more_horiz)),
+        IconButton(
+          onPressed: () {
+            FirebaseAuth.instance.signOut();
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => OnboardingPage()),
+            );
+          },
+          icon: const Icon(Icons.more_horiz),
+        ),
       ],
     );
   }

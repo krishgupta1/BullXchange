@@ -4,17 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-// --- MAKE SURE THESE IMPORTS ARE CORRECT FOR YOUR PROJECT ---
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/models/stock_holding_model.dart';
+import 'package:bullxchange/models/transaction_model.dart';
 import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
-// -----------------------------------------------------------
 
 class SellStockPage extends StatefulWidget {
   final Instrument instrument;
-  final StockHoldingModel
-  userHolding; // We need the user's current holding data
-
+  final StockHoldingModel userHolding;
   const SellStockPage({
     super.key,
     required this.instrument,
@@ -26,7 +23,6 @@ class SellStockPage extends StatefulWidget {
 }
 
 class _SellStockPageState extends State<SellStockPage> {
-  // State variables
   final _quantityController = TextEditingController();
   String _selectedProductType = 'Delivery';
   String _selectedExchange = 'NSE';
@@ -34,15 +30,11 @@ class _SellStockPageState extends State<SellStockPage> {
   double _totalAmount = 0.0;
   int _quantity = 0;
   late double _ltp;
-  late int _ownedQuantity; // To validate against
-  String? _errorText; // For quantity validation
-
-  // Services & State Flags
+  late int _ownedQuantity;
+  String? _errorText;
   final UserService _userService = UserService();
   bool _isPlacingOrder = false;
-
-  // App's color scheme
-  static const Color primaryBlue = Color(0xFF3500D4); // Sell color
+  static const Color primaryBlue = Color(0xFF3500D4);
   static const Color darkTextColor = Color(0xFF03314B);
   static const Color lightGreyBg = Color(0xFFF5F5F5);
   static const Color lightBorderColor = Color(0xFFE0E0E0);
@@ -51,39 +43,26 @@ class _SellStockPageState extends State<SellStockPage> {
   void initState() {
     super.initState();
     _ltp = (widget.instrument.liveData['ltp'] as num?)?.toDouble() ?? 0.0;
-
-    // Pre-fill data from the user's existing holding
     _ownedQuantity = widget.userHolding.quantity;
     _selectedExchange = widget.userHolding.exchange;
     _selectedProductType = widget.userHolding.transactionType == 'DELIVERY'
         ? 'Delivery'
         : 'Intraday';
-
     _generateRandomCharges();
     _quantityController.addListener(_calculateTotalAndValidate);
   }
 
   void _generateRandomCharges() {
-    _charges = 5.0 + Random().nextDouble() * 20.0; // Mock selling charges
+    _charges = 5.0 + Random().nextDouble() * 20.0;
   }
 
   void _calculateTotalAndValidate() {
     setState(() {
       _quantity = int.tryParse(_quantityController.text) ?? 0;
-
-      // Validation Logic
-      if (_quantity > _ownedQuantity) {
-        _errorText = 'Quantity cannot exceed holdings ($_ownedQuantity)';
-      } else {
-        _errorText = null;
-      }
-
-      if (_quantity > 0) {
-        // For selling, the total amount is what the user RECEIVES
-        _totalAmount = (_quantity * _ltp) - _charges;
-      } else {
-        _totalAmount = 0.0;
-      }
+      _errorText = (_quantity > _ownedQuantity)
+          ? 'Quantity cannot exceed holdings ($_ownedQuantity)'
+          : null;
+      _totalAmount = (_quantity > 0) ? (_quantity * _ltp) - _charges : 0.0;
     });
   }
 
@@ -107,27 +86,44 @@ class _SellStockPageState extends State<SellStockPage> {
       return;
     }
 
-    // CRITICAL: Create the transaction with a NEGATIVE quantity for selling
-    final newTransaction = StockHoldingModel(
+    final now = DateTime.now();
+    final symbol = widget.instrument.symbol.replaceAll('-EQ', '');
+
+    // Model for updating HOLDINGS with a NEGATIVE quantity
+    final holdingUpdate = StockHoldingModel(
       stockName: widget.instrument.name,
-      stockSymbol: widget.instrument.symbol.replaceAll('-EQ', ''),
-      quantity: -_quantity, // The quantity is negative
+      stockSymbol: symbol,
+      quantity: -_quantity, // Negative quantity for selling
       transactionPrice: _ltp,
-      buyingTime: DateTime.now(),
+      buyingTime: now,
       charges: _charges,
-      totalAmount: -_totalAmount, // Negative amount as it's a credit
+      totalAmount: -_totalAmount, // Negative amount
       exchange: _selectedExchange,
       transactionType: _selectedProductType.toUpperCase(),
     );
 
+    // Model for logging the individual TRANSACTION
+    final newTransaction = TransactionModel(
+      userId: uid,
+      symbol: symbol,
+      companyName: widget.instrument.name,
+      transactionType: 'SELL',
+      quantity: _quantity, // Positive quantity for the log
+      price: _ltp,
+      charges: _charges,
+      totalAmount: _totalAmount,
+      executedAt: now,
+    );
+
     try {
-      await _userService.updateCumulativeStockHolding(uid, newTransaction);
+      // Execute both Firestore writes
+      await _userService.addTransaction(newTransaction);
+      await _userService.updateCumulativeStockHolding(uid, holdingUpdate);
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: Colors.green,
-          content: Text(
-            'Successfully sold $_quantity shares of ${newTransaction.stockSymbol}.',
-          ),
+          content: Text('Successfully sold $_quantity shares of $symbol.'),
         ),
       );
       if (mounted) Navigator.pop(context);
@@ -136,9 +132,7 @@ class _SellStockPageState extends State<SellStockPage> {
         context,
       ).showSnackBar(SnackBar(content: Text('Failed to save transaction: $e')));
     } finally {
-      if (mounted) {
-        setState(() => _isPlacingOrder = false);
-      }
+      if (mounted) setState(() => _isPlacingOrder = false);
     }
   }
 
@@ -149,7 +143,6 @@ class _SellStockPageState extends State<SellStockPage> {
       symbol: '₹',
       decimalDigits: 2,
     );
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -275,7 +268,7 @@ class _SellStockPageState extends State<SellStockPage> {
           ),
           decoration: InputDecoration(
             labelText: 'Quantity',
-            errorText: _errorText, // Display validation error here
+            errorText: _errorText,
             labelStyle: const TextStyle(color: Colors.grey, fontSize: 16),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -310,7 +303,7 @@ class _SellStockPageState extends State<SellStockPage> {
           title: 'Product',
           options: ['Delivery', 'Intraday'],
           selectedValue: _selectedProductType,
-          onChanged: (value) {}, // Disabled
+          onChanged: (value) {},
           isEnabled: false,
         ),
         const SizedBox(height: 20),
@@ -318,7 +311,7 @@ class _SellStockPageState extends State<SellStockPage> {
           title: 'Exchange',
           options: ['NSE', 'BSE'],
           selectedValue: _selectedExchange,
-          onChanged: (value) {}, // Disabled
+          onChanged: (value) {},
           isEnabled: false,
         ),
       ],
@@ -355,9 +348,7 @@ class _SellStockPageState extends State<SellStockPage> {
               children: options.map((option) {
                 bool isSelected = selectedValue == option;
                 return GestureDetector(
-                  onTap: () {
-                    if (isEnabled) onChanged(option);
-                  },
+                  onTap: () => isEnabled ? onChanged(option) : null,
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     padding: const EdgeInsets.symmetric(horizontal: 20),

@@ -21,13 +21,12 @@ class _SignupPageState extends State<SignupPage> {
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   // 1. Add Mobile Number Controller
-  final _mobileController = TextEditingController(); 
+  final _mobileController = TextEditingController();
   final _passwordController = TextEditingController();
-  
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   // Use the updated model-based UserService
-  final UserService _usersService = UserService(); 
+  final UserService _usersService = UserService();
 
   bool _obscurePassword = true;
   bool _agreedToTerms = false;
@@ -42,7 +41,7 @@ class _SignupPageState extends State<SignupPage> {
     _fullNameController.dispose();
     _emailController.dispose();
     // 2. Dispose Mobile Number Controller
-    _mobileController.dispose(); 
+    _mobileController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -104,17 +103,19 @@ class _SignupPageState extends State<SignupPage> {
     final mobileNo = _mobileController.text.trim(); // 3a. Get mobile number
     final password = _passwordController.text.trim();
 
-    if (fullName.isEmpty || email.isEmpty || mobileNo.isEmpty || password.isEmpty) {
+    if (fullName.isEmpty ||
+        email.isEmpty ||
+        mobileNo.isEmpty ||
+        password.isEmpty) {
       _showErrorDialog('Please fill all fields, including your mobile number.');
       return;
     }
-    
+
     // Simple mobile number validation (10 digits)
     if (mobileNo.length != 10 || int.tryParse(mobileNo) == null) {
       _showErrorDialog('Please enter a valid 10-digit mobile number.');
       return;
     }
-
 
     if (!_agreedToTerms) {
       _showErrorDialog('You must agree to the Terms of Service.');
@@ -144,11 +145,10 @@ class _SignupPageState extends State<SignupPage> {
 
       final user = credential.user;
       if (user != null) {
-        
         // Call the model-based addUserProfile method
         await _usersService.addUserProfile(
           uid: user.uid,
-          name: fullName, 
+          name: fullName,
           emailId: email,
           mobileNo: mobileNo, // 3b. Pass actual mobile number
         );
@@ -266,7 +266,7 @@ class _SignupPageState extends State<SignupPage> {
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 16),
-              
+
               // 4. Mobile Number Text Field
               _buildTextFieldWithLabel(
                 label: 'Mobile Number',
@@ -275,7 +275,6 @@ class _SignupPageState extends State<SignupPage> {
                 keyboardType: TextInputType.phone,
               ),
               const SizedBox(height: 16),
-
 
               _buildTextFieldWithLabel(
                 label: 'Password',

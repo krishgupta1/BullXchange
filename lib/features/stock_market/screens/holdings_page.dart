@@ -1,326 +1,479 @@
-import 'dart:math';
-
+import 'package:bullxchange/models/stock_holding_model.dart';
+import 'package:bullxchange/services/firebase/user_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:provider/provider.dart';
 
-// --- Portfolio Data Structure ---
-// This now holds the core information for your portfolio.
-// In a real app, this would be fetched from a user's account.
-final List<Map<String, dynamic>> userPortfolioData = [
-  {'token': '2869', 'shares': 10, 'investedPrice': 3050.50}, // RADICO-EQ
-  {'token': '1570', 'shares': 5, 'investedPrice': 1410.75}, // JINDALPHOT-EQ
-  {'token': '11173', 'shares': 15, 'investedPrice': 565.20}, // TVSELECT-EQ
-  {'token': '14977', 'shares': 20, 'investedPrice': 85.10}, // SUMIT-EQ
-];
-
-class HoldingsPage extends StatelessWidget {
+/// Holdings page with shimmer and live price updates.
+class HoldingsPage extends StatefulWidget {
   const HoldingsPage({super.key});
 
   @override
+  State<HoldingsPage> createState() => _HoldingsPageState();
+}
+
+class _HoldingsPageState extends State<HoldingsPage> {
+  final UserService _userService = UserService();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  Future<List<StockHoldingModel>?>? _holdingsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    final uid = _auth.currentUser?.uid;
+    if (uid != null) {
+      _holdingsFuture = _userService.readUserProfile(uid).then((profile) {
+        final holdings = profile?.stocks;
+        // This is now called only ONCE after the user's holdings are successfully fetched.
+        if (mounted && holdings != null && holdings.isNotEmpty) {
+          Provider.of<InstrumentProvider>(
+            context,
+            listen: false,
+          ).fetchLiveDataForHoldings(holdings);
+        }
+        return holdings;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Use a Consumer to get live data from the provider
-    return Consumer<InstrumentProvider>(
-      builder: (context, provider, child) {
-        // --- Data Processing ---
-        final portfolioTokens = userPortfolioData
-            .map((p) => p['token'])
-            .toSet();
-        final holdingsWithLiveData = provider.allNSEStocks
-            .where((stock) => portfolioTokens.contains(stock.token))
-            .toList();
+    if (_auth.currentUser?.uid == null) {
+      return const Center(child: Text("Please log in to see your holdings."));
+    }
 
-        double currentValue = 0;
-        double investedValue = 0;
-        double dayReturns = 0;
-
-        for (var stock in holdingsWithLiveData) {
-          final portfolioInfo = userPortfolioData.firstWhere(
-            (p) => p['token'] == stock.token,
+    return FutureBuilder<List<StockHoldingModel>?>(
+      future: _holdingsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(
+            child: Text("Error fetching portfolio: ${snapshot.error}"),
           );
-          final shares = portfolioInfo['shares'] as int;
-          final investedPrice = portfolioInfo['investedPrice'] as double;
-          final ltp = (stock.liveData['ltp'] as num?)?.toDouble() ?? 0.0;
-          final netChange =
-              (stock.liveData['netChange'] as num?)?.toDouble() ?? 0.0;
-
-          currentValue += ltp * shares;
-          investedValue += investedPrice * shares;
-          dayReturns += netChange * shares;
         }
 
-        final totalReturns = currentValue - investedValue;
+        final userHoldings = snapshot.data;
+        final isLoading = snapshot.connectionState == ConnectionState.waiting;
 
-        // ✨ FIX: Use a Column to prevent nested scrolling errors.
-        return Column(
-          children: [
-            // --- 1. Dynamic Summary Card ---
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: _buildSummaryCard(
-                currentValue,
-                totalReturns,
-                investedValue,
-                dayReturns,
+        // The frequent fetch call has been removed from here.
+
+        return SingleChildScrollView(
+          child: Column(
+            children: [
+              PortfolioSummaryCard(
+                holdings: userHoldings,
+                isLoading: isLoading,
               ),
-            ),
-            const SizedBox(height: 24),
-
-            // --- 2. Dynamic Holdings List ---
-            ...holdingsWithLiveData.map((instrument) {
-              final portfolioInfo = userPortfolioData.firstWhere(
-                (p) => p['token'] == instrument.token,
-              );
-              return _buildStockItem(
-                instrument: instrument,
-                shares: portfolioInfo['shares'] as int,
-              );
-            }),
-          ],
+              const SizedBox(height: 16),
+              if (isLoading)
+                const HoldingsListSkeleton()
+              else if (userHoldings == null || userHoldings.isEmpty)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.only(top: 48.0),
+                    child: Text("Your portfolio is empty."),
+                  ),
+                )
+              else
+                ...userHoldings.map(
+                  (holding) => PortfolioStockItem(
+                    key: ValueKey(holding.stockSymbol),
+                    holding: holding,
+                  ),
+                ),
+            ],
+          ),
         );
       },
     );
   }
 }
 
-// --- Reusable Widgets ---
+/// Shimmer skeleton while loading holdings.
+class HoldingsListSkeleton extends StatelessWidget {
+  const HoldingsListSkeleton({super.key});
 
-Widget _buildSummaryCard(
-  double currentValue,
-  double totalReturns,
-  double investedValue,
-  double dayReturns,
-) {
-  final double totalReturnPercent = investedValue > 0
-      ? (totalReturns / investedValue) * 100
-      : 0;
-
-  return Container(
-    padding: const EdgeInsets.all(20),
-    height: 170,
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(20),
-      gradient: const LinearGradient(
-        colors: [Color(0xFF6F4CFF), Color(0xFFDB1B57)],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: Column(
+        children: List.generate(4, (_) => const SkeletonStockItem()),
       ),
-    ),
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildSummaryColumn("Current", currentValue),
-            _buildSummaryColumn(
-              "Total returns",
-              totalReturns,
-              percent: totalReturnPercent,
-              isReturn: true,
-            ),
-          ],
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildSummaryColumn("Invested", investedValue),
-            _buildSummaryColumn("1D returns", dayReturns, isReturn: true),
-          ],
-        ),
-      ],
-    ),
-  );
+    );
+  }
 }
 
-Widget _buildSummaryColumn(
-  String title,
-  double value, {
-  double? percent,
-  bool isReturn = false,
-}) {
-  final sign = value > 0 ? "+" : "";
-  final color = value > 0 ? Colors.greenAccent : Colors.redAccent;
+class SkeletonStockItem extends StatelessWidget {
+  const SkeletonStockItem({super.key});
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        title,
-        style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14),
-      ),
-      const SizedBox(height: 6),
-      Row(
+  @override
+  Widget build(BuildContext context) {
+    Color baseColor = Colors.white;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      child: Row(
         children: [
-          Text(
-            isReturn
-                ? "$sign₹${value.toStringAsFixed(2)}"
-                : "₹${value.toStringAsFixed(2)}",
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+          CircleAvatar(radius: 20, backgroundColor: baseColor),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(width: 80, height: 16, color: baseColor),
+                const SizedBox(height: 4),
+                Container(width: 60, height: 12, color: baseColor),
+              ],
             ),
           ),
-          if (isReturn && percent != null) ...[
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.9),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                "$sign${percent.toStringAsFixed(2)}%",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
+          Container(width: 60, height: 30, color: baseColor),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Container(width: 70, height: 16, color: baseColor),
+              const SizedBox(height: 4),
+              Container(width: 90, height: 12, color: baseColor),
+            ],
+          ),
         ],
       ),
-    ],
-  );
+    );
+  }
 }
 
-Widget _buildStockItem({required Instrument instrument, required int shares}) {
-  final ltp = (instrument.liveData['ltp'] as num?)?.toDouble() ?? 0.0;
-  final netChange =
-      (instrument.liveData['netChange'] as num?)?.toDouble() ?? 0.0;
-  final changeColor = netChange >= 0 ? Colors.green : Colors.red;
+/// Portfolio summary card at top.
+class PortfolioSummaryCard extends StatelessWidget {
+  final List<StockHoldingModel>? holdings;
+  final bool isLoading;
 
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-    child: Row(
-      children: [
-        _buildLogoContainer(instrument.name),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  const PortfolioSummaryCard({
+    super.key,
+    this.holdings,
+    required this.isLoading,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading || holdings == null) {
+      return Shimmer.fromColors(
+        baseColor: Colors.grey[300]!,
+        highlightColor: Colors.grey[100]!,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Container(
+            height: 170,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              color: Colors.white,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Consumer<InstrumentProvider>(
+      builder: (context, provider, child) {
+        double currentValue = 0,
+            investedValue = 0,
+            dayReturns = 0,
+            startOfDayValue = 0;
+        final holdingSymbols = holdings!.map((h) => h.stockSymbol).toSet();
+        final liveInstruments = provider.allNSEStocks
+            .where(
+              (stock) =>
+                  holdingSymbols.contains(stock.symbol.replaceAll('-EQ', '')),
+            )
+            .toList();
+
+        for (var holding in holdings!) {
+          Instrument? liveInstrument;
+          try {
+            liveInstrument = liveInstruments.firstWhere(
+              (inst) =>
+                  inst.symbol.replaceAll('-EQ', '') == holding.stockSymbol,
+            );
+          } catch (e) {
+            liveInstrument = null;
+          }
+
+          final ltp =
+              (liveInstrument?.liveData['ltp'] as num?)?.toDouble() ??
+              holding.transactionPrice;
+          final netChange =
+              (liveInstrument?.liveData['netChange'] as num?)?.toDouble() ??
+              0.0;
+          final previousClose = ltp - netChange;
+
+          currentValue += ltp * holding.quantity;
+          investedValue += holding.transactionPrice * holding.quantity;
+          dayReturns += netChange * holding.quantity;
+          startOfDayValue += previousClose * holding.quantity;
+        }
+
+        final totalReturns = currentValue - investedValue;
+        final totalReturnPercent = investedValue > 0
+            ? (totalReturns / investedValue) * 100
+            : 0;
+        final dayReturnPercent = startOfDayValue > 0
+            ? (dayReturns / startOfDayValue) * 100
+            : 0.0;
+
+        return _buildSummaryCardUI(
+          currentValue,
+          totalReturns,
+          totalReturnPercent.toDouble(),
+          investedValue,
+          dayReturns,
+          dayReturnPercent,
+        );
+      },
+    );
+  }
+
+  Widget _buildSummaryCardUI(
+    double cVal,
+    double tRet,
+    double tRetPct,
+    double iVal,
+    double dRet,
+    double dRetPct,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      height: 170,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF6F4CFF), Color(0xFFDB1B57)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                instrument.symbol,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              Text(
-                "$shares shares",
-                style: TextStyle(color: Colors.grey[600], fontSize: 12),
+              _buildSummaryColumn("Current", cVal),
+              _buildSummaryColumn(
+                "Total returns",
+                tRet,
+                percent: tRetPct,
+                isReturn: true,
               ),
             ],
           ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildSummaryColumn("Invested", iVal),
+              _buildSummaryColumn(
+                "1D returns",
+                dRet,
+                percent: dRetPct,
+                isReturn: true,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryColumn(
+    String title,
+    double value, {
+    double? percent,
+    bool isReturn = false,
+  }) {
+    final sign = value >= 0 ? "+" : "";
+    final color = value >= 0 ? Colors.greenAccent : Colors.redAccent;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14),
         ),
-        // Chart and Price info are now driven by live data
-        SizedBox(
-          width: 60,
-          height: 30,
-          child: _buildMiniChart(instrument, changeColor),
-        ),
-        const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
+        const SizedBox(height: 6),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
-              "₹${(ltp * shares).toStringAsFixed(2)}",
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              isReturn
+                  ? "$sign₹${value.toStringAsFixed(2)}"
+                  : "₹${value.toStringAsFixed(2)}",
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-            Text(
-              "(${netChange.toStringAsFixed(2)})",
-              style: TextStyle(color: changeColor, fontSize: 12),
-            ),
+            if (isReturn && percent != null) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  "$sign${percent.toStringAsFixed(2)}%",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ],
-    ),
-  );
-}
-
-Widget _buildLogoContainer(String name) {
-  if (name.toLowerCase().contains('google')) {
-    return SvgPicture.network(
-      'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg',
-      width: 40,
-      height: 40,
     );
   }
-  if (name.toLowerCase().contains('microsoft')) {
-    return Image.network(
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Microsoft_logo.svg/240px-Microsoft_logo.svg.png',
-      width: 40,
-      height: 40,
+}
+
+/// Each stock row item — only text updates, widget stays static.
+class PortfolioStockItem extends StatefulWidget {
+  final StockHoldingModel holding;
+  const PortfolioStockItem({super.key, required this.holding});
+
+  @override
+  State<PortfolioStockItem> createState() => _PortfolioStockItemState();
+}
+
+class _PortfolioStockItemState extends State<PortfolioStockItem> {
+  final ValueNotifier<double> _ltpNotifier = ValueNotifier(0.0);
+  final ValueNotifier<double> _plNotifier = ValueNotifier(0.0);
+  final ValueNotifier<double> _percentNotifier = ValueNotifier(0.0);
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final provider = Provider.of<InstrumentProvider>(
+          context,
+          listen: false,
+        );
+        _listenToLiveData(provider);
+      }
+    });
+  }
+
+  void _listenToLiveData(InstrumentProvider provider) {
+    provider.addListener(() {
+      if (!mounted) return;
+      try {
+        final inst = provider.allNSEStocks.firstWhere(
+          (i) => i.symbol.replaceAll('-EQ', '') == widget.holding.stockSymbol,
+        );
+        final ltp =
+            (inst.liveData['ltp'] as num?)?.toDouble() ??
+            widget.holding.transactionPrice;
+        final avgPrice = widget.holding.transactionPrice;
+        final q = widget.holding.quantity;
+        final pl = (ltp - avgPrice) * q;
+        final pct = avgPrice > 0 ? ((ltp - avgPrice) / avgPrice) * 100 : 0.0;
+
+        _ltpNotifier.value = ltp;
+        _plNotifier.value = pl;
+        _percentNotifier.value = pct;
+      } catch (_) {}
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final h = widget.holding;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      child: Row(
+        children: [
+          _buildLogoContainer(h.stockName),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  h.stockSymbol,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                Text(
+                  "${h.quantity} shares",
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              ValueListenableBuilder<double>(
+                valueListenable: _ltpNotifier,
+                builder: (_, val, __) => Text(
+                  "₹${(val * h.quantity).toStringAsFixed(2)}",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 2),
+              ValueListenableBuilder<double>(
+                valueListenable: _plNotifier,
+                builder: (_, plVal, __) => ValueListenableBuilder<double>(
+                  valueListenable: _percentNotifier,
+                  builder: (_, pctVal, __) {
+                    final sign = plVal >= 0 ? "+" : "";
+                    final color = plVal >= 0 ? Colors.green : Colors.red;
+                    return Text(
+                      "$sign₹${plVal.toStringAsFixed(2)} (${pctVal.toStringAsFixed(2)}%)",
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
-  final letter = name.isNotEmpty ? name[0].toUpperCase() : '?';
-  final color = Colors.primaries[name.hashCode % Colors.primaries.length];
-  return Container(
-    width: 40,
-    height: 40,
-    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-    child: Center(
-      child: Text(
-        letter,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
+  Widget _buildLogoContainer(String name) {
+    final letter = name.isNotEmpty ? name[0].toUpperCase() : "?";
+    final color = Colors.primaries[name.hashCode % Colors.primaries.length];
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      child: Center(
+        child: Text(
+          letter,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
-    ),
-  );
-}
-
-Widget _buildMiniChart(Instrument instrument, Color color) {
-  final ltp = (instrument.liveData['ltp'] as num?)?.toDouble() ?? 0.0;
-  final netChange =
-      (instrument.liveData['netChange'] as num?)?.toDouble() ?? 0.0;
-  if (ltp == 0.0) return Container(); // Return empty if no data
-
-  final startPrice = ltp - netChange;
-  final points = <FlSpot>[];
-  final random = Random(instrument.symbol.hashCode);
-
-  for (int i = 0; i < 15; i++) {
-    if (i == 14) {
-      points.add(FlSpot(i.toDouble(), ltp));
-    } else {
-      double progress = i / 14.0;
-      double priceAtProgress = startPrice + (netChange * progress);
-      double variance = ltp * 0.01 * (random.nextDouble() - 0.5);
-      points.add(FlSpot(i.toDouble(), priceAtProgress + variance));
-    }
+    );
   }
-
-  return LineChart(
-    LineChartData(
-      gridData: const FlGridData(show: false),
-      titlesData: const FlTitlesData(
-        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-      ),
-      borderData: FlBorderData(show: false),
-      lineBarsData: [
-        LineChartBarData(
-          spots: points,
-          isCurved: true,
-          color: color,
-          barWidth: 2,
-          isStrokeCapRound: true,
-          dotData: const FlDotData(show: false),
-          belowBarData: BarAreaData(show: false),
-        ),
-      ],
-    ),
-  );
 }

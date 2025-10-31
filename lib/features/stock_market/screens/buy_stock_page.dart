@@ -1,14 +1,13 @@
 import 'dart:math';
-import 'package:bullxchange/services/firebase/user_service.dart'; // Ensure this path is correct
+import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-// --- MAKE SURE THESE IMPORTS ARE CORRECT FOR YOUR PROJECT ---
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/models/stock_holding_model.dart';
+import 'package:bullxchange/models/transaction_model.dart';
 import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
-// -----------------------------------------------------------
 
 class BuyStockPage extends StatefulWidget {
   final Instrument instrument;
@@ -19,7 +18,6 @@ class BuyStockPage extends StatefulWidget {
 }
 
 class _BuyStockPageState extends State<BuyStockPage> {
-  // State variables
   final _quantityController = TextEditingController();
   String _selectedProductType = 'Delivery';
   String _selectedExchange = 'NSE';
@@ -27,12 +25,8 @@ class _BuyStockPageState extends State<BuyStockPage> {
   double _totalAmount = 0.0;
   int _quantity = 0;
   late double _ltp;
-
-  // Services & State Flags
   final UserService _userService = UserService();
   bool _isPlacingOrder = false;
-
-  // App's color scheme
   static const Color primaryPink = Color(0xFFF61C7A);
   static const Color darkTextColor = Color(0xFF03314B);
   static const Color lightGreyBg = Color(0xFFF5F5F5);
@@ -53,11 +47,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
   void _calculateTotal() {
     setState(() {
       _quantity = int.tryParse(_quantityController.text) ?? 0;
-      if (_quantity > 0) {
-        _totalAmount = (_quantity * _ltp) + _charges;
-      } else {
-        _totalAmount = 0.0;
-      }
+      _totalAmount = (_quantity > 0) ? (_quantity * _ltp) + _charges : 0.0;
     });
   }
 
@@ -81,30 +71,44 @@ class _BuyStockPageState extends State<BuyStockPage> {
       return;
     }
 
-    final newTransaction = StockHoldingModel(
+    final now = DateTime.now();
+    final symbol = widget.instrument.symbol.replaceAll('-EQ', '');
+
+    // Model for updating the user's HOLDINGS (the summary)
+    final holdingUpdate = StockHoldingModel(
       stockName: widget.instrument.name,
-      stockSymbol: widget.instrument.symbol.replaceAll('-EQ', ''),
+      stockSymbol: symbol,
       quantity: _quantity,
       transactionPrice: _ltp,
-      buyingTime: DateTime.now(),
+      buyingTime: now,
       charges: _charges,
       totalAmount: _totalAmount,
       exchange: _selectedExchange,
       transactionType: _selectedProductType.toUpperCase(),
     );
 
+    // Model for logging the individual TRANSACTION
+    final newTransaction = TransactionModel(
+      userId: uid,
+      symbol: symbol,
+      companyName: widget.instrument.name,
+      transactionType: 'BUY',
+      quantity: _quantity,
+      price: _ltp,
+      charges: _charges,
+      totalAmount: _totalAmount,
+      executedAt: now,
+    );
+
     try {
-      // --- THIS IS THE FIX ---
-      // Changed updateStockHolding to updateCumulativeStockHolding to match your UserService
-      await _userService.updateCumulativeStockHolding(uid, newTransaction);
-      // --- END OF FIX ---
+      // Execute both Firestore writes
+      await _userService.addTransaction(newTransaction);
+      await _userService.updateCumulativeStockHolding(uid, holdingUpdate);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: Colors.green,
-          content: Text(
-            'Successfully bought $_quantity shares of ${newTransaction.stockSymbol}.',
-          ),
+          content: Text('Successfully bought $_quantity shares of $symbol.'),
         ),
       );
       if (mounted) Navigator.pop(context);
@@ -113,9 +117,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
         context,
       ).showSnackBar(SnackBar(content: Text('Failed to save transaction: $e')));
     } finally {
-      if (mounted) {
-        setState(() => _isPlacingOrder = false);
-      }
+      if (mounted) setState(() => _isPlacingOrder = false);
     }
   }
 
@@ -126,7 +128,6 @@ class _BuyStockPageState extends State<BuyStockPage> {
       symbol: '₹',
       decimalDigits: 2,
     );
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
