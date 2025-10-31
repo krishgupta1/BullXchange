@@ -18,17 +18,21 @@ class HoldingsPage extends StatefulWidget {
 class _HoldingsPageState extends State<HoldingsPage> {
   final UserService _userService = UserService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  Future<List<StockHoldingModel>?>? _holdingsFuture;
-  bool _liveDataFetched = false; // Flag to prevent multiple fetches
+
+  // --- FIX 1: Change Future to Stream ---
+  Stream<List<StockHoldingModel>?>? _holdingsStream;
+  // bool _liveDataFetched = false; // <-- This is no longer needed
 
   @override
   void initState() {
     super.initState();
     final uid = _auth.currentUser?.uid;
     if (uid != null) {
-      _holdingsFuture = _userService
-          .readUserProfile(uid)
-          .then((profile) => profile?.stocks);
+      // --- FIX 2: Use the new streamUserProfile method ---
+      // We map the stream to only return the list of stocks.
+      _holdingsStream = _userService
+          .streamUserProfile(uid)
+          .map((profile) => profile?.stocks);
     }
   }
 
@@ -41,8 +45,9 @@ class _HoldingsPageState extends State<HoldingsPage> {
     // Using Consumer here to get the provider safely.
     return Consumer<InstrumentProvider>(
       builder: (context, instrumentProvider, child) {
-        return FutureBuilder<List<StockHoldingModel>?>(
-          future: _holdingsFuture,
+        // --- FIX 3: Change FutureBuilder to StreamBuilder ---
+        return StreamBuilder<List<StockHoldingModel>?>(
+          stream: _holdingsStream, // Use the stream
           builder: (context, snapshot) {
             if (snapshot.hasError) {
               return Center(
@@ -54,14 +59,12 @@ class _HoldingsPageState extends State<HoldingsPage> {
             final isLoading =
                 snapshot.connectionState == ConnectionState.waiting;
 
-            // --- FIX 1: Fetch live data safely after the future completes ---
-            // This now runs inside the builder, where context is always valid.
-            if (!isLoading &&
-                userHoldings != null &&
-                userHoldings.isNotEmpty &&
-                !_liveDataFetched) {
+            // --- FIX 4: Fetch live data every time holdings update ---
+            // We removed the _liveDataFetched flag. This ensures that
+            // when the user buys/sells and this stream updates,
+            // we re-fetch live data for the *new* list of holdings.
+            if (!isLoading && userHoldings != null && userHoldings.isNotEmpty) {
               instrumentProvider.fetchLiveDataForHoldings(userHoldings);
-              _liveDataFetched = true; // Set flag to true after fetching
             }
 
             return SingleChildScrollView(
@@ -98,7 +101,7 @@ class _HoldingsPageState extends State<HoldingsPage> {
   }
 }
 
-// ... (HoldingsListSkeleton and SkeletonStockItem are unchanged and correct) ...
+// ... (HoldingsListSkeleton is unchanged and correct) ...
 class HoldingsListSkeleton extends StatelessWidget {
   const HoldingsListSkeleton({super.key});
 
@@ -114,6 +117,7 @@ class HoldingsListSkeleton extends StatelessWidget {
   }
 }
 
+// ... (SkeletonStockItem is unchanged and correct) ...
 class SkeletonStockItem extends StatelessWidget {
   const SkeletonStockItem({super.key});
 
@@ -346,7 +350,8 @@ class PortfolioSummaryCard extends StatelessWidget {
   }
 }
 
-/// --- THIS WIDGET IS CORRECTED FOR THE MEMORY LEAK ---
+// ... (PortfolioStockItem is unchanged and correct) ...
+// This widget is already set up perfectly for your requests.
 class PortfolioStockItem extends StatefulWidget {
   final StockHoldingModel holding;
   const PortfolioStockItem({super.key, required this.holding});
@@ -360,17 +365,14 @@ class _PortfolioStockItemState extends State<PortfolioStockItem> {
   final ValueNotifier<double> _plNotifier = ValueNotifier(0.0);
   final ValueNotifier<double> _percentNotifier = ValueNotifier(0.0);
 
-  // --- FIX 2a: Store the provider and the listener function ---
   late final InstrumentProvider _provider;
   late final VoidCallback _listener;
 
   @override
   void initState() {
     super.initState();
-    // Get the provider once without listening for rebuilds
     _provider = Provider.of<InstrumentProvider>(context, listen: false);
 
-    // Define the listener function
     _listener = () {
       if (!mounted) return;
       try {
@@ -389,9 +391,7 @@ class _PortfolioStockItemState extends State<PortfolioStockItem> {
         _plNotifier.value = pl;
         _percentNotifier.value = pct;
       } catch (_) {
-        // If stock is not found in live data, initialize with stored data
         if (_ltpNotifier.value == 0.0) {
-          // Only set once
           final avgPrice = widget.holding.transactionPrice;
           _ltpNotifier.value = avgPrice;
           _plNotifier.value = 0.0;
@@ -400,13 +400,10 @@ class _PortfolioStockItemState extends State<PortfolioStockItem> {
       }
     };
 
-    // Add the listener
     _provider.addListener(_listener);
-    // Manually call the listener once to set the initial state
     _listener();
   }
 
-  // --- FIX 2b: Remove the listener in dispose to prevent leaks ---
   @override
   void dispose() {
     _provider.removeListener(_listener);
@@ -430,7 +427,6 @@ class _PortfolioStockItemState extends State<PortfolioStockItem> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // --- THIS IS THE RESOLVED CODE ---
                 Text(
                   h.stockSymbol,
                   style: const TextStyle(
@@ -438,7 +434,6 @@ class _PortfolioStockItemState extends State<PortfolioStockItem> {
                     fontSize: 16,
                   ),
                 ),
-                // --- END OF RESOLVED CODE ---
                 Text(
                   "${h.quantity} shares",
                   style: TextStyle(color: Colors.grey[600], fontSize: 12),
