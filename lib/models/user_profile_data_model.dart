@@ -1,14 +1,12 @@
-// lib/models/user_profile_data_model.dart
-import 'stock_holding_model.dart'; // Import the detailed transaction model
+import 'stock_holding_model.dart'; // Make sure this import is correct
 
 class UserProfileDataModel {
   final String uid;
   final String name;
   final String emailId;
   final String mobileNo;
-  final DateTime accountCreationTime; // CURR TIME OF USER CREATED ACCOUNT
-
-  // This array holds transaction records (detailed StockHoldingModel objects).
+  final DateTime accountCreationTime;
+  final double availableFunds; // <-- ADDED: To track virtual money
   final List<StockHoldingModel> stocks;
 
   UserProfileDataModel({
@@ -17,6 +15,7 @@ class UserProfileDataModel {
     required this.emailId,
     required this.mobileNo,
     required this.accountCreationTime,
+    required this.availableFunds, // <-- ADDED
     this.stocks = const [],
   });
 
@@ -25,6 +24,7 @@ class UserProfileDataModel {
     'emailId': emailId,
     'mobileNo': mobileNo,
     'accountCreationTime': accountCreationTime.toIso8601String(),
+    'availableFunds': availableFunds, // <-- ADDED
     'stocks': stocks.map((s) => s.toJson()).toList(),
   };
 
@@ -34,6 +34,7 @@ class UserProfileDataModel {
     if (timeData is String) {
       creationTime = DateTime.parse(timeData);
     } else {
+      // Fallback for older data or different formats
       creationTime = DateTime.now();
     }
 
@@ -43,6 +44,8 @@ class UserProfileDataModel {
       emailId: json['emailId'] as String,
       mobileNo: json['mobileNo'] as String,
       accountCreationTime: creationTime,
+      // <-- ADDED: Read funds, default to 1 lakh for existing users without this field
+      availableFunds: (json['availableFunds'] as num?)?.toDouble() ?? 100000.0,
       stocks:
           (json['stocks'] as List?)
               ?.map(

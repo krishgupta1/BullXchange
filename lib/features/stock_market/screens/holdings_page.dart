@@ -19,23 +19,16 @@ class _HoldingsPageState extends State<HoldingsPage> {
   final UserService _userService = UserService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   Future<List<StockHoldingModel>?>? _holdingsFuture;
+  bool _liveDataFetched = false; // Flag to prevent multiple fetches
 
   @override
   void initState() {
     super.initState();
     final uid = _auth.currentUser?.uid;
     if (uid != null) {
-      _holdingsFuture = _userService.readUserProfile(uid).then((profile) {
-        final holdings = profile?.stocks;
-        // This is now called only ONCE after the user's holdings are successfully fetched.
-        if (mounted && holdings != null && holdings.isNotEmpty) {
-          Provider.of<InstrumentProvider>(
-            context,
-            listen: false,
-          ).fetchLiveDataForHoldings(holdings);
-        }
-        return holdings;
-      });
+      _holdingsFuture = _userService
+          .readUserProfile(uid)
+          .then((profile) => profile?.stocks);
     }
   }
 
@@ -45,53 +38,67 @@ class _HoldingsPageState extends State<HoldingsPage> {
       return const Center(child: Text("Please log in to see your holdings."));
     }
 
-    return FutureBuilder<List<StockHoldingModel>?>(
-      future: _holdingsFuture,
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return Center(
-            child: Text("Error fetching portfolio: ${snapshot.error}"),
-          );
-        }
+    // Using Consumer here to get the provider safely.
+    return Consumer<InstrumentProvider>(
+      builder: (context, instrumentProvider, child) {
+        return FutureBuilder<List<StockHoldingModel>?>(
+          future: _holdingsFuture,
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return Center(
+                child: Text("Error fetching portfolio: ${snapshot.error}"),
+              );
+            }
 
-        final userHoldings = snapshot.data;
-        final isLoading = snapshot.connectionState == ConnectionState.waiting;
+            final userHoldings = snapshot.data;
+            final isLoading =
+                snapshot.connectionState == ConnectionState.waiting;
 
-        // The frequent fetch call has been removed from here.
+            // --- FIX 1: Fetch live data safely after the future completes ---
+            // This now runs inside the builder, where context is always valid.
+            if (!isLoading &&
+                userHoldings != null &&
+                userHoldings.isNotEmpty &&
+                !_liveDataFetched) {
+              instrumentProvider.fetchLiveDataForHoldings(userHoldings);
+              _liveDataFetched = true; // Set flag to true after fetching
+            }
 
-        return SingleChildScrollView(
-          child: Column(
-            children: [
-              PortfolioSummaryCard(
-                holdings: userHoldings,
-                isLoading: isLoading,
+            return SingleChildScrollView(
+              child: Column(
+                children: [
+                  PortfolioSummaryCard(
+                    holdings: userHoldings,
+                    isLoading: isLoading,
+                  ),
+                  const SizedBox(height: 16),
+                  if (isLoading)
+                    const HoldingsListSkeleton()
+                  else if (userHoldings == null || userHoldings.isEmpty)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.only(top: 48.0),
+                        child: Text("Your portfolio is empty."),
+                      ),
+                    )
+                  else
+                    ...userHoldings.map(
+                      (holding) => PortfolioStockItem(
+                        key: ValueKey(holding.stockSymbol),
+                        holding: holding,
+                      ),
+                    ),
+                ],
               ),
-              const SizedBox(height: 16),
-              if (isLoading)
-                const HoldingsListSkeleton()
-              else if (userHoldings == null || userHoldings.isEmpty)
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.only(top: 48.0),
-                    child: Text("Your portfolio is empty."),
-                  ),
-                )
-              else
-                ...userHoldings.map(
-                  (holding) => PortfolioStockItem(
-                    key: ValueKey(holding.stockSymbol),
-                    holding: holding,
-                  ),
-                ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
   }
 }
 
-/// Shimmer skeleton while loading holdings.
+// ... (HoldingsListSkeleton and SkeletonStockItem are unchanged and correct) ...
 class HoldingsListSkeleton extends StatelessWidget {
   const HoldingsListSkeleton({super.key});
 
@@ -145,7 +152,7 @@ class SkeletonStockItem extends StatelessWidget {
   }
 }
 
-/// Portfolio summary card at top.
+// ... (PortfolioSummaryCard is unchanged and correct) ...
 class PortfolioSummaryCard extends StatelessWidget {
   final List<StockHoldingModel>? holdings;
   final bool isLoading;
@@ -339,7 +346,7 @@ class PortfolioSummaryCard extends StatelessWidget {
   }
 }
 
-/// Each stock row item — only text updates, widget stays static.
+/// --- THIS WIDGET IS CORRECTED FOR THE MEMORY LEAK ---
 class PortfolioStockItem extends StatefulWidget {
   final StockHoldingModel holding;
   const PortfolioStockItem({super.key, required this.holding});
@@ -353,25 +360,21 @@ class _PortfolioStockItemState extends State<PortfolioStockItem> {
   final ValueNotifier<double> _plNotifier = ValueNotifier(0.0);
   final ValueNotifier<double> _percentNotifier = ValueNotifier(0.0);
 
+  // --- FIX 2a: Store the provider and the listener function ---
+  late final InstrumentProvider _provider;
+  late final VoidCallback _listener;
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        final provider = Provider.of<InstrumentProvider>(
-          context,
-          listen: false,
-        );
-        _listenToLiveData(provider);
-      }
-    });
-  }
+    // Get the provider once without listening for rebuilds
+    _provider = Provider.of<InstrumentProvider>(context, listen: false);
 
-  void _listenToLiveData(InstrumentProvider provider) {
-    provider.addListener(() {
+    // Define the listener function
+    _listener = () {
       if (!mounted) return;
       try {
-        final inst = provider.allNSEStocks.firstWhere(
+        final inst = _provider.allNSEStocks.firstWhere(
           (i) => i.symbol.replaceAll('-EQ', '') == widget.holding.stockSymbol,
         );
         final ltp =
@@ -385,14 +388,37 @@ class _PortfolioStockItemState extends State<PortfolioStockItem> {
         _ltpNotifier.value = ltp;
         _plNotifier.value = pl;
         _percentNotifier.value = pct;
-      } catch (_) {}
-    });
+      } catch (_) {
+        // If stock is not found in live data, initialize with stored data
+        if (_ltpNotifier.value == 0.0) {
+          // Only set once
+          final avgPrice = widget.holding.transactionPrice;
+          _ltpNotifier.value = avgPrice;
+          _plNotifier.value = 0.0;
+          _percentNotifier.value = 0.0;
+        }
+      }
+    };
+
+    // Add the listener
+    _provider.addListener(_listener);
+    // Manually call the listener once to set the initial state
+    _listener();
+  }
+
+  // --- FIX 2b: Remove the listener in dispose to prevent leaks ---
+  @override
+  void dispose() {
+    _provider.removeListener(_listener);
+    _ltpNotifier.dispose();
+    _plNotifier.dispose();
+    _percentNotifier.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final h = widget.holding;
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       child: Row(

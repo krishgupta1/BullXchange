@@ -58,6 +58,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
     super.dispose();
   }
 
+  // --- THIS METHOD IS CORRECTED ---
   Future<void> _handleBuy() async {
     if (_quantity <= 0 || _isPlacingOrder) return;
     setState(() => _isPlacingOrder = true);
@@ -101,9 +102,12 @@ class _BuyStockPageState extends State<BuyStockPage> {
     );
 
     try {
-      // Execute both Firestore writes
-      await _userService.addTransaction(newTransaction);
-      await _userService.updateCumulativeStockHolding(uid, holdingUpdate);
+      // --- MODIFIED: Use the single atomic executeTrade function ---
+      await _userService.executeTrade(
+        uid: uid,
+        transaction: newTransaction,
+        stockHoldingUpdate: holdingUpdate,
+      );
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -115,12 +119,13 @@ class _BuyStockPageState extends State<BuyStockPage> {
     } catch (e) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Failed to save transaction: $e')));
+      ).showSnackBar(SnackBar(content: Text('Failed to place order: $e')));
     } finally {
       if (mounted) setState(() => _isPlacingOrder = false);
     }
   }
 
+  // --- (Rest of the UI code is unchanged and correct) ---
   @override
   Widget build(BuildContext context) {
     final priceFormatter = NumberFormat.currency(
