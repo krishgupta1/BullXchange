@@ -2,10 +2,9 @@ import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
 // restored: removed company_name helper import
-import 'dart:math';
+import 'package:bullxchange/features/stock_market/widgets/mini_chart.dart';
 
 // --- Mock Data for Open Orders ---
 // In a real app, this would be fetched from the broker's order book.
@@ -184,7 +183,10 @@ Widget _buildOrderItem({
         SizedBox(
           width: 60,
           height: 30,
-          child: _buildMiniChart(instrument, changeColor),
+          child: MiniChart.fromInstrument(
+            instrument: instrument,
+            color: changeColor,
+          ),
         ),
         const SizedBox(width: 12),
         Column(
@@ -246,48 +248,4 @@ Widget _buildLogoContainer(String name) {
   );
 }
 
-Widget _buildMiniChart(Instrument instrument, Color color) {
-  final ltp = (instrument.liveData['ltp'] as num?)?.toDouble() ?? 0.0;
-  final netChange =
-      (instrument.liveData['netChange'] as num?)?.toDouble() ?? 0.0;
-  if (ltp == 0.0) return Container();
-
-  final startPrice = ltp - netChange;
-  final points = <FlSpot>[];
-  final random = Random(instrument.symbol.hashCode);
-
-  for (int i = 0; i < 15; i++) {
-    if (i == 14) {
-      points.add(FlSpot(i.toDouble(), ltp));
-    } else {
-      double progress = i / 14.0;
-      double priceAtProgress = startPrice + (netChange * progress);
-      double variance = ltp * 0.01 * (random.nextDouble() - 0.5);
-      points.add(FlSpot(i.toDouble(), priceAtProgress + variance));
-    }
-  }
-
-  return LineChart(
-    LineChartData(
-      gridData: const FlGridData(show: false),
-      titlesData: const FlTitlesData(
-        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-      ),
-      borderData: FlBorderData(show: false),
-      lineBarsData: [
-        LineChartBarData(
-          spots: points,
-          isCurved: true,
-          color: color,
-          barWidth: 2,
-          isStrokeCapRound: true,
-          dotData: const FlDotData(show: false),
-          belowBarData: BarAreaData(show: false),
-        ),
-      ],
-    ),
-  );
-}
+// Replaced by reusable MiniChart widget in lib/widgets/mini_chart.dart

@@ -3,10 +3,10 @@ import 'package:bullxchange/features/stock_market/screens/StockDetailPage.dart';
 import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bullxchange/features/auth/widgets/app_back_button.dart';
+import 'package:bullxchange/features/stock_market/widgets/mini_chart.dart';
 
 class ViewAllPage extends StatefulWidget {
   const ViewAllPage({super.key});
@@ -243,7 +243,7 @@ Widget _buildStockItem(BuildContext context, Instrument instrument) {
           SizedBox(
             width: 80,
             height: 40,
-            child: _buildMiniChart(chartData, changeColor),
+            child: MiniChart(data: chartData, color: changeColor),
           ),
           const SizedBox(width: 12),
           Column(
@@ -302,36 +302,4 @@ List<double> _createSimulatedChartData(Instrument instrument) {
   return points;
 }
 
-Widget _buildMiniChart(List<double> data, Color color) {
-  return LineChart(
-    LineChartData(
-      clipData: FlClipData.none(),
-      lineTouchData: LineTouchData(
-        enabled: false, // Disable touch events on the mini chart
-      ),
-      gridData: const FlGridData(show: false),
-      titlesData: const FlTitlesData(
-        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-      ),
-      borderData: FlBorderData(show: false),
-      lineBarsData: [
-        LineChartBarData(
-          spots: data
-              .asMap()
-              .entries
-              .map((e) => FlSpot(e.key.toDouble(), e.value))
-              .toList(),
-          isCurved: true,
-          color: color,
-          barWidth: 2,
-          isStrokeCapRound: true,
-          dotData: const FlDotData(show: false),
-          belowBarData: BarAreaData(show: false),
-        ),
-      ],
-    ),
-  );
-}
+// Replaced by reusable MiniChart widget in lib/widgets/mini_chart.dart

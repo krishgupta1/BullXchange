@@ -5,7 +5,7 @@ import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'view_all_page.dart';
-import 'package:fl_chart/fl_chart.dart';
+import 'package:bullxchange/features/stock_market/widgets/mini_chart.dart';
 import 'package:flutter/material.dart';
 
 class ExplorePage extends StatelessWidget {
@@ -160,7 +160,7 @@ Widget _buildStockItem(Instrument instrument, BuildContext context) {
           SizedBox(
             width: 80,
             height: 40,
-            child: _buildMiniChart(chartData, changeColor),
+            child: MiniChart(data: chartData, color: changeColor),
           ),
           const SizedBox(width: 12),
           Column(
@@ -265,51 +265,7 @@ Widget _buildLogoContainer(String name) {
   );
 }
 
-Widget _buildMiniChart(List<double> data, Color color) {
-  return LineChart(
-    LineChartData(
-      clipData: FlClipData.none(),
-      lineTouchData: LineTouchData(
-        touchTooltipData: LineTouchTooltipData(
-          getTooltipColor: (touchedSpot) => Colors.black87,
-          getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
-            return touchedBarSpots.map((barSpot) {
-              return LineTooltipItem(
-                '₹${barSpot.y.toStringAsFixed(2)}',
-                const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              );
-            }).toList();
-          },
-        ),
-      ),
-      gridData: const FlGridData(show: false),
-      titlesData: const FlTitlesData(
-        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-      ),
-      borderData: FlBorderData(show: false),
-      lineBarsData: [
-        LineChartBarData(
-          spots: data.asMap().entries.map((e) {
-            return FlSpot(e.key.toDouble(), e.value);
-          }).toList(),
-          isCurved: true,
-          color: color,
-          barWidth: 2,
-          isStrokeCapRound: true,
-          dotData: const FlDotData(show: false),
-          belowBarData: BarAreaData(show: false),
-        ),
-      ],
-    ),
-  );
-}
+// Replaced by reusable MiniChart widget in lib/widgets/mini_chart.dart
 
 Widget _buildToolsGrid() {
   return Row(
