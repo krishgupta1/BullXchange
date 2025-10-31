@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
+// restored: removed company_name helper import
 import 'dart:math';
 
 // --- Mock Data for Open Orders ---
@@ -162,11 +163,15 @@ Widget _buildOrderItem({
               ),
               const SizedBox(height: 2),
               Text(
-                instrument.symbol,
+                instrument.symbol.replaceAll(
+                  '-EQ',
+                  '',
+                ), // restored: show symbol bold
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                 ),
+                overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 2),
               Text(

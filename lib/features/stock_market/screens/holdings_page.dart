@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
+// restored: removed company_name helper import
 
 /// Holdings page with shimmer and live price updates.
 class HoldingsPage extends StatefulWidget {
@@ -392,6 +393,18 @@ class _PortfolioStockItemState extends State<PortfolioStockItem> {
   @override
   Widget build(BuildContext context) {
     final h = widget.holding;
+    final provider = Provider.of<InstrumentProvider>(context, listen: false);
+    Instrument? matchedInstrument;
+    try {
+      matchedInstrument = provider.allNSEStocks.firstWhere(
+        (i) => i.symbol.replaceAll('-EQ', '') == h.stockSymbol,
+      );
+    } catch (_) {
+      matchedInstrument = null;
+    }
+    final displayName = matchedInstrument != null
+        ? matchedInstrument.symbol.replaceAll('-EQ', '')
+        : (h.stockName.isNotEmpty ? h.stockName : h.stockSymbol);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
@@ -404,11 +417,12 @@ class _PortfolioStockItemState extends State<PortfolioStockItem> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  h.stockSymbol,
+                  displayName,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),
+                  overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   "${h.quantity} shares",

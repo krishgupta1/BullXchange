@@ -174,10 +174,6 @@ class _ViewAllPageState extends State<ViewAllPage> {
           padding: EdgeInsets.only(left: 16.0, right: 12.0),
           child: Icon(Icons.circle, color: Color(0xFFDB1B57), size: 16),
         ),
-        suffixIcon: const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.0),
-          child: Icon(Icons.mic, color: Colors.grey),
-        ),
         filled: true,
         fillColor: Colors.white,
         contentPadding: const EdgeInsets.symmetric(vertical: 15),
@@ -227,7 +223,10 @@ Widget _buildStockItem(BuildContext context, Instrument instrument) {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  instrument.symbol.replaceAll('-EQ', ''), // Clean up symbol
+                  instrument.symbol.replaceAll(
+                    '-EQ',
+                    '',
+                  ), // show short symbol bold
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 12,

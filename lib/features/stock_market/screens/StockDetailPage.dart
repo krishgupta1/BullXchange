@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+// restored: removed company_name helper import to display original symbol/name
 
 class StockDetailPage extends StatelessWidget {
   final Instrument instrument;
@@ -64,12 +65,13 @@ class StockDetailPage extends StatelessWidget {
           ),
         ),
         title: Text(
-          instrument.symbol.replaceAll('-EQ', ''),
+          instrument.symbol.replaceAll('-EQ', ''), // restored: show symbol
           style: const TextStyle(
             color: darkTextColor,
             fontWeight: FontWeight.bold,
             fontSize: 16,
           ),
+          overflow: TextOverflow.ellipsis,
         ),
         centerTitle: true,
       ),
@@ -191,15 +193,19 @@ class StockDetailPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                instrument.symbol.replaceAll('-EQ', ''),
+                instrument.symbol.replaceAll(
+                  '-EQ',
+                  '',
+                ), // restored: symbol bold
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: darkTextColor,
                 ),
+                overflow: TextOverflow.ellipsis,
               ),
               Text(
-                instrument.name,
+                instrument.name, // restored: faded short name below symbol
                 style: const TextStyle(
                   fontSize: 14,
                   color: Colors.grey,

@@ -143,7 +143,7 @@ Widget _buildStockItem(Instrument instrument, BuildContext context) {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  instrument.symbol,
+                  instrument.symbol.replaceAll('-EQ', ''),
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
