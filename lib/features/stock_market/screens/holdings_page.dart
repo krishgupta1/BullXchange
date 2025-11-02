@@ -87,12 +87,14 @@ class _HoldingsPageState extends State<HoldingsPage> {
                     )
                   else
                     // 🌟 FIX APPLIED: Added .toList() to fix the iterable spread error
-                    ...userHoldings.map(
-                      (holding) => PortfolioStockItem(
-                        key: ValueKey(holding.stockSymbol),
-                        holding: holding,
-                      ),
-                    ).toList(),
+                    ...userHoldings
+                        .map(
+                          (holding) => PortfolioStockItem(
+                            key: ValueKey(holding.stockSymbol),
+                            holding: holding,
+                          ),
+                        )
+                        .toList(),
                 ],
               ),
             );
@@ -339,8 +341,10 @@ class PortfolioStockItemDetailsSheet extends StatelessWidget {
 
   // ⭐️ New method to find the Instrument object
   Instrument? _getInstrument(BuildContext context) {
-    final instrumentProvider =
-        Provider.of<InstrumentProvider>(context, listen: false);
+    final instrumentProvider = Provider.of<InstrumentProvider>(
+      context,
+      listen: false,
+    );
     try {
       // Find the instrument in the provider's list
       return instrumentProvider.allNSEStocks.firstWhere(
@@ -371,9 +375,7 @@ class PortfolioStockItemDetailsSheet extends StatelessWidget {
     if (uid == null) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Please log in to sell stocks."),
-          ),
+          const SnackBar(content: Text("Please log in to sell stocks.")),
         );
       }
       return;

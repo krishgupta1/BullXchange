@@ -61,17 +61,17 @@ class _SmartLogoState extends State<SmartLogo> {
     // 🚀 MODIFIED: Show Shimmer while _isLoading is true
     if (_isLoading) {
       return Shimmer.fromColors(
-          baseColor: Colors.grey.shade300,
-          highlightColor: Colors.grey.shade100,
-          child: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              // Use BoxShape.circle to match the final alternate logo shape
-              shape: BoxShape.circle, 
-            ),
+        baseColor: Colors.grey.shade300,
+        highlightColor: Colors.grey.shade100,
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            // Use BoxShape.circle to match the final alternate logo shape
+            shape: BoxShape.circle,
           ),
+        ),
       );
     }
 

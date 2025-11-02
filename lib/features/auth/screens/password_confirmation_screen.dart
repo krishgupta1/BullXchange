@@ -5,7 +5,7 @@ import 'setup_pin_screen.dart';
 
 // --- Placeholder for the page you navigate to on "Reset password?" ---
 // You will replace this with your actual password reset page.
- 
+
 // --- Custom Route Transition Function ---
 // This function creates a PageRouteBuilder for a slide transition from right to left.
 PageRouteBuilder slideRightToLeft(Widget page) {
@@ -16,12 +16,12 @@ PageRouteBuilder slideRightToLeft(Widget page) {
       const end = Offset.zero; // End at the current screen position
       const curve = Curves.ease;
 
-      final tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+      final tween = Tween(
+        begin: begin,
+        end: end,
+      ).chain(CurveTween(curve: curve));
 
-      return SlideTransition(
-        position: animation.drive(tween),
-        child: child,
-      );
+      return SlideTransition(position: animation.drive(tween), child: child);
     },
   );
 }

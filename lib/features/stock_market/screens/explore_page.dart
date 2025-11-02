@@ -101,9 +101,7 @@ Widget _buildSectionHeader(BuildContext context, String title) {
 Widget _buildStockList(List<Instrument> topStocks, BuildContext context) {
   return Column(
     children: topStocks
-        .map(
-          (instrument) => _buildStockItem(instrument, context),
-        )
+        .map((instrument) => _buildStockItem(instrument, context))
         .toList(),
   );
 }

@@ -31,7 +31,7 @@ class IconBookmarkButton extends StatefulWidget {
 
 class _IconBookmarkButtonState extends State<IconBookmarkButton> {
   // Start with false (outline/unbookmarked state)
-  bool _isBookmarked = false; 
+  bool _isBookmarked = false;
 
   void _handleTap() {
     setState(() {
@@ -83,7 +83,6 @@ class _IconBookmarkButtonState extends State<IconBookmarkButton> {
 // END ICON TOGGLE WIDGET
 // ----------------------------------------------------------------------
 
-
 class StockDetailPage extends StatelessWidget {
   final Instrument instrument;
   const StockDetailPage({super.key, required this.instrument});
@@ -93,7 +92,7 @@ class StockDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const Color primaryPink = Color(0xFFF61C7A);
-    const Color primaryBlue = Color(0xFF3500D4); 
+    const Color primaryBlue = Color(0xFF3500D4);
     const Color darkTextColor = Color(0xFF03314B);
     const Color lightGreyBg = Color(0xFFF5F5F5);
 
