@@ -1,6 +1,31 @@
+import 'package:bullxchange/features/auth/screens/reset_password_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'setup_pin_screen.dart';
+
+// --- Placeholder for the page you navigate to on "Reset password?" ---
+// You will replace this with your actual password reset page.
+ 
+// --- Custom Route Transition Function ---
+// This function creates a PageRouteBuilder for a slide transition from right to left.
+PageRouteBuilder slideRightToLeft(Widget page) {
+  return PageRouteBuilder(
+    pageBuilder: (context, animation, secondaryAnimation) => page,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      const begin = Offset(1.0, 0.0); // Start off-screen to the right
+      const end = Offset.zero; // End at the current screen position
+      const curve = Curves.ease;
+
+      final tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+
+      return SlideTransition(
+        position: animation.drive(tween),
+        child: child,
+      );
+    },
+  );
+}
+// ----------------------------------------
 
 class PasswordConfirmationScreen extends StatefulWidget {
   const PasswordConfirmationScreen({super.key});
@@ -15,7 +40,7 @@ class _PasswordConfirmationScreenState
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
-  bool _obscurePassword = true; // State to control password visibility
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -46,6 +71,7 @@ class _PasswordConfirmationScreenState
       await user.reauthenticateWithCredential(credential);
 
       if (!mounted) return;
+      // Use pushReplacement to prevent going back to this screen from SetupPinScreen
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const SetupPinScreen()),
@@ -118,10 +144,9 @@ class _PasswordConfirmationScreenState
                 ),
               ),
               const SizedBox(height: 40),
-              // --- UPDATE: TextField now has show/hide functionality ---
               TextField(
                 controller: _passwordController,
-                obscureText: _obscurePassword, // Use state variable
+                obscureText: _obscurePassword,
                 decoration: InputDecoration(
                   hintText: "Enter Password",
                   border: OutlineInputBorder(
@@ -139,7 +164,6 @@ class _PasswordConfirmationScreenState
                     horizontal: 16,
                     vertical: 16,
                   ),
-                  // Add the eye icon button here
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword
@@ -156,6 +180,21 @@ class _PasswordConfirmationScreenState
                 ),
               ),
               const SizedBox(height: 12),
+              // --- New: Reset Password Button ---
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.pushReplacement(
+                    context,
+                    slideRightToLeft(const ResetPasswordPage()),
+                  ),
+                  child: const Text(
+                    'Reset password?',
+                    style: TextStyle(color: Color(0xFF4318FF)),
+                  ),
+                ),
+              ),
+              // --- End New ---
               if (_errorMessage != null)
                 Text(
                   _errorMessage!,

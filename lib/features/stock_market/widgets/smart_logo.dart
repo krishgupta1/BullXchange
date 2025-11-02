@@ -1,7 +1,7 @@
-// ✨ NEW, MORE COMPLEX LOGO WIDGET (USING DIO) ✨
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart'; // 1. Import Dio
+import 'package:dio/dio.dart';
+import 'package:shimmer/shimmer.dart'; // 💡 Import Shimmer for the effect
 
 class SmartLogo extends StatefulWidget {
   final Instrument instrument;
@@ -12,7 +12,6 @@ class SmartLogo extends StatefulWidget {
 }
 
 class _SmartLogoState extends State<SmartLogo> {
-  // 2. Create a Dio instance
   final Dio _dio = Dio();
 
   bool _logoExists = false;
@@ -29,16 +28,17 @@ class _SmartLogoState extends State<SmartLogo> {
 
   Future<void> _checkLogo() async {
     try {
-      // 3. Use dio.head to make the network request
+      // Use dio.head to check if the logo exists without downloading it entirely
       final response = await _dio.head(logoUrl);
       if (mounted) {
         setState(() {
+          // Check for status code 200 (OK)
           _logoExists = response.statusCode == 200;
           _isLoading = false;
         });
       }
     } on DioException {
-      // 4. Catch Dio-specific exceptions
+      // Catch Dio-specific exceptions (e.g., 404, network error)
       if (mounted) {
         setState(() {
           _logoExists = false;
@@ -58,19 +58,28 @@ class _SmartLogoState extends State<SmartLogo> {
 
   @override
   Widget build(BuildContext context) {
+    // 🚀 MODIFIED: Show Shimmer while _isLoading is true
     if (_isLoading) {
-      return const SizedBox(
-        width: 40,
-        height: 40,
-        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.grey),
+      return Shimmer.fromColors(
+          baseColor: Colors.grey.shade300,
+          highlightColor: Colors.grey.shade100,
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              // Use BoxShape.circle to match the final alternate logo shape
+              shape: BoxShape.circle, 
+            ),
+          ),
       );
     }
 
+    // Display actual logo if it exists
     if (_logoExists) {
-      // Image.network uses http internally, which is fine.
-      // The pre-check is what we converted to dio.
       return Image.network(logoUrl, width: 40, height: 40);
     } else {
+      // Display initial letter fallback logo
       final letter = widget.instrument.name.isNotEmpty
           ? widget.instrument.name[0].toUpperCase()
           : '?';

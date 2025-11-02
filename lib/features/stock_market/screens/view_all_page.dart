@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bullxchange/features/auth/widgets/app_back_button.dart';
 import 'package:bullxchange/features/stock_market/widgets/mini_chart.dart';
+import 'package:shimmer/shimmer.dart'; 
 
 class ViewAllPage extends StatefulWidget {
   const ViewAllPage({super.key});
@@ -21,7 +22,7 @@ class _ViewAllPageState extends State<ViewAllPage> {
   List<Instrument> displayedStocks = [];
   final int batchSize = 50;
   bool isLoadingMore = false;
-
+  
   final ScrollController _scrollController = ScrollController();
   final TextEditingController searchController = TextEditingController();
 
@@ -35,14 +36,7 @@ class _ViewAllPageState extends State<ViewAllPage> {
       final lowerCaseName = stock.name.toLowerCase();
       if (baseSymbol.contains(RegExp(r'[0-9]'))) return false;
       const excludedKeywords = [
-        'etf',
-        'bees',
-        'nifty',
-        'gold',
-        'bond',
-        'debenture',
-        'pref',
-        'index',
+        'etf', 'bees', 'nifty', 'gold', 'bond', 'debenture', 'pref', 'index',
       ];
       if (excludedKeywords.any((keyword) => lowerCaseName.contains(keyword))) {
         return false;
@@ -76,13 +70,15 @@ class _ViewAllPageState extends State<ViewAllPage> {
     if (isLoadingMore) return;
     setState(() => isLoadingMore = true);
     final currentLength = displayedStocks.length;
-    final moreItems = filteredStocks
-        .skip(currentLength)
-        .take(batchSize)
-        .toList();
-    displayedStocks.addAll(moreItems);
+    final moreItems = filteredStocks.skip(currentLength).take(batchSize).toList();
+    
+    if (moreItems.isNotEmpty) {
+      displayedStocks.addAll(moreItems);
+    }
+    
     final provider = Provider.of<InstrumentProvider>(context, listen: false);
-    provider.fetchLiveDataFor(moreItems);
+    provider.fetchLiveDataFor(moreItems); 
+    
     setState(() => isLoadingMore = false);
   }
 
@@ -105,7 +101,7 @@ class _ViewAllPageState extends State<ViewAllPage> {
     return Scaffold(
       appBar: AppBar(
         leading: AppBackButton(onPressed: () => Navigator.pop(context)),
-        title: Text(
+        title: const Text(
           "Select Stocks",
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
@@ -127,12 +123,16 @@ class _ViewAllPageState extends State<ViewAllPage> {
             child: ClipRect(
               child: Consumer<InstrumentProvider>(
                 builder: (context, provider, child) {
-                  if (provider.isLoading && displayedStocks.isEmpty) {
-                    return const Center(child: CircularProgressIndicator());
+                  
+                  // Initial Shimmer for full list only if all stocks are being loaded for the first time
+                  if (allStocks.isEmpty) { 
+                    return _buildShimmerLoadingList();
                   }
+                  
                   if (filteredStocks.isEmpty) {
                     return const Center(child: Text("No stocks found."));
                   }
+                  
                   return Scrollbar(
                     controller: _scrollController,
                     child: ListView.builder(
@@ -143,13 +143,10 @@ class _ViewAllPageState extends State<ViewAllPage> {
                           displayedStocks.length + (isLoadingMore ? 1 : 0),
                       itemBuilder: (context, index) {
                         if (index >= displayedStocks.length) {
-                          return const Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: Center(child: CircularProgressIndicator()),
-                          );
+                          // Show Load More Shimmer
+                          return _buildLoadMoreShimmer();
                         }
                         final instrument = displayedStocks[index];
-                        // MODIFIED: Pass context to _buildStockItem
                         return _buildStockItem(context, instrument);
                       },
                     ),
@@ -190,8 +187,75 @@ class _ViewAllPageState extends State<ViewAllPage> {
   }
 }
 
-// MODIFIED: Function now accepts BuildContext
+// ----------------------------------------------------
+// SHIMMER HELPER WIDGETS
+// ----------------------------------------------------
+
+Widget _buildShimmerStockItem() {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+    child: Row(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(width: 80, height: 12, color: Colors.white, margin: const EdgeInsets.only(bottom: 4)),
+              Container(width: 150, height: 12, color: Colors.white),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Container(width: 50, height: 12, color: Colors.white, margin: const EdgeInsets.only(bottom: 4)),
+            Container(width: 40, height: 12, color: Colors.white),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildShimmerLoadingList() {
+  return Shimmer.fromColors(
+    baseColor: Colors.grey.shade300,
+    highlightColor: Colors.grey.shade100,
+    child: ListView.builder(
+      itemCount: 10, 
+      itemBuilder: (context, index) {
+        return _buildShimmerStockItem();
+      },
+    ),
+  );
+}
+
+Widget _buildLoadMoreShimmer() {
+  return Shimmer.fromColors(
+    baseColor: Colors.grey.shade300,
+    highlightColor: Colors.grey.shade100,
+    child: Column(
+      children: [
+        _buildShimmerStockItem(),
+        _buildShimmerStockItem(), 
+      ],
+    ),
+  );
+}
+
+// ----------------------------------------------------
+// 🚀 MODIFIED: STOCK ITEM WIDGET 
+// ----------------------------------------------------
+
 Widget _buildStockItem(BuildContext context, Instrument instrument) {
+  // We rely on the SmartLogo's internal state for logo shimmer.
   final ltp = instrument.liveData["ltp"]?.toString() ?? "--";
   final percentChange =
       num.tryParse(
@@ -201,10 +265,8 @@ Widget _buildStockItem(BuildContext context, Instrument instrument) {
   final changeColor = percentChange >= 0 ? const Color(0xFF1EAB58) : Colors.red;
   final List<double> chartData = _createSimulatedChartData(instrument);
 
-  // WRAPPED with InkWell for tap functionality
   return InkWell(
     onTap: () {
-      // ADDED: Navigation logic
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -216,7 +278,9 @@ Widget _buildStockItem(BuildContext context, Instrument instrument) {
       padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
       child: Row(
         children: [
-          SmartLogo(instrument: instrument),
+          // ⭐ SmartLogo will now handle its own shimmer internally.
+          SmartLogo(instrument: instrument), 
+          
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -226,31 +290,34 @@ Widget _buildStockItem(BuildContext context, Instrument instrument) {
                   instrument.symbol.replaceAll(
                     '-EQ',
                     '',
-                  ), // show short symbol bold
+                  ), 
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                   ),
                 ),
                 Text(
-                  instrument.name,
+                  instrument.name, 
                   style: TextStyle(color: Colors.grey[600], fontSize: 12),
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
+          
+          // ✅ FIX: MiniChart is now displayed directly without conditional shimmer.
           SizedBox(
             width: 80,
             height: 40,
             child: MiniChart(data: chartData, color: changeColor),
           ),
+          
           const SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                "₹$ltp",
+                "₹$ltp", 
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
@@ -279,13 +346,18 @@ Widget _buildStockItem(BuildContext context, Instrument instrument) {
   );
 }
 
+// ----------------------------------------------------
+// SIMULATED CHART DATA FUNCTION (Unchanged)
+// ----------------------------------------------------
+
 List<double> _createSimulatedChartData(Instrument instrument) {
   final ltp =
       num.tryParse(instrument.liveData['ltp'].toString())?.toDouble() ?? 0.0;
   final netChange =
       num.tryParse(instrument.liveData['netChange'].toString())?.toDouble() ??
       0.0;
-  if (ltp == 0.0) return List<double>.generate(15, (_) => 1.0);
+  // If data is not available (ltp is 0.0), this returns a flat line.
+  if (ltp == 0.0) return List<double>.generate(15, (_) => 1.0); 
   final startPrice = ltp - netChange;
   final points = <double>[];
   final random = Random(instrument.symbol.hashCode);
@@ -301,5 +373,3 @@ List<double> _createSimulatedChartData(Instrument instrument) {
   }
   return points;
 }
-
-// Replaced by reusable MiniChart widget in lib/widgets/mini_chart.dart

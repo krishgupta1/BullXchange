@@ -12,6 +12,78 @@ import 'package:provider/provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 // restored: removed company_name helper import to display original symbol/name
 
+// ----------------------------------------------------------------------
+// NEW STATEFUL WIDGET FOR ICON TOGGLE
+// ----------------------------------------------------------------------
+class IconBookmarkButton extends StatefulWidget {
+  final Color baseColor;
+  final Color filledColor;
+
+  const IconBookmarkButton({
+    super.key,
+    this.baseColor = const Color(0xFF03314B), // darkTextColor for outline icon
+    this.filledColor = const Color(0xFF3500D4), // primaryBlue for filled icon
+  });
+
+  @override
+  State<IconBookmarkButton> createState() => _IconBookmarkButtonState();
+}
+
+class _IconBookmarkButtonState extends State<IconBookmarkButton> {
+  // Start with false (outline/unbookmarked state)
+  bool _isBookmarked = false; 
+
+  void _handleTap() {
+    setState(() {
+      _isBookmarked = !_isBookmarked;
+    });
+
+    // Simple Snackbar feedback (UI-only placeholder)
+    final message = _isBookmarked ? "Stock Bookmarked!" : "Bookmark Removed!";
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(milliseconds: 700),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Determine icon and color based on state
+    final icon = _isBookmarked ? Icons.bookmark : Icons.bookmark_border;
+    final color = _isBookmarked ? widget.filledColor : widget.baseColor;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 5,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: IconButton(
+        icon: Icon(
+          icon, // Toggles between outline and filled
+          color: color, // Toggles color
+          size: 24,
+        ),
+        onPressed: _handleTap,
+      ),
+    );
+  }
+}
+// ----------------------------------------------------------------------
+// END ICON TOGGLE WIDGET
+// ----------------------------------------------------------------------
+
+
 class StockDetailPage extends StatelessWidget {
   final Instrument instrument;
   const StockDetailPage({super.key, required this.instrument});
@@ -21,7 +93,7 @@ class StockDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const Color primaryPink = Color(0xFFF61C7A);
-    const Color primaryBlue = Color(0xFF3500D4);
+    const Color primaryBlue = Color(0xFF3500D4); 
     const Color darkTextColor = Color(0xFF03314B);
     const Color lightGreyBg = Color(0xFFF5F5F5);
 
@@ -74,6 +146,14 @@ class StockDetailPage extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
         centerTitle: true,
+        // --- START: Replaced with the simple IconBookmarkButton ---
+        actions: const [
+          IconBookmarkButton(
+            filledColor: primaryBlue,
+            baseColor: darkTextColor,
+          ),
+        ],
+        // --- END: IconBookmarkButton ---
       ),
       // --- 2. BODY USES A SINGLE SCROLL VIEW ---
       body: SingleChildScrollView(
@@ -176,7 +256,7 @@ class StockDetailPage extends StatelessWidget {
     );
   }
 
-  // --- Widget Builders (Updated to include ltp and service) ---
+  // --- Widget Builders ---
 
   Widget _buildCompanyHeader(
     Instrument instrument,
@@ -394,33 +474,10 @@ class StockDetailPage extends StatelessWidget {
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
+      // Removed the SIP button, leaving only Sell and Buy
       child: Row(
         children: [
-          // --- BUY BUTTON WITH FIREBASE LOGIC ---
-          Expanded(
-            child: ElevatedButton(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => BuyStockPage(instrument: instrument),
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: buyColor, // Use buyColor
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
-              ),
-              child: const Text(
-                "Buy", // Text is "Buy"
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
-          const SizedBox(width: 15), // Added spacer
+          // --- SELL BUTTON WITH FIREBASE LOGIC ---
           Expanded(
             child: ElevatedButton(
               onPressed: () async {
@@ -491,7 +548,7 @@ class StockDetailPage extends StatelessWidget {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: sellColor, // Use sellColor
+                backgroundColor: sellColor, // Use sellColor (primaryBlue)
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
@@ -501,6 +558,31 @@ class StockDetailPage extends StatelessWidget {
               ),
               child: const Text(
                 "Sell",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+          const SizedBox(width: 15), // Added spacer
+          // --- BUY BUTTON WITH FIREBASE LOGIC ---
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => BuyStockPage(instrument: instrument),
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: buyColor, // Use buyColor (primaryPink)
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: const Text(
+                "Buy", // Text is "Buy"
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
