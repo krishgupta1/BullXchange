@@ -118,16 +118,16 @@ class _EmptyState extends StatelessWidget {
 }
 
 Widget _buildOrderItem({
-  required Instrument? instrument, // <-- 1. Accept nullable Instrument
+  required Instrument? instrument, // <-- Accept nullable Instrument
   required OrderModel order,
 }) {
-  // 2. Get LTP from instrument if it exists, otherwise use '...'
+  // Get LTP from instrument if it exists, otherwise use '...'
   final ltp = (instrument?.liveData['ltp'] as num?)?.toDouble() ?? 0.0;
   final netChange =
       (instrument?.liveData['netChange'] as num?)?.toDouble() ?? 0.0;
   final changeColor = netChange >= 0 ? Colors.green : Colors.red;
 
-  // 3. Get order info directly from the OrderModel
+  // Get order info directly from the OrderModel
   final orderType = order.transactionType;
   final orderPrice = order.limitPrice;
   final quantity = order.quantity;
@@ -136,12 +136,12 @@ Widget _buildOrderItem({
     padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
     child: Row(
       children: [
-        // --- 4. THIS IS THE FIX ---
-        // Conditionally build the SmartLogo or a placeholder
+        // --- THIS IS THE FIX ---
+        // Conditionally build the SmartLogo if instrument is available,
+        // otherwise build the placeholder using the order's company name.
         instrument != null
             ? SmartLogo(instrument: instrument, radius: 20)
-            : _buildPlaceholderLogo(order.symbol, radius: 20),
-
+            : _buildLogoContainer(order.companyName, radius: 20),
         // --- END OF FIX ---
         const SizedBox(width: 12),
         Expanded(
@@ -182,7 +182,7 @@ Widget _buildOrderItem({
         SizedBox(
           width: 60,
           height: 30,
-          // 5. Conditionally build the MiniChart
+          // Conditionally build the MiniChart
           child: instrument != null
               ? MiniChart.fromInstrument(
                   instrument: instrument,
@@ -217,25 +217,22 @@ Widget _buildOrderItem({
   );
 }
 
-// --- 6. NEW PLACEHOLDER WIDGET ---
-/// Builds a default logo based on the first letter of the symbol
-Widget _buildPlaceholderLogo(String symbol, {double radius = 20}) {
-  final letter = symbol.isNotEmpty ? symbol[0].toUpperCase() : '?';
-  final color = Colors.primaries[symbol.hashCode % Colors.primaries.length];
-
+/// Builds a placeholder logo based on the company name
+/// (This logic is consistent with your holdings_page.dart)
+Widget _buildLogoContainer(String name, {double radius = 20}) {
+  final letter = name.isNotEmpty ? name[0].toUpperCase() : "?";
+  // This logic uses the name's hashcode, creating varied colors
+  final color = Colors.primaries[name.hashCode % Colors.primaries.length];
   return Container(
     width: radius * 2,
     height: radius * 2,
-    decoration: BoxDecoration(
-      color: color.withOpacity(0.2),
-      shape: BoxShape.circle,
-    ),
+    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     child: Center(
       child: Text(
         letter,
         style: TextStyle(
-          color: color,
-          fontSize: radius * 0.9,
+          color: Colors.white,
+          fontSize: radius, // Adjusted for better fit
           fontWeight: FontWeight.bold,
         ),
       ),
