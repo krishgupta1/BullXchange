@@ -1,38 +1,26 @@
+// lib/features/stock_market/screens/order_page.dart
 import 'package:bullxchange/models/instrument_model.dart';
+import 'package:bullxchange/models/order_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
+import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
-// restored: removed company_name helper import
 import 'package:bullxchange/features/stock_market/widgets/mini_chart.dart';
-
-// --- Mock Data for Open Orders ---
-// In a real app, this would be fetched from the broker's order book.
-final List<Map<String, dynamic>> userOpenOrders = [
-  {'token': '2869', 'orderPrice': 3080.00, 'quantity': 10, 'type': 'BUY'},
-  {'token': '1570', 'orderPrice': 1450.00, 'quantity': 20, 'type': 'SELL'},
-  {'token': '11173', 'orderPrice': 555.50, 'quantity': 50, 'type': 'BUY'},
-];
 
 class OrderPage extends StatelessWidget {
   const OrderPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<InstrumentProvider>(
-      builder: (context, provider, child) {
-        // --- Data Processing ---
-        final orderTokens = userOpenOrders.map((p) => p['token']).toSet();
-        final ordersWithLiveData = provider.allNSEStocks
-            .where((stock) => orderTokens.contains(stock.token))
-            .toList();
-
+    // 1. Consume both the list of open orders (from the stream)
+    //    and the InstrumentProvider (for live data).
+    return Consumer2<List<OrderModel>, InstrumentProvider>(
+      builder: (context, openOrders, provider, child) {
         // Handle case where there are no open orders
-        if (ordersWithLiveData.isEmpty) {
+        if (openOrders.isEmpty) {
           return const _EmptyState();
         }
 
-        // ✨ FIX: Use a Column to prevent nested scrolling errors.
         return Column(
           children: [
             Padding(
@@ -44,7 +32,7 @@ class OrderPage extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        "Open orders (${ordersWithLiveData.length})",
+                        "Open orders (${openOrders.length})",
                         style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -68,7 +56,9 @@ class OrderPage extends StatelessWidget {
                           "Cancel all",
                           style: TextStyle(color: Colors.grey[700]),
                         ),
-                        onPressed: () {},
+                        onPressed: () {
+                          // TODO: Implement Cancel All Orders logic
+                        },
                       ),
                       Text(
                         "Qty/Price",
@@ -82,13 +72,16 @@ class OrderPage extends StatelessWidget {
             const SizedBox(height: 8),
 
             // --- Orders List ---
-            ...ordersWithLiveData.map((instrument) {
-              final orderInfo = userOpenOrders.firstWhere(
-                (p) => p['token'] == instrument.token,
+            // 2. Build the list from the live order stream
+            ...openOrders.map((order) {
+              // 3. Find the matching instrument from the provider
+              final instrument = provider.getInstrumentByToken(
+                order.instrumentToken,
               );
+
               return _buildOrderItem(
-                instrument: instrument,
-                orderInfo: orderInfo,
+                instrument: instrument, // This is an Instrument? (nullable)
+                order: order,
               );
             }),
           ],
@@ -125,22 +118,31 @@ class _EmptyState extends StatelessWidget {
 }
 
 Widget _buildOrderItem({
-  required Instrument instrument,
-  required Map<String, dynamic> orderInfo,
+  required Instrument? instrument, // <-- 1. Accept nullable Instrument
+  required OrderModel order,
 }) {
-  final ltp = (instrument.liveData['ltp'] as num?)?.toDouble() ?? 0.0;
+  // 2. Get LTP from instrument if it exists, otherwise use '...'
+  final ltp = (instrument?.liveData['ltp'] as num?)?.toDouble() ?? 0.0;
   final netChange =
-      (instrument.liveData['netChange'] as num?)?.toDouble() ?? 0.0;
+      (instrument?.liveData['netChange'] as num?)?.toDouble() ?? 0.0;
   final changeColor = netChange >= 0 ? Colors.green : Colors.red;
-  final orderType = orderInfo['type'] as String;
-  final orderPrice = orderInfo['orderPrice'] as double;
-  final quantity = orderInfo['quantity'] as int;
+
+  // 3. Get order info directly from the OrderModel
+  final orderType = order.transactionType;
+  final orderPrice = order.limitPrice;
+  final quantity = order.quantity;
 
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
     child: Row(
       children: [
-        _buildLogoContainer(instrument.name),
+        // --- 4. THIS IS THE FIX ---
+        // Conditionally build the SmartLogo or a placeholder
+        instrument != null
+            ? SmartLogo(instrument: instrument, radius: 20)
+            : _buildPlaceholderLogo(order.symbol, radius: 20),
+
+        // --- END OF FIX ---
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -162,10 +164,7 @@ Widget _buildOrderItem({
               ),
               const SizedBox(height: 2),
               Text(
-                instrument.symbol.replaceAll(
-                  '-EQ',
-                  '',
-                ), // restored: show symbol bold
+                order.symbol, // Use symbol from order
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
@@ -174,7 +173,7 @@ Widget _buildOrderItem({
               ),
               const SizedBox(height: 2),
               Text(
-                "Mkt ₹${ltp.toStringAsFixed(2)}",
+                "Mkt ₹${ltp == 0.0 ? '--' : ltp.toStringAsFixed(2)}",
                 style: TextStyle(color: Colors.grey[600], fontSize: 12),
               ),
             ],
@@ -183,17 +182,22 @@ Widget _buildOrderItem({
         SizedBox(
           width: 60,
           height: 30,
-          child: MiniChart.fromInstrument(
-            instrument: instrument,
-            color: changeColor,
-          ),
+          // 5. Conditionally build the MiniChart
+          child: instrument != null
+              ? MiniChart.fromInstrument(
+                  instrument: instrument,
+                  color: changeColor,
+                )
+              : Container(
+                  color: Colors.grey[200],
+                ), // Placeholder if no instrument
         ),
         const SizedBox(width: 12),
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              "Intraday",
+              order.productType, // 'INTRADAY' or 'DELIVERY'
               style: TextStyle(color: Colors.grey[600], fontSize: 12),
             ),
             const SizedBox(height: 2),
@@ -213,39 +217,28 @@ Widget _buildOrderItem({
   );
 }
 
-Widget _buildLogoContainer(String name) {
-  if (name.toLowerCase().contains('google')) {
-    return SvgPicture.network(
-      'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg',
-      width: 40,
-      height: 40,
-    );
-  }
-  if (name.toLowerCase().contains('microsoft')) {
-    return Image.network(
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Microsoft_logo.svg/240px-Microsoft_logo.svg.png',
-      width: 40,
-      height: 40,
-    );
-  }
+// --- 6. NEW PLACEHOLDER WIDGET ---
+/// Builds a default logo based on the first letter of the symbol
+Widget _buildPlaceholderLogo(String symbol, {double radius = 20}) {
+  final letter = symbol.isNotEmpty ? symbol[0].toUpperCase() : '?';
+  final color = Colors.primaries[symbol.hashCode % Colors.primaries.length];
 
-  final letter = name.isNotEmpty ? name[0].toUpperCase() : '?';
-  final color = Colors.primaries[name.hashCode % Colors.primaries.length];
   return Container(
-    width: 40,
-    height: 40,
-    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    width: radius * 2,
+    height: radius * 2,
+    decoration: BoxDecoration(
+      color: color.withOpacity(0.2),
+      shape: BoxShape.circle,
+    ),
     child: Center(
       child: Text(
         letter,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 24,
+        style: TextStyle(
+          color: color,
+          fontSize: radius * 0.9,
           fontWeight: FontWeight.bold,
         ),
       ),
     ),
   );
 }
-
-// Replaced by reusable MiniChart widget in lib/widgets/mini_chart.dart

@@ -1,3 +1,4 @@
+// lib/features/stock_market/screens/stock_page.dart
 import 'package:bullxchange/features/auth/screens/onboarding_page_1.1.dart';
 import 'package:bullxchange/features/stock_market/screens/explore_page.dart';
 import 'package:bullxchange/features/stock_market/screens/holdings_page.dart';
@@ -5,6 +6,7 @@ import 'package:bullxchange/features/stock_market/screens/order_page.dart';
 import 'package:bullxchange/features/stock_market/screens/position_page.dart';
 import 'package:bullxchange/features/stock_market/screens/watchlist_page.dart';
 import 'package:bullxchange/models/instrument_model.dart';
+import 'package:bullxchange/models/order_model.dart'; // <-- 1. IMPORT NEW MODEL
 import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bullxchange/services/firebase/user_service.dart';
@@ -24,16 +26,21 @@ class _StockPageState extends State<StockPage>
   bool get wantKeepAlive => true;
   int _selectedActionIndex = 0;
   String? _userName;
+  String? _uid; // <-- 2. ADD UID STATE
 
   @override
   void initState() {
     super.initState();
-    _loadUserName();
+    _loadUserData(); // <-- 3. RENAME FUNCTION
   }
 
-  Future<void> _loadUserName() async {
+  Future<void> _loadUserData() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        setState(() => _uid = user.uid); // <-- 4. STORE THE UID
+      }
+
       if (user != null &&
           user.displayName != null &&
           user.displayName!.trim().isNotEmpty) {
@@ -41,9 +48,8 @@ class _StockPageState extends State<StockPage>
         return;
       }
 
-      final uid = user?.uid;
-      if (uid != null) {
-        final profile = await UserService().readUserProfile(uid);
+      if (_uid != null) {
+        final profile = await UserService().readUserProfile(_uid!);
         if (profile != null && profile.name.trim().isNotEmpty) {
           if (!mounted) return;
           setState(() => _userName = profile.name);
@@ -59,62 +65,71 @@ class _StockPageState extends State<StockPage>
   Widget build(BuildContext context) {
     super.build(context);
 
-    return Consumer<InstrumentProvider>(
-      builder: (context, provider, child) {
-        // ✨ FIX: Show a loading spinner for the entire page
-        // until the initial data fetch is complete.
-        if (provider.isLoading) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
+    // 5. PROVIDE THE NEW ORDER STREAM
+    //    We check if _uid is null. If it is, we provide an empty stream.
+    //    Once _uid is set, this will rebuild and provide the correct stream.
+    return StreamProvider<List<OrderModel>>.value(
+      value: _uid != null
+          ? UserService().streamOpenOrders(_uid!)
+          : Stream.value([]),
+      initialData: const [],
+      child: Consumer<InstrumentProvider>(
+        builder: (context, provider, child) {
+          // ✨ FIX: Show a loading spinner for the entire page
+          // until the initial data fetch is complete.
+          if (provider.isLoading) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
 
-        // Show an error message if something went wrong
-        if (provider.errorMessage != null) {
-          return Scaffold(
-            body: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  'Error: ${provider.errorMessage}',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.red),
+          // Show an error message if something went wrong
+          if (provider.errorMessage != null) {
+            return Scaffold(
+              body: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    'Error: ${provider.errorMessage}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.red),
+                  ),
                 ),
+              ),
+            );
+          }
+
+          // Once loaded, build the main UI
+          return Scaffold(
+            body: SafeArea(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                children: [
+                  // All content is now part of one scrollable list
+                  const SizedBox(height: 16),
+                  _buildHeader(),
+                  const SizedBox(height: 30),
+                  _buildIndexCards(provider.nifty50, provider.bankNifty),
+                  const SizedBox(height: 20),
+                  _buildActionButtons(),
+                  const SizedBox(height: 20), // Add spacing
+                  // The content of the selected tab
+                  IndexedStack(
+                    index: _selectedActionIndex,
+                    children: [
+                      ExplorePage(),
+                      HoldingsPage(),
+                      PositionPage(),
+                      const OrderPage(), // This page will now receive the stream
+                      const WatchlistPage(),
+                    ],
+                  ),
+                ],
               ),
             ),
           );
-        }
-
-        // Once loaded, build the main UI
-        return Scaffold(
-          body: SafeArea(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              children: [
-                // All content is now part of one scrollable list
-                const SizedBox(height: 16),
-                _buildHeader(),
-                const SizedBox(height: 30),
-                _buildIndexCards(provider.nifty50, provider.bankNifty),
-                const SizedBox(height: 20),
-                _buildActionButtons(),
-                const SizedBox(height: 20), // Add spacing
-                // The content of the selected tab
-                IndexedStack(
-                  index: _selectedActionIndex,
-                  children: [
-                    ExplorePage(),
-                    HoldingsPage(),
-                    const PositionPage(),
-                    const OrderPage(),
-                    const WatchlistPage(),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+        },
+      ),
     );
   }
 
@@ -147,9 +162,10 @@ class _StockPageState extends State<StockPage>
         IconButton(
           onPressed: () {
             FirebaseAuth.instance.signOut();
-            Navigator.push(
+            Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (context) => OnboardingPage()),
+              MaterialPageRoute(builder: (context) => const OnboardingPage()),
+              (route) => false, // Remove all routes behind it
             );
           },
           icon: const Icon(Icons.more_horiz),

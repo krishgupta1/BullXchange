@@ -20,6 +20,9 @@ class InstrumentProvider with ChangeNotifier {
 
   Timer? _refreshTimer;
 
+  // --- NEW: Map for fast symbol lookups ---
+  Map<String, Instrument> _allNSEStocksMap = {};
+
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
@@ -244,6 +247,27 @@ class InstrumentProvider with ChangeNotifier {
       return null;
     }
   }
+
+  // ---
+  // --- NEW METHOD TO FIX THE ERROR ---
+  // ---
+  /// Helper to find an instrument by its stock symbol (e.g., "RELIANCE-EQ")
+  Instrument? getInstrumentBySymbol(String symbol) {
+    // The symbol in StockHoldingModel is clean (e.g., "RELIANCE").
+    // The symbol in Instrument is not (e.g., "RELIANCE-EQ").
+    final String eqSymbol = '$symbol-EQ';
+
+    if (_allNSEStocksMap.isEmpty) {
+      // Build the map for fast lookups if it's not already built.
+      _allNSEStocksMap = {for (var stock in allNSEStocks) stock.symbol: stock};
+    }
+
+    // Look up the full symbol (e.g., "RELIANCE-EQ") in the map.
+    return _allNSEStocksMap[eqSymbol];
+  }
+  // ---
+  // --- END OF NEW METHOD ---
+  // ---
 
   Future<void> fetchLiveDataFor(List<Instrument> instruments) async {
     await _updateInstruments(instruments);

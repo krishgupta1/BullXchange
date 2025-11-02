@@ -216,7 +216,7 @@ Widget _buildStockItem(BuildContext context, Instrument instrument) {
       padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
       child: Row(
         children: [
-          SmartLogo(instrument: instrument),
+          SmartLogo(instrument: instrument, radius: 0),
           const SizedBox(width: 12),
           Expanded(
             child: Column(

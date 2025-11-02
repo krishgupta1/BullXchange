@@ -1,85 +1,111 @@
+// lib/pages/position_page.dart (or wherever you have it)
 import 'package:bullxchange/models/instrument_model.dart';
+import 'package:bullxchange/models/user_profile_data_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
+import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:intl/intl.dart'; // <-- IMPORT FOR FORMATTING
 import 'package:provider/provider.dart';
-import 'package:bullxchange/features/stock_market/widgets/mini_chart.dart';
-
-// --- Mock Data for Intraday Positions ---
-// In a real app, this would be fetched from the user's broker account.
-final List<Map<String, dynamic>> userPositionsData = [
-  {'token': '2742', 'shares': 50, 'avgBuyPrice': 270.50}, // SETFNIF50-EQ
-  {'token': '1604', 'shares': 100, 'avgBuyPrice': 1350.00}, // JINDALPHOT-EQ
-  {'token': '11536', 'shares': 30, 'avgBuyPrice': 5600.00}, // PILANIINVS-EQ
-];
+// import 'package:bullxchange/features/stock_market/widgets/mini_chart.dart'; // MiniChart is commented out
 
 class PositionPage extends StatelessWidget {
   const PositionPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<InstrumentProvider>(
-      builder: (context, provider, child) {
-        // --- Data Processing ---
-        final positionTokens = userPositionsData.map((p) => p['token']).toSet();
-        final positionsWithLiveData = provider.allNSEStocks
-            .where((stock) => positionTokens.contains(stock.token))
-            .toList();
-
-        // Handle case where there are no open positions
-        if (positionsWithLiveData.isEmpty) {
+    // --- 1. CONSUME BOTH PROVIDERS ---
+    return Consumer2<UserProfileDataModel?, InstrumentProvider>(
+      builder: (context, userProfile, instrumentProvider, child) {
+        // --- 2. GET LIVE POSITIONS FROM USER PROFILE ---
+        if (userProfile == null || userProfile.positions.isEmpty) {
           return const _EmptyState();
         }
 
-        double totalPnl = 0;
-        for (var stock in positionsWithLiveData) {
-          final positionInfo = userPositionsData.firstWhere(
-            (p) => p['token'] == stock.token,
+        final userPositions = userProfile.positions;
+
+        // --- 3. CALCULATE P&L AND INVESTMENT FROM LIVE DATA ---
+        double totalOverallPnl = 0;
+        double totalInvestment = 0;
+        List<Widget> positionWidgets = [];
+
+        for (var position in userPositions) {
+          // Find the matching instrument from the provider
+          final instrument = instrumentProvider.getInstrumentBySymbol(
+            position.stockSymbol,
           );
-          final shares = positionInfo['shares'] as int;
-          final netChange =
-              (stock.liveData['netChange'] as num?)?.toDouble() ?? 0.0;
-          totalPnl += netChange * shares;
+
+          if (instrument == null) continue; // Skip if no live data found
+
+          // --- P&L CALCULATION (OVERALL P&L) ---
+          final ltp = (instrument.liveData['ltp'] as num?)?.toDouble() ?? 0.0;
+          final avgBuyPrice = position.transactionPrice;
+          final quantity = position.quantity;
+
+          final double pnl = (ltp - avgBuyPrice) * quantity;
+          final double investment = avgBuyPrice * quantity;
+
+          // --- THIS IS THE NEW VALUE YOU WANTED ---
+          final double currentTotalValue = ltp * quantity;
+
+          double pnlPercent = 0.0;
+          if (investment > 0) {
+            pnlPercent = (pnl / investment) * 100;
+          }
+          // --- END P&L CALCULATION ---
+
+          totalOverallPnl += pnl;
+          totalInvestment += investment;
+
+          positionWidgets.add(
+            _buildStockItem(
+              instrument: instrument,
+              shares: position.quantity,
+              pnl: pnl,
+              pnlPercent: pnlPercent,
+              currentTotalValue: currentTotalValue, // <-- PASS NEW VALUE
+            ),
+          );
         }
 
-        // ✨ FIX: Use a Column to prevent nested scrolling errors.
-        return Column(
-          children: [
-            // --- 1. Dynamic Position Summary Card ---
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: _buildPositionSummaryCard(totalPnl),
-            ),
-            const SizedBox(height: 24),
+        if (positionWidgets.isEmpty) {
+          return const _EmptyState();
+        }
 
-            // --- 2. "Intraday" Section Header ---
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0),
-              child: Text(
-                "Intraday Positions",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        // --- 4. BUILD THE UI ---
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 1. Dynamic Position Summary Card
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: _buildPositionSummaryCard(
+                  totalOverallPnl,
+                  totalInvestment,
+                ),
               ),
-            ),
+              const SizedBox(height: 24),
 
-            // --- 3. Dynamic Positions List ---
-            ...positionsWithLiveData.map((instrument) {
-              final positionInfo = userPositionsData.firstWhere(
-                (p) => p['token'] == instrument.token,
-              );
-              return _buildStockItem(
-                instrument: instrument,
-                shares: positionInfo['shares'] as int,
-              );
-            }),
-          ],
+              // 2. "Intraday" Section Header
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                child: Text(
+                  "Intraday Positions",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ),
+
+              // 3. Dynamic Positions List
+              ...positionWidgets,
+            ],
+          ),
         );
       },
     );
   }
 }
 
-// --- Reusable Widgets ---
-
+// --- _EmptyState is UNCHANGED ---
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
 
@@ -105,9 +131,15 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-Widget _buildPositionSummaryCard(double totalPnl) {
+// --- _buildPositionSummaryCard is UNCHANGED ---
+Widget _buildPositionSummaryCard(double totalPnl, double totalInvestment) {
   final sign = totalPnl >= 0 ? "+" : "";
   final color = totalPnl >= 0 ? Colors.greenAccent : Colors.redAccent;
+
+  double totalPnlPercent = 0.0;
+  if (totalInvestment > 0) {
+    totalPnlPercent = (totalPnl / totalInvestment) * 100;
+  }
 
   return Container(
     height: 170,
@@ -131,7 +163,7 @@ Widget _buildPositionSummaryCard(double totalPnl) {
         Row(
           children: [
             Text(
-              "$sign₹${totalPnl.toStringAsFixed(2)}",
+              "$sign₹${totalPnl.abs().toStringAsFixed(2)}",
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 22,
@@ -146,7 +178,7 @@ Widget _buildPositionSummaryCard(double totalPnl) {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                "Today",
+                "$sign${totalPnlPercent.abs().toStringAsFixed(2)}%",
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 12,
@@ -170,7 +202,9 @@ Widget _buildPositionSummaryCard(double totalPnl) {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                onPressed: () {},
+                onPressed: () {
+                  // TODO: Implement "Exit All Positions" logic
+                },
               ),
             ),
           ],
@@ -180,25 +214,36 @@ Widget _buildPositionSummaryCard(double totalPnl) {
   );
 }
 
-Widget _buildStockItem({required Instrument instrument, required int shares}) {
-  final ltp = (instrument.liveData['ltp'] as num?)?.toDouble() ?? 0.0;
-  final netChange =
-      (instrument.liveData['netChange'] as num?)?.toDouble() ?? 0.0;
-  final pnl = netChange * shares;
+// --- THIS IS THE UPDATED WIDGET ---
+Widget _buildStockItem({
+  required Instrument instrument,
+  required int shares,
+  required double pnl,
+  required double pnlPercent,
+  required double currentTotalValue, // <-- UPDATED PARAMETER
+}) {
   final changeColor = pnl >= 0 ? Colors.green : Colors.red;
+  final sign = pnl >= 0 ? '+' : '';
+
+  // --- ADDED FORMATTER ---
+  final priceFormatter = NumberFormat.currency(
+    locale: 'en_IN',
+    symbol: '₹',
+    decimalDigits: 2,
+  );
 
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
     child: Row(
       children: [
-        _buildLogoContainer(instrument.name),
+        SmartLogo(instrument: instrument, radius: 20),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                instrument.symbol, // restored: show symbol in bold
+                instrument.symbol.replaceAll('-EQ', ''),
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
@@ -206,30 +251,24 @@ Widget _buildStockItem({required Instrument instrument, required int shares}) {
                 overflow: TextOverflow.ellipsis,
               ),
               Text(
-                instrument.name, // restored: faded short name below symbol
+                '$shares Shares',
                 style: TextStyle(color: Colors.grey[600], fontSize: 12),
               ),
             ],
-          ),
-        ),
-        SizedBox(
-          width: 60,
-          height: 30,
-          child: MiniChart.fromInstrument(
-            instrument: instrument,
-            color: changeColor,
           ),
         ),
         const SizedBox(width: 12),
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
+            // --- UPDATED THIS TEXT WIDGET ---
             Text(
-              "₹${ltp.toStringAsFixed(2)}",
+              priceFormatter.format(currentTotalValue), // e.g., "₹4,409.00"
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
+            // ---
             Text(
-              "P&L: ${pnl.toStringAsFixed(2)}",
+              "$sign₹${pnl.abs().toStringAsFixed(2)} ($sign${pnlPercent.abs().toStringAsFixed(2)}%)",
               style: TextStyle(color: changeColor, fontSize: 12),
             ),
           ],
@@ -238,40 +277,3 @@ Widget _buildStockItem({required Instrument instrument, required int shares}) {
     ),
   );
 }
-
-Widget _buildLogoContainer(String name) {
-  if (name.toLowerCase().contains('google')) {
-    return SvgPicture.network(
-      'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg',
-      width: 40,
-      height: 40,
-    );
-  }
-  if (name.toLowerCase().contains('microsoft')) {
-    return Image.network(
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Microsoft_logo.svg/240px-Microsoft_logo.svg.png',
-      width: 40,
-      height: 40,
-    );
-  }
-
-  final letter = name.isNotEmpty ? name[0].toUpperCase() : '?';
-  final color = Colors.primaries[name.hashCode % Colors.primaries.length];
-  return Container(
-    width: 40,
-    height: 40,
-    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-    child: Center(
-      child: Text(
-        letter,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    ),
-  );
-}
-
-// Replaced by reusable MiniChart widget in lib/widgets/mini_chart.dart

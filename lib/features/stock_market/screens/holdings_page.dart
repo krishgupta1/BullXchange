@@ -461,7 +461,7 @@ class _PortfolioStockItemState extends State<PortfolioStockItem> {
                 builder: (_, plVal, __) => ValueListenableBuilder<double>(
                   valueListenable: _percentNotifier,
                   builder: (_, pctVal, __) {
-                    final sign = plVal >= 0 ? "+" : "";
+                    final sign = plVal >= 0 ? "+" : "-";
                     final color = plVal >= 0 ? Colors.green : Colors.red;
                     return Text(
                       "$sign₹${plVal.toStringAsFixed(2)} (${pctVal.toStringAsFixed(2)}%)",

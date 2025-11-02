@@ -1,10 +1,10 @@
 // lib/services/firebase/user_service.dart
+import 'package:bullxchange/models/order_model.dart'; // <-- 1. IMPORT ORDER MODEL
 import 'package:bullxchange/models/stock_holding_model.dart';
 import 'package:bullxchange/models/user_profile_data_model.dart';
 import 'package:bullxchange/models/transaction_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart'; // Still needed for kDebugMode if you keep any
-// Note: I'm removing all kDebugMode prints as requested.
+import 'package:flutter/foundation.dart';
 
 class UserService {
   final CollectionReference usersRef = FirebaseFirestore.instance.collection(
@@ -12,6 +12,11 @@ class UserService {
   );
   final CollectionReference transactionsRef = FirebaseFirestore.instance
       .collection('transactions');
+
+  // --- 2. ADD ORDERS COLLECTION REFERENCE ---
+  final CollectionReference ordersRef = FirebaseFirestore.instance.collection(
+    'orders',
+  );
 
   // --- Profile Management ---
   Future<void> addUserProfile({
@@ -28,11 +33,11 @@ class UserService {
       accountCreationTime: DateTime.now(),
       availableFunds: 100000.0,
       stocks: const [],
+      positions: const [], // Make sure to initialize the new list
     );
     try {
       await usersRef.doc(uid).set(profile.toJson());
     } catch (e) {
-      // You can keep one print here for critical errors
       if (kDebugMode) {
         print('Error creating user profile: $e');
       }
@@ -67,7 +72,7 @@ class UserService {
   }
 
   // --- Atomic Trade Function (Used by Buy/Sell pages) ---
-  Future<void> executeTrade({
+  Future<String> executeTrade({
     required String uid,
     required TransactionModel transaction,
     required StockHoldingModel stockHoldingUpdate,
@@ -90,6 +95,7 @@ class UserService {
         );
         final currentFunds = currentUserProfile.availableFunds;
 
+        // Check funds (this logic is the same for both types)
         if (transaction.transactionType == 'BUY' &&
             currentFunds < transaction.totalAmount) {
           throw Exception("Insufficient funds to complete the purchase.");
@@ -99,51 +105,112 @@ class UserService {
             ? currentFunds - transaction.totalAmount
             : currentFunds + transaction.totalAmount;
 
-        List<StockHoldingModel> currentStocks = List.from(
+        // --- THIS IS THE NEW ROUTING LOGIC ---
+
+        // Get mutable copies of both lists
+        List<StockHoldingModel> currentHoldings = List.from(
           currentUserProfile.stocks,
         );
-        int existingIndex = currentStocks.indexWhere(
+        List<StockHoldingModel> currentPositions = List.from(
+          currentUserProfile.positions,
+        );
+
+        // Determine which list to update
+        bool isIntraday = stockHoldingUpdate.transactionType == 'INTRADAY';
+
+        List<StockHoldingModel> listToUpdate = isIntraday
+            ? currentPositions
+            : currentHoldings;
+
+        int existingIndex = listToUpdate.indexWhere(
           (stock) => stock.stockSymbol == stockHoldingUpdate.stockSymbol,
         );
 
         if (existingIndex != -1) {
-          final oldStock = currentStocks[existingIndex];
+          // Stock already exists in the list, update it
+          final oldStock = listToUpdate[existingIndex];
           final int totalQty = oldStock.quantity + stockHoldingUpdate.quantity;
 
           if (totalQty <= 0) {
-            currentStocks.removeAt(existingIndex);
+            // Remove from list if quantity is zero or less
+            listToUpdate.removeAt(existingIndex);
           } else {
-            // Calculate new average price
-            final double totalValue =
-                (oldStock.quantity * oldStock.transactionPrice) +
-                (stockHoldingUpdate.quantity *
-                    stockHoldingUpdate.transactionPrice);
-            final double newAvgPrice = totalValue / totalQty;
-            currentStocks[existingIndex] = oldStock.copyWith(
+            // Calculate new average price (only if it's a BUY)
+            double newAvgPrice = oldStock.transactionPrice;
+            if (stockHoldingUpdate.quantity > 0) {
+              // It's a BUY
+              final double totalValue =
+                  (oldStock.quantity * oldStock.transactionPrice) +
+                  (stockHoldingUpdate.quantity *
+                      stockHoldingUpdate.transactionPrice);
+              newAvgPrice = totalValue / totalQty;
+            }
+
+            listToUpdate[existingIndex] = oldStock.copyWith(
               quantity: totalQty,
               transactionPrice: newAvgPrice,
             );
           }
         } else if (stockHoldingUpdate.quantity > 0) {
-          currentStocks.add(stockHoldingUpdate);
+          // New stock, add to the list
+          listToUpdate.add(stockHoldingUpdate);
         }
 
+        // --- END OF NEW ROUTING LOGIC ---
+
+        // Update the user document in Firestore
         firestoreTransaction.update(userDocRef, {
           'availableFunds': newFunds,
-          'stocks': currentStocks.map((s) => s.toJson()).toList(),
+
+          // Update both lists in Firestore
+          'stocks': currentHoldings.map((s) => s.toJson()).toList(),
+          'positions': currentPositions.map((p) => p.toJson()).toList(),
         });
 
+        // Log the transaction (this is the same)
         firestoreTransaction.set(newTransactionRef, transaction.toJson());
       });
 
-      // Removed success print
+      return newTransactionRef.id;
     } catch (e) {
-      // It's often good to keep error prints
       if (kDebugMode) {
         print("Failed to execute trade: $e");
       }
       rethrow;
     }
+  }
+
+  // --- 3. NEW FUNCTION TO PLACE A LIMIT ORDER ---
+  Future<void> placeLimitOrder(OrderModel order) async {
+    try {
+      await ordersRef.add(order.toJson());
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error placing limit order: $e');
+      }
+      rethrow;
+    }
+  }
+
+  // --- 4. NEW STREAM FOR OPEN ORDERS ---
+  Stream<List<OrderModel>> streamOpenOrders(String uid) {
+    return ordersRef
+        .where('userId', isEqualTo: uid)
+        .where('orderStatus', isEqualTo: 'PENDING')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) {
+          try {
+            return snapshot.docs
+                .map((doc) => OrderModel.fromSnapshot(doc))
+                .toList();
+          } catch (e) {
+            if (kDebugMode) {
+              print('Error mapping open orders: $e');
+            }
+            return [];
+          }
+        });
   }
 
   // --- Your Original Functions (Kept for reference) ---
@@ -159,6 +226,8 @@ class UserService {
     }
   }
 
+  // NOTE: This function is now redundant because executeTrade handles all its logic.
+  // You can safely remove it if you are no longer calling it from anywhere.
   Future<void> updateCumulativeStockHolding(
     String uid,
     StockHoldingModel newStockTransaction,
@@ -167,7 +236,6 @@ class UserService {
     try {
       final docSnap = await docRef.get();
       if (!docSnap.exists) {
-        // Kept this one as it's a specific warning
         if (kDebugMode) print('User not found for UID: $uid');
         return;
       }

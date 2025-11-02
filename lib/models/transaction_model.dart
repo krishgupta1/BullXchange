@@ -13,6 +13,10 @@ class TransactionModel {
   final String orderStatus; // e.g., 'EXECUTED'
   final DateTime executedAt;
 
+  // --- THESE ARE THE REQUIRED FIELDS ---
+  final String exchange;
+  final String productType;
+
   TransactionModel({
     this.id,
     required this.userId,
@@ -25,6 +29,10 @@ class TransactionModel {
     required this.totalAmount,
     this.orderStatus = 'EXECUTED', // Defaulting to EXECUTED for this app
     required this.executedAt,
+
+    // --- ADD THESE TO YOUR CONSTRUCTOR ---
+    required this.exchange,
+    required this.productType,
   });
 
   /// Converts the model to a Map for Firestore.
@@ -40,6 +48,33 @@ class TransactionModel {
       'totalAmount': totalAmount,
       'orderStatus': orderStatus,
       'executedAt': Timestamp.fromDate(executedAt),
+
+      // --- ADD THESE TO THE JSON ---
+      'exchange': exchange,
+      'productType': productType,
     };
+  }
+
+  /// Creates a TransactionModel from a Firestore document snapshot.
+  factory TransactionModel.fromSnapshot(DocumentSnapshot doc) {
+    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
+    return TransactionModel(
+      id: doc.id,
+      userId: data['userId'],
+      symbol: data['symbol'],
+      companyName: data['companyName'],
+      transactionType: data['transactionType'],
+      quantity: data['quantity'],
+      price: (data['price'] as num).toDouble(),
+      charges: (data['charges'] as num).toDouble(),
+      totalAmount: (data['totalAmount'] as num).toDouble(),
+      orderStatus: data['orderStatus'],
+      executedAt: (data['executedAt'] as Timestamp).toDate(),
+
+      // --- ADD THESE FOR READING FROM FIRESTORE ---
+      exchange: data['exchange'] ?? 'NSE', // Default to NSE if missing
+      productType: data['productType'] ?? 'Delivery', // Default
+    );
   }
 }

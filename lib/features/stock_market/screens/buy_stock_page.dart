@@ -1,4 +1,6 @@
-import 'dart:math';
+import 'package:bullxchange/features/stock_market/screens/transaction_success_page.dart';
+import 'package:bullxchange/models/order_model.dart'; // <-- 1. IMPORT NEW MODEL
+import 'package:bullxchange/services/firebase/charge_calculator_service.dart';
 import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -19,120 +21,202 @@ class BuyStockPage extends StatefulWidget {
 
 class _BuyStockPageState extends State<BuyStockPage> {
   final _quantityController = TextEditingController();
+  final _limitPriceController =
+      TextEditingController(); // <-- 2. ADD PRICE CONTROLLER
+
   String _selectedProductType = 'Delivery';
   String _selectedExchange = 'NSE';
-  double _charges = 0.0;
+  String _selectedOrderType = 'Market'; // <-- 3. ADD ORDER TYPE
+
+  Map<String, double> _chargesBreakdown = {};
+  double _totalCharges = 0.0;
+
   double _totalAmount = 0.0;
   int _quantity = 0;
   late double _ltp;
+  double _price = 0.0; // <-- 4. ADD PRICE STATE
+
   final UserService _userService = UserService();
+  final ChargeCalculatorService _chargeCalculator = ChargeCalculatorService();
   bool _isPlacingOrder = false;
+
   static const Color primaryPink = Color(0xFFF61C7A);
   static const Color darkTextColor = Color(0xFF03314B);
   static const Color lightGreyBg = Color(0xFFF5F5F5);
   static const Color lightBorderColor = Color(0xFFE0E0E0);
 
+  final _priceFormatter = NumberFormat.currency(
+    locale: 'en_IN',
+    symbol: '₹',
+    decimalDigits: 2,
+  );
+
   @override
   void initState() {
     super.initState();
     _ltp = (widget.instrument.liveData['ltp'] as num?)?.toDouble() ?? 0.0;
-    _generateRandomCharges();
+    _price = _ltp; // 5. Init price to LTP
+    _limitPriceController.text = _ltp.toStringAsFixed(2);
+
     _quantityController.addListener(_calculateTotal);
+    _limitPriceController.addListener(_onPriceChanged); // 6. Add listener
+    _calculateTotal();
   }
 
-  void _generateRandomCharges() {
-    _charges = 5.0 + Random().nextDouble() * 20.0;
+  void _onPriceChanged() {
+    if (_selectedOrderType == 'Limit') {
+      setState(() {
+        _price = double.tryParse(_limitPriceController.text) ?? 0.0;
+        _calculateTotal();
+      });
+    }
+  }
+
+  void _onOrderTypeChanged(String newType) {
+    setState(() {
+      _selectedOrderType = newType;
+      if (newType == 'Market') {
+        _price = _ltp; // Set price to Market
+        _limitPriceController.text = _ltp.toStringAsFixed(2);
+      } else {
+        _price = double.tryParse(_limitPriceController.text) ?? _ltp;
+      }
+      _calculateTotal();
+    });
   }
 
   void _calculateTotal() {
-    setState(() {
-      _quantity = int.tryParse(_quantityController.text) ?? 0;
-      _totalAmount = (_quantity > 0) ? (_quantity * _ltp) + _charges : 0.0;
-    });
+    _quantity = int.tryParse(_quantityController.text) ?? 0;
+    final double tradeValue = _quantity * _price; // <-- Use _price not _ltp
+
+    _chargesBreakdown = _chargeCalculator.calculateBuyCharges(tradeValue);
+    _totalCharges = _chargesBreakdown['total'] ?? 0.0;
+
+    _totalAmount = (_quantity > 0) ? (tradeValue + _totalCharges) : 0.0;
   }
 
   @override
   void dispose() {
     _quantityController.removeListener(_calculateTotal);
+    _limitPriceController.removeListener(_onPriceChanged);
     _quantityController.dispose();
+    _limitPriceController.dispose();
     super.dispose();
   }
 
-  // --- THIS METHOD IS CORRECTED ---
+  // --- 7. UPDATED _handleBuy TO BE A ROUTER ---
   Future<void> _handleBuy() async {
-    if (_quantity <= 0 || _isPlacingOrder) return;
+    if (_quantity <= 0 || _price <= 0 || _isPlacingOrder) return;
     setState(() => _isPlacingOrder = true);
 
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error: User not logged in.')),
-      );
+      // ... (error handling)
       setState(() => _isPlacingOrder = false);
       return;
     }
 
+    if (_selectedOrderType == 'Market') {
+      await _executeMarketOrder(uid);
+    } else {
+      await _placeLimitOrder(uid);
+    }
+
+    if (mounted) {
+      setState(() => _isPlacingOrder = false);
+    }
+  }
+
+  Future<void> _executeMarketOrder(String uid) async {
     final now = DateTime.now();
     final symbol = widget.instrument.symbol.replaceAll('-EQ', '');
 
-    // Model for updating the user's HOLDINGS (the summary)
-    final holdingUpdate = StockHoldingModel(
-      stockName: widget.instrument.name,
-      stockSymbol: symbol,
-      quantity: _quantity,
-      transactionPrice: _ltp,
-      buyingTime: now,
-      charges: _charges,
-      totalAmount: _totalAmount,
-      exchange: _selectedExchange,
-      transactionType: _selectedProductType.toUpperCase(),
-    );
-
-    // Model for logging the individual TRANSACTION
     final newTransaction = TransactionModel(
       userId: uid,
       symbol: symbol,
       companyName: widget.instrument.name,
       transactionType: 'BUY',
       quantity: _quantity,
-      price: _ltp,
-      charges: _charges,
+      price: _price, // Use _price (which is _ltp for market)
+      charges: _totalCharges,
       totalAmount: _totalAmount,
       executedAt: now,
+      exchange: _selectedExchange,
+      productType: _selectedProductType,
+    );
+
+    final holdingUpdate = StockHoldingModel(
+      stockName: widget.instrument.name,
+      stockSymbol: symbol,
+      quantity: _quantity,
+      transactionPrice: _price,
+      buyingTime: now,
+      charges: _totalCharges,
+      totalAmount: _totalAmount,
+      exchange: _selectedExchange,
+      transactionType: _selectedProductType.toUpperCase(),
     );
 
     try {
-      // --- MODIFIED: Use the single atomic executeTrade function ---
-      await _userService.executeTrade(
+      final String transactionId = await _userService.executeTrade(
         uid: uid,
         transaction: newTransaction,
         stockHoldingUpdate: holdingUpdate,
       );
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.green,
-          content: Text('Successfully bought $_quantity shares of $symbol.'),
-        ),
-      );
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (context) => TransactionSuccessPage(
+              transaction: newTransaction,
+              transactionId: transactionId,
+            ),
+          ),
+          (route) => route.isFirst, // Clears stack back to home
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to place order: $e')));
-    } finally {
-      if (mounted) setState(() => _isPlacingOrder = false);
+      // ... (error handling)
     }
   }
 
-  // --- (Rest of the UI code is unchanged and correct) ---
+  Future<void> _placeLimitOrder(String uid) async {
+    final symbol = widget.instrument.symbol.replaceAll('-EQ', '');
+
+    final newOrder = OrderModel(
+      userId: uid,
+      symbol: symbol,
+      companyName: widget.instrument.name,
+      transactionType: 'BUY',
+      orderType: 'LIMIT',
+      productType: _selectedProductType.toUpperCase(),
+      quantity: _quantity,
+      limitPrice: _price, // Use _price (the user's limit price)
+      createdAt: DateTime.now(),
+      exchange: _selectedExchange,
+      instrumentToken: widget.instrument.token,
+    );
+
+    try {
+      await _userService.placeLimitOrder(newOrder);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.blue,
+          content: Text('Limit order for $symbol placed successfully.'),
+        ),
+      );
+      if (mounted) {
+        // Go back to the main app screen
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    } catch (e) {
+      // ... (error handling)
+    }
+  }
+
+  // --- 8. UPDATED UI ---
   @override
   Widget build(BuildContext context) {
-    final priceFormatter = NumberFormat.currency(
-      locale: 'en_IN',
-      symbol: '₹',
-      decimalDigits: 2,
-    );
+    // ... (Scaffold, AppBar, etc. are the same)
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -178,11 +262,13 @@ class _BuyStockPageState extends State<BuyStockPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildStockHeader(priceFormatter),
+            _buildStockHeader(_priceFormatter),
             const SizedBox(height: 24),
-            _buildInputSection(),
+            _buildInputSection(), // This function is now updated
             const SizedBox(height: 24),
-            _buildOrderSummary(priceFormatter),
+            _buildOrderSummary(
+              _priceFormatter,
+            ), // This function is also updated
           ],
         ),
       ),
@@ -191,6 +277,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
   }
 
   Widget _buildStockHeader(NumberFormat formatter) {
+    // ... (This function is unchanged)
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -202,7 +289,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
           Expanded(
             child: Row(
               children: [
-                SmartLogo(instrument: widget.instrument),
+                SmartLogo(instrument: widget.instrument, radius: 0),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
@@ -244,29 +331,98 @@ class _BuyStockPageState extends State<BuyStockPage> {
     );
   }
 
+  // --- 9. UPDATED _buildInputSection ---
   Widget _buildInputSection() {
+    bool isLimit = _selectedOrderType == 'Limit';
+
     return Column(
       children: [
-        TextField(
-          controller: _quantityController,
-          keyboardType: TextInputType.number,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: darkTextColor,
-          ),
-          decoration: InputDecoration(
-            labelText: 'Quantity',
-            labelStyle: const TextStyle(color: Colors.grey, fontSize: 16),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: lightBorderColor, width: 1.5),
+        Row(
+          children: [
+            Expanded(
+              child: _buildSegmentedControl(
+                title: 'Type',
+                options: ['Market', 'Limit'],
+                selectedValue: _selectedOrderType,
+                onChanged: _onOrderTypeChanged,
+              ),
             ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: primaryPink, width: 2.0),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _quantityController,
+                keyboardType: TextInputType.number,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: darkTextColor,
+                ),
+                decoration: InputDecoration(
+                  labelText: 'Quantity',
+                  labelStyle: const TextStyle(color: Colors.grey, fontSize: 16),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: lightBorderColor,
+                      width: 1.5,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: primaryPink,
+                      width: 2.0,
+                    ),
+                  ),
+                ),
+              ),
             ),
-          ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: TextField(
+                controller: _limitPriceController,
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                enabled: isLimit, // <-- ONLY ENABLED FOR LIMIT
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: isLimit
+                      ? darkTextColor
+                      : Colors.grey, // <-- Visual cue
+                ),
+                decoration: InputDecoration(
+                  labelText: 'Price',
+                  labelStyle: TextStyle(color: Colors.grey, fontSize: 16),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: lightBorderColor,
+                      width: 1.5,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: primaryPink,
+                      width: 2.0,
+                    ),
+                  ),
+                  disabledBorder: OutlineInputBorder(
+                    // <-- Style for disabled
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Colors.grey[200]!,
+                      width: 1.5,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 20),
         _buildSegmentedControl(
@@ -286,12 +442,14 @@ class _BuyStockPageState extends State<BuyStockPage> {
     );
   }
 
+  // ... (SegmentedControl is unchanged)
   Widget _buildSegmentedControl({
     required String title,
     required List<String> options,
     required String selectedValue,
     required ValueChanged<String> onChanged,
   }) {
+    // ... (This function is unchanged)
     return Row(
       children: [
         Text(
@@ -338,6 +496,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
     );
   }
 
+  // --- 10. UPDATED _buildOrderSummary ---
   Widget _buildOrderSummary(NumberFormat formatter) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -348,10 +507,52 @@ class _BuyStockPageState extends State<BuyStockPage> {
       child: Column(
         children: [
           _buildSummaryRow('Quantity', _quantity.toString()),
-          _buildSummaryRow('Price', formatter.format(_ltp)),
+          // --- Updated Price Row ---
+          _buildSummaryRow(
+            'Price',
+            _selectedOrderType == 'Market'
+                ? 'Market'
+                : formatter.format(_price),
+          ),
           const Divider(height: 24),
-          _buildSummaryRow('Subtotal', formatter.format(_quantity * _ltp)),
-          _buildSummaryRow('Charges', formatter.format(_charges)),
+          _buildSummaryRow('Subtotal', formatter.format(_quantity * _price)),
+          // --- Charges Row (unchanged) ---
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Charges',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.info_outline,
+                        color: Colors.grey,
+                        size: 18,
+                      ),
+                      onPressed: () => _showChargeDetailsBottomSheet(context),
+                    ),
+                  ],
+                ),
+                Text(
+                  formatter.format(_totalCharges),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: darkTextColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
           const Divider(height: 24),
           _buildSummaryRow(
             'Total Amount',
@@ -363,6 +564,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
     );
   }
 
+  // ... (rest of the file is unchanged)
   Widget _buildSummaryRow(String label, String value, {bool isTotal = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -395,7 +597,9 @@ class _BuyStockPageState extends State<BuyStockPage> {
       color: Colors.white,
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
       child: ElevatedButton(
-        onPressed: (_quantity > 0 && !_isPlacingOrder) ? _handleBuy : null,
+        onPressed: (_quantity > 0 && _price > 0 && !_isPlacingOrder)
+            ? _handleBuy
+            : null,
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryPink,
           foregroundColor: Colors.white,
@@ -419,6 +623,77 @@ class _BuyStockPageState extends State<BuyStockPage> {
                 "Place Buy Order",
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
+      ),
+    );
+  }
+
+  void _showChargeDetailsBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Buy Charges Breakdown',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: darkTextColor,
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildChargeRow('Brokerage', _chargesBreakdown['brokerage']),
+              _buildChargeRow('STT (Buy)', _chargesBreakdown['stt']),
+              _buildChargeRow(
+                'Exchange Charges',
+                _chargesBreakdown['exchangeCharges'],
+              ),
+              _buildChargeRow('SEBI Charges', _chargesBreakdown['sebiCharges']),
+              _buildChargeRow('Stamp Duty', _chargesBreakdown['stampDuty']),
+              _buildChargeRow('GST', _chargesBreakdown['gst']),
+              const Divider(height: 24),
+              _buildChargeRow(
+                'Total Charges',
+                _chargesBreakdown['total'],
+                isTotal: true,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildChargeRow(String label, double? value, {bool isTotal = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 16,
+              color: isTotal ? darkTextColor : Colors.grey[700],
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
+            ),
+          ),
+          Text(
+            _priceFormatter.format(value ?? 0.0),
+            style: TextStyle(
+              fontSize: 16,
+              color: darkTextColor,
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }

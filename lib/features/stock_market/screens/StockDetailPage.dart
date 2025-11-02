@@ -186,7 +186,7 @@ class StockDetailPage extends StatelessWidget {
   ) {
     return Row(
       children: [
-        SmartLogo(instrument: instrument),
+        SmartLogo(instrument: instrument, radius: 0),
         const SizedBox(width: 10),
         Expanded(
           child: Column(

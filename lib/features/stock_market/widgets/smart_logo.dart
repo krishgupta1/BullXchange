@@ -5,7 +5,7 @@ import 'package:dio/dio.dart'; // 1. Import Dio
 
 class SmartLogo extends StatefulWidget {
   final Instrument instrument;
-  const SmartLogo({super.key, required this.instrument});
+  const SmartLogo({super.key, required this.instrument, required int radius});
 
   @override
   State<SmartLogo> createState() => _SmartLogoState();
