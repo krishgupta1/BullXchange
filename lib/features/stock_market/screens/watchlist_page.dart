@@ -8,7 +8,6 @@ import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
 class WatchlistPage extends StatefulWidget {
