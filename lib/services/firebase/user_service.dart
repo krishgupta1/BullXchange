@@ -1,5 +1,4 @@
-// lib/services/firebase/user_service.dart
-import 'package:bullxchange/models/order_model.dart'; // <-- 1. IMPORT ORDER MODEL
+import 'package:bullxchange/models/order_model.dart';
 import 'package:bullxchange/models/stock_holding_model.dart';
 import 'package:bullxchange/models/user_profile_data_model.dart';
 import 'package:bullxchange/models/transaction_model.dart';
@@ -12,8 +11,6 @@ class UserService {
   );
   final CollectionReference transactionsRef = FirebaseFirestore.instance
       .collection('transactions');
-
-  // --- 2. ADD ORDERS COLLECTION REFERENCE ---
   final CollectionReference ordersRef = FirebaseFirestore.instance.collection(
     'orders',
   );
@@ -33,7 +30,8 @@ class UserService {
       accountCreationTime: DateTime.now(),
       availableFunds: 100000.0,
       stocks: const [],
-      positions: const [], // Make sure to initialize the new list
+      positions: const [],
+      watchlist: const [], // <-- 1. ADD THIS FOR NEW USERS
     );
     try {
       await usersRef.doc(uid).set(profile.toJson());
@@ -200,17 +198,53 @@ class UserService {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
-          try {
-            return snapshot.docs
-                .map((doc) => OrderModel.fromSnapshot(doc))
-                .toList();
-          } catch (e) {
-            if (kDebugMode) {
-              print('Error mapping open orders: $e');
-            }
-            return [];
-          }
+      try {
+        return snapshot.docs
+            .map((doc) => OrderModel.fromSnapshot(doc))
+            .toList();
+      } catch (e) {
+        if (kDebugMode) {
+          print('Error mapping open orders: $e');
+        }
+        return [];
+      }
+    });
+  }
+
+  // --- 5. NEW WATCHLIST FUNCTION ---
+  /// Toggles a stock in the user's watchlist.
+  /// Uses arrayUnion to add and arrayRemove to delete, ensuring no duplicates.
+  Future<void> toggleWatchlistStock(String uid, String instrumentToken) async {
+    final userDocRef = usersRef.doc(uid);
+
+    try {
+      // Get the current user data first to see if the stock is already in the list
+      final doc = await userDocRef.get();
+      if (!doc.exists) {
+        throw Exception("User profile not found.");
+      }
+
+      final data = doc.data() as Map<String, dynamic>;
+      final List<String> currentWatchlist =
+          List<String>.from(data['watchlist'] ?? []);
+
+      if (currentWatchlist.contains(instrumentToken)) {
+        // It exists, so REMOVE it
+        await userDocRef.update({
+          'watchlist': FieldValue.arrayRemove([instrumentToken])
         });
+      } else {
+        // It doesn't exist, so ADD it
+        await userDocRef.update({
+          'watchlist': FieldValue.arrayUnion([instrumentToken])
+        });
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error toggling watchlist: $e');
+      }
+      rethrow;
+    }
   }
 
   // --- Your Original Functions (Kept for reference) ---
