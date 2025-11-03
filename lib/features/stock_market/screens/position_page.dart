@@ -1,100 +1,147 @@
+// lib/pages/position_page.dart (or wherever you have it)
+import 'package:bullxchange/models/instrument_model.dart';
+import 'package:bullxchange/models/user_profile_data_model.dart';
+import 'package:bullxchange/provider/instrument_provider.dart';
+import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:fl_chart/fl_chart.dart';
-
-// Using the same data structure for positions
-final List<Map<String, dynamic>> positions = [
-  {
-    'logo': 'twitter',
-    'stockName': 'Twitter Inc.',
-    'shares': 5,
-    'price': '₹1,720.98',
-    'priceChange': '₹1,540.90',
-    'trendColor': Colors.blue,
-    'data': const [2.0, 3.0, 2.0, 4.0, 3.0, 5.0, 3.0],
-  },
-  {
-    'logo': 'google',
-    'isGoogle': true,
-    'stockName': 'Alphabet Inc.',
-    'shares': 5,
-    'price': '₹1,720.98',
-    'priceChange': '₹1,540.90',
-    'trendColor': Colors.green,
-    'data': const [2.0, 3.0, 5.0, 4.0, 6.0, 7.0, 8.0],
-  },
-  {
-    'logo': 'microsoft',
-    'isMicrosoft': true,
-    'stockName': 'Microsoft',
-    'shares': 5,
-    'price': '₹1,720.98',
-    'priceChange': '₹1,598.23',
-    'trendColor': Colors.green,
-    'data': const [5.0, 4.0, 6.0, 3.0, 5.0, 4.0, 2.0],
-  },
-  {
-    'logo': 'nike',
-    'stockName': 'Nike, Inc.',
-    'shares': 5,
-    'price': '₹1,720.98',
-    'priceChange': '₹1,342.76',
-    'trendColor': Colors.orange,
-    'data': const [4.0, 5.0, 3.0, 4.0, 2.0, 3.0, 1.0],
-  },
-];
+import 'package:intl/intl.dart'; // <-- IMPORT FOR FORMATTING
+import 'package:provider/provider.dart';
+// import 'package:bullxchange/features/stock_market/widgets/mini_chart.dart'; // MiniChart is commented out
 
 class PositionPage extends StatelessWidget {
   const PositionPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 16.0),
-      children: [
-        // --- 1. Position Summary Card ---
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: _buildPositionSummaryCard(),
-        ),
-        const SizedBox(height: 24),
+    // --- 1. CONSUME BOTH PROVIDERS ---
+    return Consumer2<UserProfileDataModel?, InstrumentProvider>(
+      builder: (context, userProfile, instrumentProvider, child) {
+        // --- 2. GET LIVE POSITIONS FROM USER PROFILE ---
+        if (userProfile == null || userProfile.positions.isEmpty) {
+          return const _EmptyState();
+        }
 
-        // --- 2. "Delivery" Section Header ---
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.0),
-          child: Text(
-            "Delivery",
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-        ),
+        final userPositions = userProfile.positions;
 
-        // --- 3. Positions List ---
-        ...positions.map((p) {
-          return _buildStockItem(
-            logo: _buildLogoContainer(
-              p['logo'] == 'twitter' ? Colors.blue.shade700 : Colors.black,
-              p['logo'].substring(0, 1).toUpperCase(),
-              isGoogle: p['isGoogle'] ?? false,
-              isMicrosoft: p['isMicrosoft'] ?? false,
-            ),
-            company: p['stockName'],
-            shares: '${p['shares']} shares',
-            price: p['price'],
-            change: p['priceChange'],
-            changeColor: p['trendColor'],
-            data: p['data'],
+        // --- 3. CALCULATE P&L AND INVESTMENT FROM LIVE DATA ---
+        double totalOverallPnl = 0;
+        double totalInvestment = 0;
+        List<Widget> positionWidgets = [];
+
+        for (var position in userPositions) {
+          // Find the matching instrument from the provider
+          final instrument = instrumentProvider.getInstrumentBySymbol(
+            position.stockSymbol,
           );
-        }),
+
+          if (instrument == null) continue; // Skip if no live data found
+
+          // --- P&L CALCULATION (OVERALL P&L) ---
+          final ltp = (instrument.liveData['ltp'] as num?)?.toDouble() ?? 0.0;
+          final avgBuyPrice = position.transactionPrice;
+          final quantity = position.quantity;
+
+          final double pnl = (ltp - avgBuyPrice) * quantity;
+          final double investment = avgBuyPrice * quantity;
+
+          // --- THIS IS THE NEW VALUE YOU WANTED ---
+          final double currentTotalValue = ltp * quantity;
+
+          double pnlPercent = 0.0;
+          if (investment > 0) {
+            pnlPercent = (pnl / investment) * 100;
+          }
+          // --- END P&L CALCULATION ---
+
+          totalOverallPnl += pnl;
+          totalInvestment += investment;
+
+          positionWidgets.add(
+            _buildStockItem(
+              instrument: instrument,
+              shares: position.quantity,
+              pnl: pnl,
+              pnlPercent: pnlPercent,
+              currentTotalValue: currentTotalValue, // <-- PASS NEW VALUE
+            ),
+          );
+        }
+
+        if (positionWidgets.isEmpty) {
+          return const _EmptyState();
+        }
+
+        // --- 4. BUILD THE UI ---
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 1. Dynamic Position Summary Card
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: _buildPositionSummaryCard(
+                  totalOverallPnl,
+                  totalInvestment,
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // 2. "Intraday" Section Header
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                child: Text(
+                  "Intraday Positions",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ),
+
+              // 3. Dynamic Positions List
+              ...positionWidgets,
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+// --- _EmptyState is UNCHANGED ---
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      children: [
+        SizedBox(height: 20),
+        Icon(Icons.work_history_outlined, size: 48, color: Colors.grey),
+        SizedBox(height: 16),
+        Text(
+          "No Open Positions",
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        SizedBox(height: 8),
+        Text(
+          "Your intraday trades for the day will appear here.",
+          style: TextStyle(color: Colors.grey),
+          textAlign: TextAlign.center,
+        ),
       ],
     );
   }
 }
 
-// --- Reusable Widgets ---
+// --- _buildPositionSummaryCard is UNCHANGED ---
+Widget _buildPositionSummaryCard(double totalPnl, double totalInvestment) {
+  final sign = totalPnl >= 0 ? "+" : "";
+  final color = totalPnl >= 0 ? Colors.greenAccent : Colors.redAccent;
 
-Widget _buildPositionSummaryCard() {
+  double totalPnlPercent = 0.0;
+  if (totalInvestment > 0) {
+    totalPnlPercent = (totalPnl / totalInvestment) * 100;
+  }
+
   return Container(
-    // ✨ FIX 1: Set a fixed height to match the holdings page card.
     height: 170,
     padding: const EdgeInsets.all(20),
     decoration: BoxDecoration(
@@ -108,19 +155,18 @@ Widget _buildPositionSummaryCard() {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Total Returns Section
         Text(
-          "Total returns",
+          "Total Profit & Loss",
           style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14),
         ),
         const SizedBox(height: 6),
         Row(
           children: [
-            const Text(
-              "+₹799.97",
-              style: TextStyle(
+            Text(
+              "$sign₹${totalPnl.abs().toStringAsFixed(2)}",
+              style: const TextStyle(
                 color: Colors.white,
-                fontSize: 18,
+                fontSize: 22,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -128,13 +174,13 @@ Widget _buildPositionSummaryCard() {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: color.withOpacity(0.9),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Text(
-                "+810%",
-                style: TextStyle(
-                  color: Colors.black,
+              child: Text(
+                "$sign${totalPnlPercent.abs().toStringAsFixed(2)}%",
+                style: const TextStyle(
+                  color: Colors.white,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -142,9 +188,7 @@ Widget _buildPositionSummaryCard() {
             ),
           ],
         ),
-        // ✨ FIX 2: Add a Spacer to push the buttons to the bottom.
         const Spacer(),
-        // Buttons Section
         Row(
           children: [
             Expanded(
@@ -158,22 +202,9 @@ Widget _buildPositionSummaryCard() {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                onPressed: () {},
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: TextButton.icon(
-                icon: const Text("Set safe exit"),
-                label: const Icon(Icons.keyboard_arrow_down, size: 20),
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: Colors.white.withOpacity(0.15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                onPressed: () {},
+                onPressed: () {
+                  // TODO: Implement "Exit All Positions" logic
+                },
               ),
             ),
           ],
@@ -183,127 +214,64 @@ Widget _buildPositionSummaryCard() {
   );
 }
 
-// Unchanged from holdings_page.dart
+// --- THIS IS THE UPDATED WIDGET ---
 Widget _buildStockItem({
-  required Widget logo,
-  required String company,
-  required String shares,
-  required String price,
-  required String change,
-  required Color changeColor,
-  required List<double> data,
+  required Instrument instrument,
+  required int shares,
+  required double pnl,
+  required double pnlPercent,
+  required double currentTotalValue, // <-- UPDATED PARAMETER
 }) {
+  final changeColor = pnl >= 0 ? Colors.green : Colors.red;
+  final sign = pnl >= 0 ? '+' : '';
+
+  // --- ADDED FORMATTER ---
+  final priceFormatter = NumberFormat.currency(
+    locale: 'en_IN',
+    symbol: '₹',
+    decimalDigits: 2,
+  );
+
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
     child: Row(
       children: [
-        logo,
+        SmartLogo(instrument: instrument, radius: 20),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                company,
+                instrument.symbol.replaceAll('-EQ', ''),
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                 ),
+                overflow: TextOverflow.ellipsis,
               ),
               Text(
-                shares,
+                '$shares Shares',
                 style: TextStyle(color: Colors.grey[600], fontSize: 12),
               ),
             ],
           ),
         ),
-        SizedBox(
-          width: 60,
-          height: 30,
-          child: _buildMiniChart(data, changeColor),
-        ),
         const SizedBox(width: 12),
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
+            // --- UPDATED THIS TEXT WIDGET ---
             Text(
-              price,
+              priceFormatter.format(currentTotalValue), // e.g., "₹4,409.00"
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
+            // ---
             Text(
-              "($change)",
+              "$sign₹${pnl.abs().toStringAsFixed(2)} ($sign${pnlPercent.abs().toStringAsFixed(2)}%)",
               style: TextStyle(color: changeColor, fontSize: 12),
             ),
           ],
-        ),
-      ],
-    ),
-  );
-}
-
-// Unchanged from holdings_page.dart
-Widget _buildLogoContainer(
-  Color bgColor,
-  String letter, {
-  bool isGoogle = false,
-  bool isMicrosoft = false,
-}) {
-  if (isGoogle) {
-    return SvgPicture.network(
-      'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg',
-      width: 40,
-      height: 40,
-      placeholderBuilder: (BuildContext context) =>
-          const CircularProgressIndicator(),
-    );
-  }
-  if (isMicrosoft) {
-    return Image.network(
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Microsoft_logo.svg/240px-Microsoft_logo.svg.png',
-      width: 40,
-      height: 40,
-    );
-  }
-  return Container(
-    width: 40,
-    height: 40,
-    decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
-    child: Center(
-      child: Text(
-        letter,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    ),
-  );
-}
-
-// Unchanged from holdings_page.dart
-Widget _buildMiniChart(List<double> data, Color color) {
-  return LineChart(
-    LineChartData(
-      gridData: const FlGridData(show: false),
-      titlesData: const FlTitlesData(
-        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-      ),
-      borderData: FlBorderData(show: false),
-      lineBarsData: [
-        LineChartBarData(
-          spots: data.asMap().entries.map((e) {
-            return FlSpot(e.key.toDouble(), e.value);
-          }).toList(),
-          isCurved: true,
-          color: color,
-          barWidth: 2,
-          isStrokeCapRound: true,
-          dotData: const FlDotData(show: false),
-          belowBarData: BarAreaData(show: false),
         ),
       ],
     ),

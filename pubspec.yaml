@@ -11,9 +11,10 @@ dependencies:
     sdk: flutter
 
   # Firebase
-  firebase_core: ^4.1.1
+  firebase_core: 4.2.0
   cloud_firestore: ^6.0.2
   firebase_auth: ^6.1.0
+  shimmer: ^3.0.0
 
   # HTTP and environment
   dio: ^5.9.0
@@ -22,7 +23,7 @@ dependencies:
   # Security & PIN
   flutter_secure_storage: ^9.2.2
   pinput: ^5.0.0
-  local_auth: ^2.3.0
+  local_auth: ^3.0.0
   crypto: ^3.0.3
   shared_preferences: ^2.5.3
   provider: ^6.1.5+1
@@ -32,11 +33,13 @@ dependencies:
   flutter_svg: ^2.2.1
   auto_size_text: ^3.0.0
   path_provider: ^2.1.5
+  webview_flutter: ^4.13.0
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.4
 
 flutter:
@@ -68,4 +71,4 @@ flutter:
 flutter_icons:
   android: true
   ios: true
-  image_path: "assets/icon/app_icon.png"
+  image_path: "assets/icon/icon.png"

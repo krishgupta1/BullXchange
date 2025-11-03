@@ -1,131 +1,154 @@
-import 'package:fl_chart/fl_chart.dart';
+import 'package:bullxchange/models/instrument_model.dart';
+import 'package:bullxchange/models/order_model.dart';
+import 'package:bullxchange/provider/instrument_provider.dart';
+import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-
-// Data structure for open orders
-final List<Map<String, dynamic>> openOrders = [
-  {
-    'logo': 'twitter',
-    'stockName': 'Twitter Inc.',
-    'marketPrice': '1750',
-    'orderPrice': '1725',
-    'quantity': 20,
-    'trendColor': Colors.blue,
-    'data': const [2.0, 3.0, 2.0, 4.0, 3.0, 5.0, 3.0],
-  },
-  {
-    'logo': 'google',
-    'isGoogle': true,
-    'stockName': 'Alphabet Inc.',
-    'marketPrice': '1750',
-    'orderPrice': '1725',
-    'quantity': 20,
-    'trendColor': Colors.green,
-    'data': const [2.0, 3.0, 5.0, 4.0, 6.0, 7.0, 8.0],
-  },
-  {
-    'logo': 'microsoft',
-    'isMicrosoft': true,
-    'stockName': 'Microsoft',
-    'marketPrice': '1750',
-    'orderPrice': '1725',
-    'quantity': 20,
-    'trendColor': Colors.red,
-    'data': const [5.0, 4.0, 6.0, 3.0, 5.0, 4.0, 2.0],
-  },
-  {
-    'logo': 'nike',
-    'stockName': 'Nike, Inc.',
-    'marketPrice': '1750',
-    'orderPrice': '1725',
-    'quantity': 20,
-    'trendColor': Colors.orange,
-    'data': const [4.0, 5.0, 3.0, 4.0, 2.0, 3.0, 1.0],
-  },
-];
+import 'package:provider/provider.dart';
+import 'package:bullxchange/features/stock_market/widgets/mini_chart.dart';
 
 class OrderPage extends StatelessWidget {
   const OrderPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16.0),
-      children: [
-        // --- Header with collapsible icon ---
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              "Open orders (${openOrders.length})",
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const Icon(Icons.keyboard_arrow_up),
-          ],
-        ),
-        const SizedBox(height: 16),
-        // --- Cancel all / Qty Header ---
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            TextButton.icon(
-              icon: const Icon(
-                Icons.cancel_outlined,
-                color: Colors.grey,
-                size: 20,
-              ),
-              label: Text(
-                "Cancel all",
-                style: TextStyle(color: Colors.grey[700]),
-              ),
-              onPressed: () {},
-            ),
-            Text(
-              "Qty/Price",
-              style: TextStyle(color: Colors.grey[600], fontSize: 14),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
+    // 1. Consume both the list of open orders (from the stream)
+    //    and the InstrumentProvider (for live data).
+    return Consumer2<List<OrderModel>, InstrumentProvider>(
+      builder: (context, openOrders, provider, child) {
+        // Handle case where there are no open orders
+        if (openOrders.isEmpty) {
+          return const _EmptyState();
+        }
 
-        // --- Orders List ---
-        ...openOrders.map((order) {
-          return _buildOrderItem(
-            logo: _buildLogoContainer(
-              order['logo'] == 'twitter' ? Colors.blue.shade700 : Colors.black,
-              order['logo'].substring(0, 1).toUpperCase(),
-              isGoogle: order['isGoogle'] ?? false,
-              isMicrosoft: order['isMicrosoft'] ?? false,
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  // --- Header with collapsible icon ---
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Open orders (${openOrders.length})",
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Icon(Icons.keyboard_arrow_up),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // --- Cancel all / Qty Header ---
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      TextButton.icon(
+                        icon: const Icon(
+                          Icons.cancel_outlined,
+                          color: Colors.grey,
+                          size: 20,
+                        ),
+                        label: Text(
+                          "Cancel all",
+                          style: TextStyle(color: Colors.grey[700]),
+                        ),
+                        onPressed: () {
+                          // TODO: Implement Cancel All Orders logic
+                        },
+                      ),
+                      Text(
+                        "Qty/Price",
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            stockName: order['stockName'],
-            marketPrice: order['marketPrice'],
-            orderPrice: order['orderPrice'],
-            quantity: order['quantity'],
-            data: order['data'],
-            color: order['trendColor'],
-          );
-        }),
-      ],
+            const SizedBox(height: 8),
+
+            // --- Orders List ---
+            // 2. Build the list from the live order stream
+            ...openOrders.map((order) {
+              // 3. Find the matching instrument from the provider
+              final instrument = provider.getInstrumentByToken(
+                order.instrumentToken,
+              );
+
+              return _buildOrderItem(
+                instrument: instrument, // This is an Instrument? (nullable)
+                order: order,
+              );
+            }),
+          ],
+        );
+      },
     );
   }
 }
 
 // --- Reusable Widgets ---
 
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      children: [
+        SizedBox(height: 20),
+        Icon(Icons.receipt_long_outlined, size: 48, color: Colors.grey),
+        SizedBox(height: 16),
+        Text(
+          "No Pending Orders",
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        SizedBox(height: 8),
+        Text(
+          "Your open orders for the day will appear here.",
+          style: TextStyle(color: Colors.grey),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+}
+
 Widget _buildOrderItem({
-  required Widget logo,
-  required String stockName,
-  required String marketPrice,
-  required String orderPrice,
-  required int quantity,
-  required List<double> data,
-  required Color color,
+  required Instrument? instrument, // <-- Accept nullable Instrument
+  required OrderModel order,
 }) {
+  // Get LTP from instrument if it exists, otherwise use '...'
+  final ltp = (instrument?.liveData['ltp'] as num?)?.toDouble() ?? 0.0;
+  final netChange =
+      (instrument?.liveData['netChange'] as num?)?.toDouble() ?? 0.0;
+  final changeColor = netChange >= 0 ? Colors.green : Colors.red;
+
+  // Get order info directly from the OrderModel
+  final orderType = order.transactionType;
+  final quantity = order.quantity;
+
+  // --- NEW LOGIC ---
+  // Determine the price text based on the order type from the model
+  final String priceText;
+  if (order.orderType == 'LIMIT') {
+    priceText = "At ₹${order.limitPrice.toStringAsFixed(2)}";
+  } else {
+    // Assumes anything not 'LIMIT' is 'MARKET'
+    priceText = "Market";
+  }
+  // --- END OF NEW LOGIC ---
+
   return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 12.0),
+    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
     child: Row(
       children: [
-        logo,
+        // Conditionally build the SmartLogo or placeholder
+        instrument != null
+            ? SmartLogo(instrument: instrument, radius: 20)
+            : _buildLogoContainer(order.companyName, radius: 20),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -134,18 +157,10 @@ Widget _buildOrderItem({
               Text.rich(
                 TextSpan(
                   children: [
-                    const TextSpan(
-                      text: "BUY + ",
-                      style: TextStyle(
-                        color: Colors.green,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
                     TextSpan(
-                      text: "SL/TGT",
+                      text: "$orderType ",
                       style: TextStyle(
-                        color: Colors.red[400],
+                        color: orderType == 'BUY' ? Colors.green : Colors.red,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
@@ -155,27 +170,40 @@ Widget _buildOrderItem({
               ),
               const SizedBox(height: 2),
               Text(
-                stockName,
+                order.symbol, // Use symbol from order
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                 ),
+                overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 2),
               Text(
-                "Mkt ₹$marketPrice",
+                "Mkt ₹${ltp == 0.0 ? '--' : ltp.toStringAsFixed(2)}",
                 style: TextStyle(color: Colors.grey[600], fontSize: 12),
               ),
             ],
           ),
         ),
-        SizedBox(width: 60, height: 30, child: _buildMiniChart(data, color)),
+        SizedBox(
+          width: 60,
+          height: 30,
+          // Conditionally build the MiniChart
+          child: instrument != null
+              ? MiniChart.fromInstrument(
+                  instrument: instrument,
+                  color: changeColor,
+                )
+              : Container(
+                  color: Colors.grey[200],
+                ), // Placeholder if no instrument
+        ),
         const SizedBox(width: 12),
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              "Intraday",
+              order.productType, // 'INTRADAY' or 'DELIVERY'
               style: TextStyle(color: Colors.grey[600], fontSize: 12),
             ),
             const SizedBox(height: 2),
@@ -184,8 +212,9 @@ Widget _buildOrderItem({
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 2),
+            // --- USE THE NEW DYNAMIC TEXT ---
             Text(
-              "At ₹$orderPrice",
+              priceText,
               style: TextStyle(color: Colors.grey[600], fontSize: 12),
             ),
           ],
@@ -195,71 +224,24 @@ Widget _buildOrderItem({
   );
 }
 
-// Copied from previous pages
-Widget _buildLogoContainer(
-  Color bgColor,
-  String letter, {
-  bool isGoogle = false,
-  bool isMicrosoft = false,
-}) {
-  if (isGoogle) {
-    return SvgPicture.network(
-      'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg',
-      width: 40,
-      height: 40,
-    );
-  }
-  if (isMicrosoft) {
-    return Image.network(
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Microsoft_logo.svg/240px-Microsoft_logo.svg.png',
-      width: 40,
-      height: 40,
-    );
-  }
+/// Builds a placeholder logo based on the company name
+Widget _buildLogoContainer(String name, {double radius = 20}) {
+  final letter = name.isNotEmpty ? name[0].toUpperCase() : "?";
+  // This logic uses the name's hashcode, creating varied colors
+  final color = Colors.primaries[name.hashCode % Colors.primaries.length];
   return Container(
-    width: 40,
-    height: 40,
-    decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
+    width: radius * 2,
+    height: radius * 2,
+    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     child: Center(
       child: Text(
         letter,
-        style: const TextStyle(
+        style: TextStyle(
           color: Colors.white,
-          fontSize: 24,
+          fontSize: radius, // Adjusted for better fit
           fontWeight: FontWeight.bold,
         ),
       ),
-    ),
-  );
-}
-
-// Copied from previous pages
-Widget _buildMiniChart(List<double> data, Color color) {
-  return LineChart(
-    LineChartData(
-      gridData: const FlGridData(show: false),
-      titlesData: const FlTitlesData(
-        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-      ),
-      borderData: FlBorderData(show: false),
-      lineBarsData: [
-        LineChartBarData(
-          spots: data
-              .asMap()
-              .entries
-              .map((e) => FlSpot(e.key.toDouble(), e.value))
-              .toList(),
-          isCurved: true,
-          color: color,
-          barWidth: 2,
-          isStrokeCapRound: true,
-          dotData: const FlDotData(show: false),
-          belowBarData: BarAreaData(show: false),
-        ),
-      ],
     ),
   );
 }

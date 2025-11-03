@@ -1,9 +1,17 @@
+// lib/features/stock_market/screens/stock_page.dart
+import 'package:bullxchange/features/auth/screens/onboarding_page_1.1.dart';
+import 'package:bullxchange/features/stock_market/screens/explore_page.dart';
 import 'package:bullxchange/features/stock_market/screens/holdings_page.dart';
 import 'package:bullxchange/features/stock_market/screens/order_page.dart';
 import 'package:bullxchange/features/stock_market/screens/position_page.dart';
 import 'package:bullxchange/features/stock_market/screens/watchlist_page.dart';
+import 'package:bullxchange/models/instrument_model.dart';
+import 'package:bullxchange/models/order_model.dart'; // <-- 1. IMPORT NEW MODEL
+import 'package:bullxchange/provider/instrument_provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:flutter/material.dart';
-import 'explore_page.dart';
+import 'package:provider/provider.dart';
 
 class StockPage extends StatefulWidget {
   const StockPage({super.key});
@@ -17,52 +25,115 @@ class _StockPageState extends State<StockPage>
   @override
   bool get wantKeepAlive => true;
   int _selectedActionIndex = 0;
+  String? _userName;
+  String? _uid; // <-- 2. ADD UID STATE
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData(); // <-- 3. RENAME FUNCTION
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        setState(() => _uid = user.uid); // <-- 4. STORE THE UID
+      }
+
+      if (user != null &&
+          user.displayName != null &&
+          user.displayName!.trim().isNotEmpty) {
+        setState(() => _userName = user.displayName);
+        return;
+      }
+
+      if (_uid != null) {
+        final profile = await UserService().readUserProfile(_uid!);
+        if (profile != null && profile.name.trim().isNotEmpty) {
+          if (!mounted) return;
+          setState(() => _userName = profile.name);
+          return;
+        }
+      }
+    } catch (_) {
+      // Ignore errors; we'll fall back to generic label
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    // ✨ FIX 1: Removed SingleChildScrollView.
-    // The main layout is now a Column that fills the screen.
-    return SafeArea(
-      child: Padding(
-        // Use Padding instead of padding on a ScrollView.
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // --- STATIC TOP CONTENT ---
-            // These widgets will always be visible.
-            const SizedBox(height: 16),
-            _buildHeader(),
-            const SizedBox(height: 30),
-            _buildIndexCards(),
-            const SizedBox(height: 20),
-            _buildActionButtons(),
 
-            // --- DYNAMIC CONTENT AREA ---
-            // ✨ FIX 2: Wrap IndexedStack with Expanded.
-            // This tells the IndexedStack to fill all remaining vertical space in the Column.
-            // This gives it a finite, bounded height, which solves the error.
-            Expanded(
-              child: IndexedStack(
-                index: _selectedActionIndex,
+    // 5. PROVIDE THE NEW ORDER STREAM
+    //    We check if _uid is null. If it is, we provide an empty stream.
+    //    Once _uid is set, this will rebuild and provide the correct stream.
+    return StreamProvider<List<OrderModel>>.value(
+      value: _uid != null
+          ? UserService().streamOpenOrders(_uid!)
+          : Stream.value([]),
+      initialData: const [],
+      child: Consumer<InstrumentProvider>(
+        builder: (context, provider, child) {
+          // ✨ FIX: Show a loading spinner for the entire page
+          // until the initial data fetch is complete.
+          if (provider.isLoading) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          // Show an error message if something went wrong
+          if (provider.errorMessage != null) {
+            return Scaffold(
+              body: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    'Error: ${provider.errorMessage}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ),
+              ),
+            );
+          }
+
+          // Once loaded, build the main UI
+          return Scaffold(
+            body: SafeArea(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 children: [
-                  const ExplorePage(),
-                  const HoldingsPage(),
-                  const PositionPage(),
-                  const OrderPage(),
-                  const WatchlistPage(),
+                  // All content is now part of one scrollable list
+                  const SizedBox(height: 16),
+                  _buildHeader(),
+                  const SizedBox(height: 30),
+                  _buildIndexCards(provider.nifty50, provider.bankNifty),
+                  const SizedBox(height: 20),
+                  _buildActionButtons(),
+                  const SizedBox(height: 20), // Add spacing
+                  // The content of the selected tab
+                  IndexedStack(
+                    index: _selectedActionIndex,
+                    children: [
+                      ExplorePage(),
+                      HoldingsPage(),
+                      PositionPage(),
+                      const OrderPage(), // This page will now receive the stream
+                      const WatchlistPage(),
+                    ],
+                  ),
                 ],
               ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
-  // No changes needed for your builder methods (_buildHeader, _buildIndexCards, etc.)
-  // They are perfectly fine.
+  // All your helper methods below this point remain exactly the same.
 
   Widget _buildHeader() {
     return Row(
@@ -73,56 +144,58 @@ class _StockPageState extends State<StockPage>
           child: Icon(Icons.person, color: Color(0xFF7A4DFF), size: 28),
         ),
         const SizedBox(width: 12),
-        const Column(
+        Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Hi, User!",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              'Hi, ${_userName ?? 'User'}!',
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 2),
-            Text(
-              "Welcome to Tradebase",
+            const SizedBox(height: 2),
+            const Text(
+              'Welcome to BullXchange',
               style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
           ],
         ),
         const Spacer(),
-        IconButton(onPressed: () {}, icon: const Icon(Icons.more_horiz)),
+        IconButton(
+          onPressed: () {
+            FirebaseAuth.instance.signOut();
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const OnboardingPage()),
+              (route) => false, // Remove all routes behind it
+            );
+          },
+          icon: const Icon(Icons.more_horiz),
+        ),
       ],
     );
   }
 
-  Widget _buildIndexCards() {
+  Widget _buildIndexCards(Instrument? nifty50, Instrument? bankNifty) {
     return Row(
       children: [
-        Expanded(
-          child: _buildIndexCard(
-            name: "NIFTY 50",
-            value: "2202.42",
-            change: "-27.40 (0.11%)",
-            changeColor: Colors.red,
-          ),
-        ),
+        Expanded(child: _buildIndexCard(instrument: nifty50)),
         const SizedBox(width: 16),
-        Expanded(
-          child: _buildIndexCard(
-            name: "BANK NIFTY",
-            value: "2202.42",
-            change: "-27.40 (0.11%)",
-            changeColor: Colors.red,
-          ),
-        ),
+        Expanded(child: _buildIndexCard(instrument: bankNifty)),
       ],
     );
   }
 
-  Widget _buildIndexCard({
-    required String name,
-    required String value,
-    required String change,
-    required Color changeColor,
-  }) {
+  Widget _buildIndexCard({required Instrument? instrument}) {
+    final name =
+        instrument?.name.toUpperCase().replaceFirst("NIFTY ", "") ??
+        "LOADING...";
+    final value = instrument?.liveData["ltp"]?.toString() ?? "--";
+    final netChange = instrument?.liveData["netChange"]?.toString() ?? "0";
+    final percentChange =
+        instrument?.liveData["percentChange"]?.toString() ?? "0";
+    final double changeValue = num.tryParse(netChange)?.toDouble() ?? 0.0;
+    final changeColor = changeValue >= 0 ? Colors.green : Colors.red;
+    final changeText = "$netChange ($percentChange%)";
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -150,12 +223,12 @@ class _StockPageState extends State<StockPage>
           ),
           const SizedBox(height: 8),
           Text(
-            "\$$value",
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            value != "--" ? "₹$value" : value,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
           Text(
-            change,
+            changeText,
             style: TextStyle(
               color: changeColor,
               fontSize: 12,
@@ -168,7 +241,6 @@ class _StockPageState extends State<StockPage>
   }
 
   Widget _buildActionButtons() {
-    // This is fine, but make sure your pages are created for each button.
     final buttonLabels = [
       "Explore",
       "Holdings",

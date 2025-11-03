@@ -4,6 +4,7 @@ import 'package:bullxchange/features/auth/screens/setup_pin_screen.dart';
 import 'package:bullxchange/features/auth/screens/verify_pin_screen.dart';
 import 'package:bullxchange/services/firebase/pin_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:bullxchange/utils/logger.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthWrapper extends StatelessWidget {
@@ -11,12 +12,12 @@ class AuthWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint("--- Building AuthWrapper ---");
+    AppLog.d("--- Building AuthWrapper ---");
 
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-        debugPrint(
+        AppLog.d(
           "AuthWrapper StreamBuilder rebuilt. Connection state: ${snapshot.connectionState}",
         );
 
@@ -29,7 +30,7 @@ class AuthWrapper extends StatelessWidget {
 
         // If the snapshot has data, it means the user is logged in.
         if (snapshot.hasData) {
-          debugPrint(
+          AppLog.d(
             "➡️ AuthWrapper: User is LOGGED IN. Showing PinCheckWrapper.",
           );
           // Now, check if a PIN is set for this user.
@@ -37,9 +38,7 @@ class AuthWrapper extends StatelessWidget {
         }
 
         // If there's no data, the user is logged out.
-        debugPrint(
-          "➡️ AuthWrapper: User is LOGGED OUT. Showing OnboardingPage.",
-        );
+        AppLog.d("➡️ AuthWrapper: User is LOGGED OUT. Showing OnboardingPage.");
         return const OnboardingPage();
       },
     );
@@ -65,11 +64,11 @@ class _PinCheckWrapperState extends State<PinCheckWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint("--- Building PinCheckWrapper ---");
+    AppLog.d("--- Building PinCheckWrapper ---");
     return FutureBuilder<bool>(
       future: _hasPinFuture,
       builder: (context, snapshot) {
-        debugPrint(
+        AppLog.d(
           "PinCheckWrapper FutureBuilder rebuilt. Connection state: ${snapshot.connectionState}",
         );
 
@@ -81,7 +80,7 @@ class _PinCheckWrapperState extends State<PinCheckWrapper> {
         }
 
         if (snapshot.hasError) {
-          debugPrint(
+          AppLog.w(
             "PinCheckWrapper: Error checking for PIN: ${snapshot.error}",
           );
           return const SetupPinScreen();
@@ -90,12 +89,10 @@ class _PinCheckWrapperState extends State<PinCheckWrapper> {
         final hasPin = snapshot.data ?? false;
 
         if (hasPin) {
-          debugPrint(
-            "➡️ PinCheckWrapper: PIN exists. Showing VerifyPinScreen.",
-          );
+          AppLog.d("➡️ PinCheckWrapper: PIN exists. Showing VerifyPinScreen.");
           return const VerifyPinScreen();
         } else {
-          debugPrint("➡️ PinCheckWrapper: NO PIN. Showing SetupPinScreen.");
+          AppLog.d("➡️ PinCheckWrapper: NO PIN. Showing SetupPinScreen.");
           return const SetupPinScreen();
         }
       },

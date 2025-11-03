@@ -1,291 +1,847 @@
+import 'package:bullxchange/models/stock_holding_model.dart';
+import 'package:bullxchange/services/firebase/user_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:fl_chart/fl_chart.dart';
+import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
+import 'package:bullxchange/models/instrument_model.dart';
+import 'package:bullxchange/provider/instrument_provider.dart';
 
-// --- Updated Data Structure ---
-// ✨ FIX: Chart data is now a List<double> to prevent type errors.
-final List<Map<String, dynamic>> holdings = [
-  {
-    'logo': 'twitter',
-    'stockName': 'Twitter Inc.',
-    'shares': 5,
-    'price': '₹1,720.98',
-    'priceChange': '₹1,540.90',
-    'trendColor': Colors.blue,
-    'data': const [2.0, 3.0, 2.0, 4.0, 3.0, 5.0, 3.0],
-  },
-  {
-    'logo': 'google',
-    'isGoogle': true, // Flag for SVG logo
-    'stockName': 'Alphabet Inc.',
-    'shares': 5,
-    'price': '₹1,720.98',
-    'priceChange': '₹1,540.90',
-    'trendColor': Colors.green,
-    'data': const [2.0, 3.0, 5.0, 4.0, 6.0, 7.0, 8.0],
-  },
-  {
-    'logo': 'microsoft',
-    'isMicrosoft': true, // Flag for PNG logo
-    'stockName': 'Microsoft',
-    'shares': 5,
-    'price': '₹1,720.98',
-    'priceChange': '₹1,598.23',
-    'trendColor': Colors.green,
-    'data': const [5.0, 4.0, 6.0, 3.0, 5.0, 4.0, 2.0],
-  },
-  {
-    'logo': 'nike',
-    'stockName': 'Nike, Inc.',
-    'shares': 5,
-    'price': '₹1,720.98',
-    'priceChange': '₹1,342.76',
-    'trendColor': Colors.orange,
-    'data': const [4.0, 5.0, 3.0, 4.0, 2.0, 3.0, 1.0],
-  },
-];
+// ⭐️ ADDED IMPORTS FOR NAVIGATION TARGETS
+import 'package:bullxchange/features/stock_market/screens/buy_stock_page.dart';
+import 'package:bullxchange/features/stock_market/screens/sell_stock_page.dart';
+// ---------------------------------------------------------------------------
 
-class HoldingsPage extends StatelessWidget {
+/// Holdings page with shimmer and live price updates.
+class HoldingsPage extends StatefulWidget {
   const HoldingsPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 16.0),
-      children: [
-        // --- 1. Summary Card ---
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: _buildSummaryCard(),
-        ),
-        const SizedBox(height: 24),
+  State<HoldingsPage> createState() => _HoldingsPageState();
+}
 
-        // --- 2. Holdings List ---
-        ...holdings.map((h) {
-          return _buildStockItem(
-            logo: _buildLogoContainer(
-              h['logo'] == 'twitter' ? Colors.blue.shade700 : Colors.black,
-              h['logo'].substring(0, 1).toUpperCase(),
-              isGoogle: h['isGoogle'] ?? false,
-              isMicrosoft: h['isMicrosoft'] ?? false,
-            ),
-            company: h['stockName'],
-            shares: '${h['shares']} shares',
-            price: h['price'],
-            change: h['priceChange'],
-            changeColor: h['trendColor'],
-            data: h['data'],
-          );
-        }),
-      ],
+class _HoldingsPageState extends State<HoldingsPage> {
+  final UserService _userService = UserService();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  // --- FIX 1: Change Future to Stream ---
+  Stream<List<StockHoldingModel>?>? _holdingsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    final uid = _auth.currentUser?.uid;
+    if (uid != null) {
+      // --- FIX 2: Use the new streamUserProfile method ---
+      // We map the stream to only return the list of stocks.
+      _holdingsStream = _userService
+          .streamUserProfile(uid)
+          .map((profile) => profile?.stocks);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_auth.currentUser?.uid == null) {
+      return const Center(child: Text("Please log in to see your holdings."));
+    }
+
+    // Using Consumer here to get the provider safely.
+    return Consumer<InstrumentProvider>(
+      builder: (context, instrumentProvider, child) {
+        // --- FIX 3: Change FutureBuilder to StreamBuilder ---
+        return StreamBuilder<List<StockHoldingModel>?>(
+          stream: _holdingsStream, // Use the stream
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return Center(
+                child: Text("Error fetching portfolio: ${snapshot.error}"),
+              );
+            }
+
+            final userHoldings = snapshot.data;
+            final isLoading =
+                snapshot.connectionState == ConnectionState.waiting;
+
+            // --- FIX 4: Fetch live data every time holdings update ---
+            if (!isLoading && userHoldings != null && userHoldings.isNotEmpty) {
+              instrumentProvider.fetchLiveDataForHoldings(userHoldings);
+            }
+
+            return SingleChildScrollView(
+              child: Column(
+                children: [
+                  PortfolioSummaryCard(
+                    holdings: userHoldings,
+                    isLoading: isLoading,
+                  ),
+                  const SizedBox(height: 16),
+                  if (isLoading)
+                    const HoldingsListSkeleton()
+                  else if (userHoldings == null || userHoldings.isEmpty)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.only(top: 48.0),
+                        child: Text("Your portfolio is empty."),
+                      ),
+                    )
+                  else
+                    // 🌟 FIX APPLIED: Added .toList() to fix the iterable spread error
+                    ...userHoldings.map(
+                      (holding) => PortfolioStockItem(
+                        key: ValueKey(holding.stockSymbol),
+                        holding: holding,
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }
 
-// --- Reusable Widgets ---
+// -----------------------------------------------------------------
+// ⬇️ MODIFIED WIDGET: PortfolioStockItem (Added GestureDetector)
+// -----------------------------------------------------------------
+class PortfolioStockItem extends StatefulWidget {
+  final StockHoldingModel holding;
+  const PortfolioStockItem({super.key, required this.holding});
 
-Widget _buildSummaryCard() {
-  return Container(
-    padding: const EdgeInsets.all(20),
-    height: 170,
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(20),
-      gradient: const LinearGradient(
-        colors: [Color(0xFF6F4CFF), Color(0xFFDB1B57)],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
-    ),
-    child: Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildSummaryColumn("Current", "₹9,863.09"),
-            _buildSummaryColumn("Total returns", "+₹799.97", isReturn: true),
-          ],
-        ),
-        const SizedBox(height: 20),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildSummaryColumn("Invested", "₹9,063.12"),
-            _buildSummaryColumn("1D returns", "+₹159.97", isReturn: true),
-          ],
-        ),
-      ],
-    ),
-  );
+  @override
+  State<PortfolioStockItem> createState() => _PortfolioStockItemState();
 }
 
-Widget _buildSummaryColumn(
-  String title,
-  String value, {
-  bool isReturn = false,
-}) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        title,
-        style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14),
-      ),
-      const SizedBox(height: 6),
-      Row(
-        children: [
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+class _PortfolioStockItemState extends State<PortfolioStockItem> {
+  final ValueNotifier<double> _ltpNotifier = ValueNotifier(0.0);
+  final ValueNotifier<double> _plNotifier = ValueNotifier(0.0);
+  final ValueNotifier<double> _percentNotifier = ValueNotifier(0.0);
+
+  late final InstrumentProvider _provider;
+  late final VoidCallback _listener;
+
+  @override
+  void initState() {
+    super.initState();
+    _provider = Provider.of<InstrumentProvider>(context, listen: false);
+
+    _listener = () {
+      if (!mounted) return;
+      try {
+        final inst = _provider.allNSEStocks.firstWhere(
+          (i) => i.symbol.replaceAll('-EQ', '') == widget.holding.stockSymbol,
+        );
+        final ltp =
+            (inst.liveData['ltp'] as num?)?.toDouble() ??
+            widget.holding.transactionPrice;
+        final avgPrice = widget.holding.transactionPrice;
+        final q = widget.holding.quantity;
+        final pl = (ltp - avgPrice) * q;
+        final pct = avgPrice > 0 ? ((ltp - avgPrice) / avgPrice) * 100 : 0.0;
+
+        _ltpNotifier.value = ltp;
+        _plNotifier.value = pl;
+        _percentNotifier.value = pct;
+      } catch (_) {
+        if (_ltpNotifier.value == 0.0) {
+          final avgPrice = widget.holding.transactionPrice;
+          _ltpNotifier.value = avgPrice;
+          _plNotifier.value = 0.0;
+          _percentNotifier.value = 0.0;
+        }
+      }
+    };
+
+    _provider.addListener(_listener);
+    _listener();
+  }
+
+  @override
+  void dispose() {
+    _provider.removeListener(_listener);
+    _ltpNotifier.dispose();
+    _plNotifier.dispose();
+    _percentNotifier.dispose();
+    super.dispose();
+  }
+
+  // New method to show the bottom sheet
+  void _showDetailsSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        // Pass the ValueNotifiers to keep the details live-updating
+        return PortfolioStockItemDetailsSheet(
+          holding: widget.holding,
+          ltpNotifier: _ltpNotifier,
+          plNotifier: _plNotifier,
+          percentNotifier: _percentNotifier,
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final h = widget.holding;
+
+    return GestureDetector(
+      onTap: () => _showDetailsSheet(context), // <--- New onTap handler
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        child: Row(
+          children: [
+            _buildLogoContainer(h.stockName),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    h.stockSymbol,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  Text(
+                    "${h.quantity} shares",
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  ),
+                ],
+              ),
             ),
-          ),
-          if (isReturn) ...[
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Text(
-                "+810%",
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                ValueListenableBuilder<double>(
+                  valueListenable: _ltpNotifier,
+                  builder: (_, val, __) => Text(
+                    "₹${(val * h.quantity).toStringAsFixed(2)}",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 2),
+                ValueListenableBuilder<double>(
+                  valueListenable: _plNotifier,
+                  builder: (_, plVal, __) => ValueListenableBuilder<double>(
+                    valueListenable: _percentNotifier,
+                    builder: (_, pctVal, __) {
+                      final sign = plVal >= 0 ? "+" : "";
+                      final color = plVal >= 0 ? Colors.green : Colors.red;
+                      return Text(
+                        "$sign₹${plVal.toStringAsFixed(2)} (${pctVal.toStringAsFixed(2)}%)",
+                        style: TextStyle(
+                          color: color,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogoContainer(String name) {
+    final letter = name.isNotEmpty ? name[0].toUpperCase() : "?";
+    final color = Colors.primaries[name.hashCode % Colors.primaries.length];
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      child: Center(
+        child: Text(
+          letter,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// -----------------------------------------------------------------
+// ⬆️ MODIFIED WIDGET: PortfolioStockItem (Added GestureDetector)
+// -----------------------------------------------------------------
+
+// -----------------------------------------------------------------
+// 🌟 UPDATED WIDGET: PortfolioStockItemDetailsSheet (Implemented Buy/Sell Logic)
+// -----------------------------------------------------------------
+class PortfolioStockItemDetailsSheet extends StatelessWidget {
+  final StockHoldingModel holding;
+  final ValueNotifier<double> ltpNotifier;
+  final ValueNotifier<double> plNotifier;
+  final ValueNotifier<double> percentNotifier;
+
+  const PortfolioStockItemDetailsSheet({
+    super.key,
+    required this.holding,
+    required this.ltpNotifier,
+    required this.plNotifier,
+    required this.percentNotifier,
+  });
+
+  // Custom Colors
+  static const Color primaryPink = Color(0xFFF61C7A);
+  static const Color primaryBlue = Color(0xFF3500D4);
+
+  // Helper method to build a detail row
+  Widget _buildDetailRow(String title, Widget valueWidget) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(title, style: TextStyle(color: Colors.grey[600], fontSize: 16)),
+          valueWidget,
         ],
       ),
-    ],
-  );
-}
+    );
+  }
 
-Widget _buildStockItem({
-  required Widget logo,
-  required String company,
-  required String shares,
-  required String price,
-  required String change,
-  required Color changeColor,
-  required List<double> data,
-}) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-    child: Row(
-      children: [
-        logo,
-        const SizedBox(width: 12),
-        Expanded(
+  // Re-used utility to build the stock logo (larger for the sheet)
+  Widget _buildLogoContainer(String name) {
+    final letter = name.isNotEmpty ? name[0].toUpperCase() : "?";
+    final color = Colors.primaries[name.hashCode % Colors.primaries.length];
+    return Container(
+      width: 50,
+      height: 50,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      child: Center(
+        child: Text(
+          letter,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ⭐️ New method to find the Instrument object
+  Instrument? _getInstrument(BuildContext context) {
+    final instrumentProvider = Provider.of<InstrumentProvider>(
+      context,
+      listen: false,
+    );
+    try {
+      // Find the instrument in the provider's list
+      return instrumentProvider.allNSEStocks.firstWhere(
+        (i) => i.symbol.replaceAll('-EQ', '') == holding.stockSymbol,
+      );
+    } catch (e) {
+      // Instrument not found in the live list, likely an issue with the symbol or API fetching
+      return null;
+    }
+  }
+
+  // ⭐️ New method for Sell Button Logic (Adapted from StockDetailPage)
+  Future<void> _handleSell(BuildContext context) async {
+    final instrument = _getInstrument(context);
+    if (instrument == null) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Could not find live data for this stock."),
+          ),
+        );
+      }
+      return;
+    }
+
+    // 1. Get the current user's ID
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please log in to sell stocks.")),
+        );
+      }
+      return;
+    }
+
+    // 2. Navigate to the SellStockPage. We already have the specific holding.
+    if (context.mounted) {
+      Navigator.pop(context); // Close the BottomSheet first
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SellStockPage(
+            instrument: instrument,
+            userHolding: holding, // Pass the existing holding
+          ),
+        ),
+      );
+    }
+  }
+
+  // ⭐️ New method for Buy Button Logic (Adapted from StockDetailPage)
+  void _handleBuy(BuildContext context) {
+    final instrument = _getInstrument(context);
+    if (instrument == null) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Could not find live data for this stock to buy."),
+          ),
+        );
+      }
+      return;
+    }
+
+    Navigator.pop(context); // Close the BottomSheet first
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BuyStockPage(instrument: instrument),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final investedAmount = holding.transactionPrice * holding.quantity;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                company,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
+              // --- Header: Stock Name and Symbol ---
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildLogoContainer(holding.stockName),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          holding.stockName,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          holding.stockSymbol,
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const Divider(height: 30),
+
+              // --- Holding Details ---
+              _buildDetailRow(
+                "Quantity",
+                Text(
+                  "${holding.quantity} Shares",
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-              Text(
-                shares,
-                style: TextStyle(color: Colors.grey[600], fontSize: 12),
+              _buildDetailRow(
+                "Invested Amount",
+                Text(
+                  "₹${investedAmount.toStringAsFixed(2)}",
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              _buildDetailRow(
+                "Current Stock Price",
+                ValueListenableBuilder<double>(
+                  valueListenable: ltpNotifier,
+                  builder: (_, ltpVal, __) => Text(
+                    "₹${ltpVal.toStringAsFixed(2)}",
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              _buildDetailRow(
+                "Current Profit (Value)",
+                ValueListenableBuilder<double>(
+                  valueListenable: plNotifier,
+                  builder: (_, plVal, __) {
+                    final sign = plVal >= 0 ? "+" : "";
+                    final color = plVal >= 0 ? Colors.green : Colors.red;
+                    // Current Profit is the total value: (Current Price * Quantity)
+                    final currentValue = ltpNotifier.value * holding.quantity;
+
+                    return ValueListenableBuilder<double>(
+                      valueListenable: percentNotifier,
+                      builder: (_, pctVal, __) => Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          // Display Current Value (Current Price * Quantity)
+                          Text(
+                            "₹${currentValue.toStringAsFixed(2)}",
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          // Display P&L (Total Returns)
+                          Text(
+                            "$sign₹${plVal.toStringAsFixed(2)} (${pctVal.toStringAsFixed(2)}%)",
+                            style: TextStyle(
+                              color: color,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              const Divider(height: 30),
+
+              // --- Action Buttons (Buy & Sell) ---
+              Row(
+                children: [
+                  Expanded(
+                    // ⭐️ BUY BUTTON: Uses _handleBuy
+                    child: ElevatedButton(
+                      onPressed: () => _handleBuy(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryPink, // Pink for BUY
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text(
+                        "BUY",
+                        style: TextStyle(fontSize: 16, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    // ⭐️ SELL BUTTON: Uses _handleSell
+                    child: ElevatedButton(
+                      onPressed: () async => await _handleSell(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryBlue, // Blue for SELL
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text(
+                        "SELL",
+                        style: TextStyle(fontSize: 16, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
         ),
-        SizedBox(
-          width: 60,
-          height: 30,
-          child: _buildMiniChart(data, changeColor),
+      ),
+    );
+  }
+}
+// -----------------------------------------------------------------
+// ⬆️ UPDATED WIDGET: PortfolioStockItemDetailsSheet (Implemented Buy/Sell Logic)
+// -----------------------------------------------------------------
+
+// ... (HoldingsListSkeleton, SkeletonStockItem, PortfolioSummaryCard, and PlaceholderBuySellPage are unchanged) ...
+class HoldingsListSkeleton extends StatelessWidget {
+  const HoldingsListSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: Column(
+        children: List.generate(4, (_) => const SkeletonStockItem()),
+      ),
+    );
+  }
+}
+
+class SkeletonStockItem extends StatelessWidget {
+  const SkeletonStockItem({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    Color baseColor = Colors.white;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      child: Row(
+        children: [
+          CircleAvatar(radius: 20, backgroundColor: baseColor),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(width: 80, height: 16, color: baseColor),
+                const SizedBox(height: 4),
+                Container(width: 60, height: 12, color: baseColor),
+              ],
+            ),
+          ),
+          Container(width: 60, height: 30, color: baseColor),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Container(width: 70, height: 16, color: baseColor),
+              const SizedBox(height: 4),
+              Container(width: 90, height: 12, color: baseColor),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class PortfolioSummaryCard extends StatelessWidget {
+  final List<StockHoldingModel>? holdings;
+  final bool isLoading;
+
+  const PortfolioSummaryCard({
+    super.key,
+    this.holdings,
+    required this.isLoading,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading || holdings == null) {
+      return Shimmer.fromColors(
+        baseColor: Colors.grey[300]!,
+        highlightColor: Colors.grey[100]!,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Container(
+            height: 170,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              color: Colors.white,
+            ),
+          ),
         ),
-        const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
+      );
+    }
+
+    return Consumer<InstrumentProvider>(
+      builder: (context, provider, child) {
+        double currentValue = 0,
+            investedValue = 0,
+            dayReturns = 0,
+            startOfDayValue = 0;
+        final holdingSymbols = holdings!.map((h) => h.stockSymbol).toSet();
+        final liveInstruments = provider.allNSEStocks
+            .where(
+              (stock) =>
+                  holdingSymbols.contains(stock.symbol.replaceAll('-EQ', '')),
+            )
+            .toList();
+
+        for (var holding in holdings!) {
+          Instrument? liveInstrument;
+          try {
+            liveInstrument = liveInstruments.firstWhere(
+              (inst) =>
+                  inst.symbol.replaceAll('-EQ', '') == holding.stockSymbol,
+            );
+          } catch (e) {
+            liveInstrument = null;
+          }
+
+          final ltp =
+              (liveInstrument?.liveData['ltp'] as num?)?.toDouble() ??
+              holding.transactionPrice;
+          final netChange =
+              (liveInstrument?.liveData['netChange'] as num?)?.toDouble() ??
+              0.0;
+          final previousClose = ltp - netChange;
+
+          currentValue += ltp * holding.quantity;
+          investedValue += holding.transactionPrice * holding.quantity;
+          dayReturns += netChange * holding.quantity;
+          startOfDayValue += previousClose * holding.quantity;
+        }
+
+        final totalReturns = currentValue - investedValue;
+        final totalReturnPercent = investedValue > 0
+            ? (totalReturns / investedValue) * 100
+            : 0;
+        final dayReturnPercent = startOfDayValue > 0
+            ? (dayReturns / startOfDayValue) * 100
+            : 0.0;
+
+        return _buildSummaryCardUI(
+          currentValue,
+          totalReturns,
+          totalReturnPercent.toDouble(),
+          investedValue,
+          dayReturns,
+          dayReturnPercent,
+        );
+      },
+    );
+  }
+
+  Widget _buildSummaryCardUI(
+    double cVal,
+    double tRet,
+    double tRetPct,
+    double iVal,
+    double dRet,
+    double dRetPct,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.all(16.0), // Added margin to fit on screen
+      height: 170,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF6F4CFF), Color(0xFFDB1B57)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildSummaryColumn("Current", cVal),
+              _buildSummaryColumn(
+                "Total returns",
+                tRet,
+                percent: tRetPct,
+                isReturn: true,
+              ),
+            ],
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildSummaryColumn("Invested", iVal),
+              _buildSummaryColumn(
+                "1D returns",
+                dRet,
+                percent: dRetPct,
+                isReturn: true,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryColumn(
+    String title,
+    double value, {
+    double? percent,
+    bool isReturn = false,
+  }) {
+    final sign = value >= 0 ? "+" : "";
+    final color = value >= 0 ? Colors.greenAccent : Colors.redAccent;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
-              price,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              isReturn
+                  ? "$sign₹${value.toStringAsFixed(2)}"
+                  : "₹${value.toStringAsFixed(2)}",
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-            Text(
-              "($change)",
-              style: TextStyle(color: changeColor, fontSize: 12),
-            ),
+            if (isReturn && percent != null) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  "$sign${percent.toStringAsFixed(2)}%",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ],
-    ),
-  );
-}
-
-Widget _buildLogoContainer(
-  Color bgColor,
-  String letter, {
-  bool isGoogle = false,
-  bool isMicrosoft = false,
-}) {
-  if (isGoogle) {
-    return SvgPicture.network(
-      'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg',
-      width: 40,
-      height: 40,
-      placeholderBuilder: (BuildContext context) =>
-          const CircularProgressIndicator(),
     );
   }
-  if (isMicrosoft) {
-    // ✨ FIX: Use Image.network for PNG files, not SvgPicture.network
-    return Image.network(
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Microsoft_logo.svg/240px-Microsoft_logo.svg.png',
-      width: 40,
-      height: 40,
-    );
-  }
-  return Container(
-    width: 40,
-    height: 40,
-    decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
-    child: Center(
-      child: Text(
-        letter,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    ),
-  );
-}
-
-Widget _buildMiniChart(List<double> data, Color color) {
-  return LineChart(
-    LineChartData(
-      gridData: const FlGridData(show: false),
-      titlesData: const FlTitlesData(
-        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-      ),
-      borderData: FlBorderData(show: false),
-      lineBarsData: [
-        LineChartBarData(
-          spots: data.asMap().entries.map((e) {
-            return FlSpot(e.key.toDouble(), e.value);
-          }).toList(),
-          isCurved: true,
-          color: color,
-          barWidth: 2,
-          isStrokeCapRound: true,
-          dotData: const FlDotData(show: false),
-          belowBarData: BarAreaData(show: false),
-        ),
-      ],
-    ),
-  );
 }
