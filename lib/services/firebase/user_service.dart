@@ -31,7 +31,7 @@ class UserService {
       availableFunds: 100000.0,
       stocks: const [],
       positions: const [],
-      watchlist: const [], // <-- 1. ADD THIS FOR NEW USERS
+      watchlist: const [], // <-- Already included
     );
     try {
       await usersRef.doc(uid).set(profile.toJson());
@@ -93,7 +93,6 @@ class UserService {
         );
         final currentFunds = currentUserProfile.availableFunds;
 
-        // Check funds (this logic is the same for both types)
         if (transaction.transactionType == 'BUY' &&
             currentFunds < transaction.totalAmount) {
           throw Exception("Insufficient funds to complete the purchase.");
@@ -103,9 +102,6 @@ class UserService {
             ? currentFunds - transaction.totalAmount
             : currentFunds + transaction.totalAmount;
 
-        // --- THIS IS THE NEW ROUTING LOGIC ---
-
-        // Get mutable copies of both lists
         List<StockHoldingModel> currentHoldings = List.from(
           currentUserProfile.stocks,
         );
@@ -113,7 +109,6 @@ class UserService {
           currentUserProfile.positions,
         );
 
-        // Determine which list to update
         bool isIntraday = stockHoldingUpdate.transactionType == 'INTRADAY';
 
         List<StockHoldingModel> listToUpdate = isIntraday
@@ -125,18 +120,14 @@ class UserService {
         );
 
         if (existingIndex != -1) {
-          // Stock already exists in the list, update it
           final oldStock = listToUpdate[existingIndex];
           final int totalQty = oldStock.quantity + stockHoldingUpdate.quantity;
 
           if (totalQty <= 0) {
-            // Remove from list if quantity is zero or less
             listToUpdate.removeAt(existingIndex);
           } else {
-            // Calculate new average price (only if it's a BUY)
             double newAvgPrice = oldStock.transactionPrice;
             if (stockHoldingUpdate.quantity > 0) {
-              // It's a BUY
               final double totalValue =
                   (oldStock.quantity * oldStock.transactionPrice) +
                   (stockHoldingUpdate.quantity *
@@ -150,22 +141,15 @@ class UserService {
             );
           }
         } else if (stockHoldingUpdate.quantity > 0) {
-          // New stock, add to the list
           listToUpdate.add(stockHoldingUpdate);
         }
 
-        // --- END OF NEW ROUTING LOGIC ---
-
-        // Update the user document in Firestore
         firestoreTransaction.update(userDocRef, {
           'availableFunds': newFunds,
-
-          // Update both lists in Firestore
           'stocks': currentHoldings.map((s) => s.toJson()).toList(),
           'positions': currentPositions.map((p) => p.toJson()).toList(),
         });
 
-        // Log the transaction (this is the same)
         firestoreTransaction.set(newTransactionRef, transaction.toJson());
       });
 
@@ -178,7 +162,7 @@ class UserService {
     }
   }
 
-  // --- 3. NEW FUNCTION TO PLACE A LIMIT ORDER ---
+  // --- FUNCTION TO PLACE A LIMIT ORDER ---
   Future<void> placeLimitOrder(OrderModel order) async {
     try {
       await ordersRef.add(order.toJson());
@@ -190,7 +174,7 @@ class UserService {
     }
   }
 
-  // --- 4. NEW STREAM FOR OPEN ORDERS ---
+  // --- STREAM FOR OPEN ORDERS ---
   Stream<List<OrderModel>> streamOpenOrders(String uid) {
     return ordersRef
         .where('userId', isEqualTo: uid)
@@ -211,14 +195,42 @@ class UserService {
         });
   }
 
-  // --- 5. NEW WATCHLIST FUNCTION ---
-  /// Toggles a stock in the user's watchlist.
-  /// Uses arrayUnion to add and arrayRemove to delete, ensuring no duplicates.
+  // --- ⭐️ NEW FUNCTION TO CANCEL ALL PENDING ORDERS ⭐️ ---
+  Future<void> cancelAllOrders(String uid) async {
+    try {
+      // 1. Find all orders that are 'PENDING' for this user
+      final querySnapshot = await ordersRef
+          .where('userId', isEqualTo: uid)
+          .where('orderStatus', isEqualTo: 'PENDING')
+          .get();
+
+      if (querySnapshot.docs.isEmpty) {
+        return; // No pending orders to cancel
+      }
+
+      // 2. Create a batch write to update all found orders
+      WriteBatch batch = FirebaseFirestore.instance.batch();
+
+      for (var doc in querySnapshot.docs) {
+        // 3. Update the status of each order in the batch
+        batch.update(doc.reference, {'orderStatus': 'CANCELLED'});
+      }
+
+      // 4. Commit the batch write
+      await batch.commit();
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error cancelling all orders: $e');
+      }
+      rethrow; // Re-throw the error to be caught by the UI
+    }
+  }
+
+  // --- WATCHLIST FUNCTION ---
   Future<void> toggleWatchlistStock(String uid, String instrumentToken) async {
     final userDocRef = usersRef.doc(uid);
 
     try {
-      // Get the current user data first to see if the stock is already in the list
       final doc = await userDocRef.get();
       if (!doc.exists) {
         throw Exception("User profile not found.");
@@ -230,12 +242,10 @@ class UserService {
       );
 
       if (currentWatchlist.contains(instrumentToken)) {
-        // It exists, so REMOVE it
         await userDocRef.update({
           'watchlist': FieldValue.arrayRemove([instrumentToken]),
         });
       } else {
-        // It doesn't exist, so ADD it
         await userDocRef.update({
           'watchlist': FieldValue.arrayUnion([instrumentToken]),
         });
@@ -248,7 +258,7 @@ class UserService {
     }
   }
 
-  // --- Your Original Functions (Kept for reference) ---
+  // --- (Your unused functions below) ---
 
   Future<void> addTransaction(TransactionModel transaction) async {
     try {
@@ -261,8 +271,6 @@ class UserService {
     }
   }
 
-  // NOTE: This function is now redundant because executeTrade handles all its logic.
-  // You can safely remove it if you are no longer calling it from anywhere.
   Future<void> updateCumulativeStockHolding(
     String uid,
     StockHoldingModel newStockTransaction,

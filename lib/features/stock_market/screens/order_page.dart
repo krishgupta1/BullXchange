@@ -5,27 +5,101 @@ import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+// --- ⭐️ 1. IMPORT FIREBASE AND USER SERVICE ---
+import 'package:bullxchange/services/firebase/user_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 class OrderPage extends StatelessWidget {
   const OrderPage({super.key});
 
+  // --- ⭐️ 2. NEW METHOD TO HANDLE CANCELLATION ---
+  void _handleCancelAll(BuildContext context) async {
+    final String? uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('User not logged in.')));
+      return;
+    }
+
+    // --- Step 1: Show Confirmation Dialog ---
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cancel All Orders?'),
+        content: const Text(
+          'Are you sure you want to cancel all pending orders?',
+        ),
+        actions: [
+          TextButton(
+            child: const Text('No'),
+            onPressed: () => Navigator.of(ctx).pop(false),
+          ),
+          TextButton(
+            child: const Text(
+              'Yes, Cancel All',
+              style: TextStyle(color: Colors.red),
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return; // User pressed "No"
+
+    // --- Step 2: Show Loading Dialog ---
+    if (context.mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // --- Step 3: Call Service ---
+    try {
+      final UserService userService = UserService();
+      await userService.cancelAllOrders(uid);
+
+      if (context.mounted) {
+        Navigator.pop(context); // Close loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('All pending orders have been cancelled.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context); // Close loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error cancelling orders: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // 1. Consume both the list of open orders (from the stream)
-    //    and the InstrumentProvider (for live data).
     return Consumer2<List<OrderModel>, InstrumentProvider>(
       builder: (context, openOrders, provider, child) {
-        // Handle case where there are no open orders
         if (openOrders.isEmpty) {
-          return Center(child: const _EmptyState());
+          // --- ⭐️ 3. WRAP EMPTY STATE IN A CENTER ---
+          return const Center(child: _EmptyState());
         }
 
+        // --- ⭐️ 4. RETURN A COLUMN, NOT A LISTVIEW ---
         return Column(
           children: [
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
-                  // --- Header with collapsible icon ---
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -40,7 +114,6 @@ class OrderPage extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  // --- Cancel all / Qty Header ---
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -54,9 +127,7 @@ class OrderPage extends StatelessWidget {
                           "Cancel all",
                           style: TextStyle(color: Colors.grey[700]),
                         ),
-                        onPressed: () {
-                          // TODO: Implement Cancel All Orders logic
-                        },
+                        onPressed: () => _handleCancelAll(context),
                       ),
                       Text(
                         "Qty/Price",
@@ -69,19 +140,15 @@ class OrderPage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
 
-            // --- Orders List ---
-            // 2. Build the list from the live order stream
+            // --- ⭐️ 5. SPREAD THE LIST OF WIDGETS DIRECTLY ---
+            // This Column will be scrolled by its parent (SingleChildScrollView)
             ...openOrders.map((order) {
-              // 3. Find the matching instrument from the provider
               final instrument = provider.getInstrumentByToken(
                 order.instrumentToken,
               );
 
-              return _buildOrderItem(
-                instrument: instrument, // This is an Instrument? (nullable)
-                order: order,
-              );
-            }),
+              return _buildOrderItem(instrument: instrument, order: order);
+            }).toList(),
           ],
         );
       },
@@ -89,13 +156,14 @@ class OrderPage extends StatelessWidget {
   }
 }
 
-// --- Reusable Widgets ---
+// --- Reusable Widgets (UNCHANGED) ---
 
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
   @override
   Widget build(BuildContext context) {
     return const Column(
+      mainAxisAlignment: MainAxisAlignment.center, // Center vertically
       children: [
         SizedBox(height: 20),
         Icon(Icons.receipt_long_outlined, size: 48, color: Colors.grey),
@@ -116,35 +184,28 @@ class _EmptyState extends StatelessWidget {
 }
 
 Widget _buildOrderItem({
-  required Instrument? instrument, // <-- Accept nullable Instrument
+  required Instrument? instrument,
   required OrderModel order,
 }) {
-  // Get LTP from instrument if it exists, otherwise use '...'
   final ltp = (instrument?.liveData['ltp'] as num?)?.toDouble() ?? 0.0;
   final netChange =
       (instrument?.liveData['netChange'] as num?)?.toDouble() ?? 0.0;
   final changeColor = netChange >= 0 ? Colors.green : Colors.red;
 
-  // Get order info directly from the OrderModel
   final orderType = order.transactionType;
   final quantity = order.quantity;
 
-  // --- NEW LOGIC ---
-  // Determine the price text based on the order type from the model
   final String priceText;
   if (order.orderType == 'LIMIT') {
     priceText = "At ₹${order.limitPrice.toStringAsFixed(2)}";
   } else {
-    // Assumes anything not 'LIMIT' is 'MARKET'
     priceText = "Market";
   }
-  // --- END OF NEW LOGIC ---
 
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
     child: Row(
       children: [
-        // Conditionally build the SmartLogo or placeholder
         instrument != null
             ? SmartLogo(instrument: instrument, radius: 20)
             : _buildLogoContainer(order.companyName, radius: 20),
@@ -169,7 +230,7 @@ Widget _buildOrderItem({
               ),
               const SizedBox(height: 2),
               Text(
-                order.symbol, // Use symbol from order
+                order.symbol,
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
@@ -189,7 +250,7 @@ Widget _buildOrderItem({
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              order.productType, // 'INTRADAY' or 'DELIVERY'
+              order.productType,
               style: TextStyle(color: Colors.grey[600], fontSize: 12),
             ),
             const SizedBox(height: 2),
@@ -198,7 +259,6 @@ Widget _buildOrderItem({
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 2),
-            // --- USE THE NEW DYNAMIC TEXT ---
             Text(
               priceText,
               style: TextStyle(color: Colors.grey[600], fontSize: 12),
@@ -210,10 +270,8 @@ Widget _buildOrderItem({
   );
 }
 
-/// Builds a placeholder logo based on the company name
 Widget _buildLogoContainer(String name, {double radius = 20}) {
   final letter = name.isNotEmpty ? name[0].toUpperCase() : "?";
-  // This logic uses the name's hashcode, creating varied colors
   final color = Colors.primaries[name.hashCode % Colors.primaries.length];
   return Container(
     width: radius * 2,
@@ -224,7 +282,7 @@ Widget _buildLogoContainer(String name, {double radius = 20}) {
         letter,
         style: TextStyle(
           color: Colors.white,
-          fontSize: radius, // Adjusted for better fit
+          fontSize: radius,
           fontWeight: FontWeight.bold,
         ),
       ),
