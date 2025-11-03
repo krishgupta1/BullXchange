@@ -124,6 +124,7 @@ class _SellStockPageState extends State<SellStockPage> {
       executedAt: now,
       exchange: _selectedExchange,
       productType: _selectedProductType,
+      orderType: '',
     );
 
     final holdingUpdate = StockHoldingModel(

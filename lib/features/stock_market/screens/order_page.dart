@@ -4,7 +4,6 @@ import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:bullxchange/features/stock_market/widgets/mini_chart.dart';
 
 class OrderPage extends StatelessWidget {
   const OrderPage({super.key});
@@ -184,19 +183,6 @@ Widget _buildOrderItem({
               ),
             ],
           ),
-        ),
-        SizedBox(
-          width: 60,
-          height: 30,
-          // Conditionally build the MiniChart
-          child: instrument != null
-              ? MiniChart.fromInstrument(
-                  instrument: instrument,
-                  color: changeColor,
-                )
-              : Container(
-                  color: Colors.grey[200],
-                ), // Placeholder if no instrument
         ),
         const SizedBox(width: 12),
         Column(

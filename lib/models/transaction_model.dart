@@ -12,10 +12,11 @@ class TransactionModel {
   final double totalAmount;
   final String orderStatus; // e.g., 'EXECUTED'
   final DateTime executedAt;
-
-  // --- THESE ARE THE REQUIRED FIELDS ---
   final String exchange;
   final String productType;
+
+  // --- 1. THE MISSING FIELD ---
+  final String orderType;
 
   TransactionModel({
     this.id,
@@ -27,12 +28,13 @@ class TransactionModel {
     required this.price,
     required this.charges,
     required this.totalAmount,
-    this.orderStatus = 'EXECUTED', // Defaulting to EXECUTED for this app
+    this.orderStatus = 'EXECUTED',
     required this.executedAt,
-
-    // --- ADD THESE TO YOUR CONSTRUCTOR ---
     required this.exchange,
     required this.productType,
+
+    // --- 2. ADDED TO CONSTRUCTOR ---
+    required this.orderType,
   });
 
   /// Converts the model to a Map for Firestore.
@@ -48,10 +50,11 @@ class TransactionModel {
       'totalAmount': totalAmount,
       'orderStatus': orderStatus,
       'executedAt': Timestamp.fromDate(executedAt),
-
-      // --- ADD THESE TO THE JSON ---
       'exchange': exchange,
       'productType': productType,
+
+      // --- 3. ADDED TO JSON ---
+      'orderType': orderType,
     };
   }
 
@@ -71,10 +74,12 @@ class TransactionModel {
       totalAmount: (data['totalAmount'] as num).toDouble(),
       orderStatus: data['orderStatus'],
       executedAt: (data['executedAt'] as Timestamp).toDate(),
+      exchange: data['exchange'] ?? 'NSE',
+      productType: data['productType'] ?? 'Delivery',
 
-      // --- ADD THESE FOR READING FROM FIRESTORE ---
-      exchange: data['exchange'] ?? 'NSE', // Default to NSE if missing
-      productType: data['productType'] ?? 'Delivery', // Default
+      // --- 4. FIXED FROMJSON ---
+      orderType:
+          data['orderType'] ?? 'Market', // Default to 'Market' for old data
     );
   }
 }

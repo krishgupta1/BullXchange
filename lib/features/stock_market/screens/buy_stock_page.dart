@@ -107,7 +107,6 @@ class _BuyStockPageState extends State<BuyStockPage> {
     super.dispose();
   }
 
-  // --- MODIFIED: _handleBuy (to use readUserProfile) ---
   Future<void> _handleBuy() async {
     if (_quantity <= 0 || _price <= 0 || _isPlacingOrder) return;
     setState(() => _isPlacingOrder = true);
@@ -124,32 +123,25 @@ class _BuyStockPageState extends State<BuyStockPage> {
       return;
     }
 
-    // --- NEW: FUND CHECK (using readUserProfile) ---
     try {
-      // 1. Fetch current user data using the new method
       final userProfile = await _userService.readUserProfile(uid);
       if (userProfile == null) {
         throw Exception("User profile not found.");
       }
 
-      // 2. Get available funds from the model object
       final double availableFunds = userProfile.availableFunds;
 
-      // 3. Perform the check (same as before)
       if (_totalAmount > availableFunds) {
         if (mounted) {
           _showInsufficientFundsDialog(availableFunds, _totalAmount);
         }
-        setState(() => _isPlacingOrder = false); // Re-enable button
-        return; // Stop execution
+        setState(() => _isPlacingOrder = false);
+        return;
       }
 
-      // 4. If funds are sufficient, proceed with the order (same as before)
       if (_selectedOrderType == 'Market') {
-        // NOTE: Your new UserService's executeTrade handles market orders
         await _executeMarketOrder(uid);
       } else {
-        // NOTE: Your new UserService's placeLimitOrder handles this
         await _placeLimitOrder(uid);
       }
     } catch (e) {
@@ -162,7 +154,6 @@ class _BuyStockPageState extends State<BuyStockPage> {
         );
       }
     }
-    // --- END NEW ---
 
     if (mounted) {
       setState(() => _isPlacingOrder = false);
@@ -179,12 +170,13 @@ class _BuyStockPageState extends State<BuyStockPage> {
       companyName: widget.instrument.name,
       transactionType: 'BUY',
       quantity: _quantity,
-      price: _price, // Use _price (which is _ltp for market)
+      price: _price,
       charges: _totalCharges,
       totalAmount: _totalAmount,
       executedAt: now,
       exchange: _selectedExchange,
       productType: _selectedProductType,
+      orderType: 'Market', // <-- ⭐️ THIS IS THE FIX ⭐️
     );
 
     final holdingUpdate = StockHoldingModel(
@@ -213,7 +205,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
               transactionId: transactionId,
             ),
           ),
-          (route) => route.isFirst, // Clears stack back to home
+          (route) => route.isFirst,
         );
       }
     } catch (e) {
@@ -236,17 +228,16 @@ class _BuyStockPageState extends State<BuyStockPage> {
       symbol: symbol,
       companyName: widget.instrument.name,
       transactionType: 'BUY',
-      orderType: 'LIMIT',
+      orderType: 'LIMIT', // This is correct for the OrderModel
       productType: _selectedProductType.toUpperCase(),
       quantity: _quantity,
-      limitPrice: _price, // Use _price (the user's limit price)
+      limitPrice: _price,
       createdAt: DateTime.now(),
       exchange: _selectedExchange,
       instrumentToken: widget.instrument.token,
     );
 
     try {
-      // We pass the newOrder object, which includes the UID
       await _userService.placeLimitOrder(newOrder);
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -256,7 +247,6 @@ class _BuyStockPageState extends State<BuyStockPage> {
         ),
       );
       if (mounted) {
-        // Go back to the main app screen
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } catch (e) {
@@ -442,13 +432,11 @@ class _BuyStockPageState extends State<BuyStockPage> {
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
-                enabled: isLimit, // <-- ONLY ENABLED FOR LIMIT
+                enabled: isLimit,
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: isLimit
-                      ? darkTextColor
-                      : Colors.grey, // <-- Visual cue
+                  color: isLimit ? darkTextColor : Colors.grey,
                 ),
                 decoration: InputDecoration(
                   labelText: 'Price',
@@ -468,7 +456,6 @@ class _BuyStockPageState extends State<BuyStockPage> {
                     ),
                   ),
                   disabledBorder: OutlineInputBorder(
-                    // <-- Style for disabled
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
                       color: Colors.grey[200]!,
@@ -872,4 +859,4 @@ class _BuyStockPageState extends State<BuyStockPage> {
       ),
     );
   }
-} // <-- End of _BuyStockPageState class
+}

@@ -27,6 +27,12 @@ class OrderDetailsPage extends StatelessWidget {
     final bool isBuy = transaction.transactionType == 'BUY';
     final Color typeColor = isBuy ? const Color(0xFF1EAB58) : Colors.red;
 
+    // --- ⭐️ 1. AUTOMATE ORDER TYPE AND PRICE LABEL ---
+    // This assumes you added `orderType` to your TransactionModel
+    final bool isMarketOrder = transaction.orderType == 'Market';
+    final String orderTypeLabel = isMarketOrder ? 'Market' : 'Limit';
+    final String priceLabel = isMarketOrder ? 'Avg. Price' : 'Order Price';
+
     // Generate a placeholder NSE ID
     final String nseOrderId =
         "00${transaction.executedAt.millisecondsSinceEpoch.toString().substring(5)}";
@@ -135,12 +141,15 @@ class OrderDetailsPage extends StatelessWidget {
                     ),
                   ),
                   const Divider(height: 32),
+
+                  // --- ⭐️ 2. USE THE AUTOMATED LABELS ---
                   _buildDetailRow(
                     'Order',
-                    'Limit', // Hardcoded as per screenshot
-                    'Order Price',
+                    orderTypeLabel, // <-- Automated
+                    priceLabel, // <-- Automated
                     priceFormatter.format(transaction.price),
                   ),
+
                   _buildDetailRow(
                     'Type',
                     transaction.productType, // From TransactionModel
@@ -150,15 +159,9 @@ class OrderDetailsPage extends StatelessWidget {
                   _buildDetailRow(
                     'Charges',
                     priceFormatter.format(transaction.charges),
-                    'Avg Price',
+                    'Avg Price', // This is always true for an executed order
                     priceFormatter.format(transaction.price),
                   ),
-                  // _buildDetailRow(
-                  //   'Validity',
-                  //   'Day End', // Hardcoded
-                  //   '',
-                  //   '',
-                  // ),
                   const Divider(height: 32),
                   Row(
                     children: [

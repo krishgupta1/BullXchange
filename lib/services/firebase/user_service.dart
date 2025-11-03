@@ -198,17 +198,17 @@ class UserService {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
-      try {
-        return snapshot.docs
-            .map((doc) => OrderModel.fromSnapshot(doc))
-            .toList();
-      } catch (e) {
-        if (kDebugMode) {
-          print('Error mapping open orders: $e');
-        }
-        return [];
-      }
-    });
+          try {
+            return snapshot.docs
+                .map((doc) => OrderModel.fromSnapshot(doc))
+                .toList();
+          } catch (e) {
+            if (kDebugMode) {
+              print('Error mapping open orders: $e');
+            }
+            return [];
+          }
+        });
   }
 
   // --- 5. NEW WATCHLIST FUNCTION ---
@@ -225,18 +225,19 @@ class UserService {
       }
 
       final data = doc.data() as Map<String, dynamic>;
-      final List<String> currentWatchlist =
-          List<String>.from(data['watchlist'] ?? []);
+      final List<String> currentWatchlist = List<String>.from(
+        data['watchlist'] ?? [],
+      );
 
       if (currentWatchlist.contains(instrumentToken)) {
         // It exists, so REMOVE it
         await userDocRef.update({
-          'watchlist': FieldValue.arrayRemove([instrumentToken])
+          'watchlist': FieldValue.arrayRemove([instrumentToken]),
         });
       } else {
         // It doesn't exist, so ADD it
         await userDocRef.update({
-          'watchlist': FieldValue.arrayUnion([instrumentToken])
+          'watchlist': FieldValue.arrayUnion([instrumentToken]),
         });
       }
     } catch (e) {
