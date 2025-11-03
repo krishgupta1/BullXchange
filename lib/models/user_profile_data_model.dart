@@ -1,4 +1,3 @@
-// lib/models/user_profile_data_model.dart
 import 'package:bullxchange/models/stock_holding_model.dart';
 
 class UserProfileDataModel {
@@ -8,10 +7,10 @@ class UserProfileDataModel {
   final String mobileNo;
   final DateTime accountCreationTime;
   final double availableFunds;
-  final List<StockHoldingModel> stocks; // These are your 'Holdings'
 
-  // --- 1. ADD THIS NEW FIELD ---
+  final List<StockHoldingModel> stocks; // These are your 'Holdings'
   final List<StockHoldingModel> positions; // These are for 'Intraday'
+  final List<String> watchlist; // These are for bookmarked stock tokens
 
   UserProfileDataModel({
     required this.uid,
@@ -21,9 +20,8 @@ class UserProfileDataModel {
     required this.accountCreationTime,
     required this.availableFunds,
     required this.stocks,
-
-    // --- 2. ADD TO CONSTRUCTOR ---
     required this.positions,
+    required this.watchlist, // <-- ADDED
   });
 
   Map<String, dynamic> toJson() => {
@@ -31,16 +29,15 @@ class UserProfileDataModel {
     'name': name,
     'emailId': emailId,
     'mobileNo': mobileNo,
-    'accountCreationTime': accountCreationTime.toIso8601String(),
+    'accountCreationTime': accountCreationTime.toString(),
     'availableFunds': availableFunds,
     'stocks': stocks.map((stock) => stock.toJson()).toList(),
-
-    // --- 3. ADD TO JSON ---
     'positions': positions.map((pos) => pos.toJson()).toList(),
+    'watchlist': watchlist, // <-- ADDED
   };
 
   factory UserProfileDataModel.fromJson(String uid, Map<String, dynamic> json) {
-    // Helper to safely parse lists
+    // Helper to safely parse lists of StockHoldingModel
     List<StockHoldingModel> parseHoldings(String key) {
       if (json[key] != null && json[key] is List) {
         final List<dynamic> jsonData = json[key] as List;
@@ -64,9 +61,12 @@ class UserProfileDataModel {
       ),
       availableFunds: (json['availableFunds'] as num).toDouble(),
 
-      // --- 4. UPDATE FROMJSON LOGIC ---
+      // Use the safe helper
       stocks: parseHoldings('stocks'),
       positions: parseHoldings('positions'),
+
+      // Helper to safely parse list of String
+      watchlist: List<String>.from(json['watchlist'] ?? []), // <-- ADDED
     );
   }
 }

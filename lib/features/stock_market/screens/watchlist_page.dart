@@ -1,67 +1,98 @@
-import 'package:bullxchange/models/instrument_model.dart';
-import 'package:bullxchange/provider/instrument_provider.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:provider/provider.dart';
+import 'package:bullxchange/features/stock_market/screens/StockDetailPage.dart';
+import 'package:bullxchange/features/stock_market/screens/view_all_page.dart';
 import 'package:bullxchange/features/stock_market/widgets/mini_chart.dart';
+import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
+import 'package:bullxchange/models/instrument_model.dart';
+import 'package:bullxchange/models/user_profile_data_model.dart';
+import 'package:bullxchange/provider/instrument_provider.dart';
+import 'package:bullxchange/services/firebase/user_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-// --- Mock Data for User's Watchlist ---
-// In a real app, this list of tokens would be saved in user preferences.
-final List<String> userWatchlistTokens = [
-  '547', // AXISBANK-EQ
-  '13538', // SPUL-EQ
-  '11723', // IGL-EQ
-  '1727', // KRBL-EQ
-  '10184', // INDIAMART-EQ
-  '3456', // TATASTEEL-EQ
-];
-
-class WatchlistPage extends StatelessWidget {
+class WatchlistPage extends StatefulWidget {
   const WatchlistPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer<InstrumentProvider>(
-      builder: (context, provider, child) {
-        // --- Data Processing ---
-        final watchlistStocks = provider.allNSEStocks
-            .where((stock) => userWatchlistTokens.contains(stock.token))
-            .toList();
+  State<WatchlistPage> createState() => _WatchlistPageState();
+}
 
-        // Handle case where the watchlist is empty
-        if (watchlistStocks.isEmpty) {
-          return const _EmptyState();
+class _WatchlistPageState extends State<WatchlistPage> {
+  // Create instances to use
+  final UserService _userService = UserService();
+  final String? uid = FirebaseAuth.instance.currentUser?.uid;
+
+  @override
+  Widget build(BuildContext context) {
+    if (uid == null) {
+      return const Center(child: Text("Please log in."));
+    }
+
+    // This StreamBuilder listens to real-time changes in the user's profile
+    return StreamBuilder<UserProfileDataModel?>(
+      stream: _userService.streamUserProfile(uid!),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (!snapshot.hasData || snapshot.data == null) {
+          return const Center(child: Text("Could not load user profile."));
         }
 
-        // ✨ FIX: Use a Column to prevent nested scrolling errors.
-        return Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  // --- Header with stock count and actions ---
-                  _buildWatchlistHeader(watchlistStocks.length),
-                  const SizedBox(height: 16),
-                  // --- Sort controls ---
-                  _buildSortHeader(),
-                ],
-              ),
-            ),
-            const Divider(height: 1, thickness: 1),
+        // Get the dynamic watchlist tokens from the user's profile
+        final userProfile = snapshot.data!;
+        final userWatchlistTokens = userProfile.watchlist;
 
-            // --- Watchlist stocks ---
-            ...watchlistStocks.map((instrument) {
-              return _buildStockItem(instrument: instrument);
-            }),
-          ],
+        // The rest of your code now uses the dynamic list
+        return Consumer<InstrumentProvider>(
+          builder: (context, provider, child) {
+            final watchlistStocks = provider.allNSEStocks
+                .where((stock) => userWatchlistTokens.contains(stock.token))
+                .toList();
+
+            if (watchlistStocks.isEmpty) {
+              return const _EmptyState();
+            }
+
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      _buildWatchlistHeader(watchlistStocks.length, context),
+                      const SizedBox(height: 16),
+                      _buildSortHeader(),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1, thickness: 1),
+
+                // --- Watchlist stocks ---
+                ...watchlistStocks.map((instrument) {
+                  return InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              StockDetailPage(instrument: instrument),
+                        ),
+                      );
+                    },
+                    child: _buildStockItem(instrument: instrument),
+                  );
+                }),
+              ],
+            );
+          },
         );
       },
     );
   }
 }
 
-// --- Reusable Widgets ---
+// --- Reusable Widgets (from your original file) ---
 
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
@@ -92,7 +123,7 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-Widget _buildWatchlistHeader(int stockCount) {
+Widget _buildWatchlistHeader(int stockCount, BuildContext context) {
   return Row(
     children: [
       Text(
@@ -100,7 +131,15 @@ Widget _buildWatchlistHeader(int stockCount) {
         style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
       ),
       const Spacer(),
-      IconButton(icon: const Icon(Icons.add_box_outlined), onPressed: () {}),
+      IconButton(
+        icon: const Icon(Icons.add_box_outlined),
+        onPressed: () {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => ViewAllPage()),
+          );
+        },
+      ),
       IconButton(icon: const Icon(Icons.edit_outlined), onPressed: () {}),
     ],
   );
@@ -133,7 +172,7 @@ Widget _buildStockItem({required Instrument instrument}) {
     padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
     child: Row(
       children: [
-        _buildLogoContainer(instrument.name),
+        SmartLogo(instrument: instrument, radius: 0),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -180,40 +219,3 @@ Widget _buildStockItem({required Instrument instrument}) {
     ),
   );
 }
-
-Widget _buildLogoContainer(String name) {
-  if (name.toLowerCase().contains('google')) {
-    return SvgPicture.network(
-      'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg',
-      width: 40,
-      height: 40,
-    );
-  }
-  if (name.toLowerCase().contains('microsoft')) {
-    return Image.network(
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Microsoft_logo.svg/240px-Microsoft_logo.svg.png',
-      width: 40,
-      height: 40,
-    );
-  }
-
-  final letter = name.isNotEmpty ? name[0].toUpperCase() : '?';
-  final color = Colors.primaries[name.hashCode % Colors.primaries.length];
-  return Container(
-    width: 40,
-    height: 40,
-    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-    child: Center(
-      child: Text(
-        letter,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    ),
-  );
-}
-
-// Replaced by reusable MiniChart widget in lib/widgets/mini_chart.dart

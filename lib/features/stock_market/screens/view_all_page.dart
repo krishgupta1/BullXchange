@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:bullxchange/features/stock_market/screens/StockDetailPage.dart';
+import 'package:bullxchange/features/stock_market/screens/stock_page.dart';
 import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
@@ -110,7 +111,12 @@ class _ViewAllPageState extends State<ViewAllPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: AppBackButton(onPressed: () => Navigator.pop(context)),
+        leading: AppBackButton(
+          onPressed: () => Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const StockPage()),
+          ),
+        ),
         title: const Text(
           "Select Stocks",
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),

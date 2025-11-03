@@ -1,8 +1,11 @@
+// --- lib/features/stock_market/screens/stock_detail_page.dart ---
+
 import 'package:bullxchange/features/stock_market/screens/buy_stock_page.dart';
 import 'package:bullxchange/features/stock_market/screens/sell_stock_page.dart';
 import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/models/stock_holding_model.dart';
+import 'package:bullxchange/models/user_profile_data_model.dart'; // <-- IMPORT USER MODEL
 import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -10,84 +13,45 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-// restored: removed company_name helper import to display original symbol/name
 
-// ----------------------------------------------------------------------
-// NEW STATEFUL WIDGET FOR ICON TOGGLE
-// ----------------------------------------------------------------------
-class IconBookmarkButton extends StatefulWidget {
-  final Color baseColor;
-  final Color filledColor;
+// --- REMOVED THE PLACEHOLDER IconBookmarkButton WIDGET ---
 
-  const IconBookmarkButton({
-    super.key,
-    this.baseColor = const Color(0xFF03314B), // darkTextColor for outline icon
-    this.filledColor = const Color(0xFF3500D4), // primaryBlue for filled icon
-  });
-
-  @override
-  State<IconBookmarkButton> createState() => _IconBookmarkButtonState();
-}
-
-class _IconBookmarkButtonState extends State<IconBookmarkButton> {
-  // Start with false (outline/unbookmarked state)
-  bool _isBookmarked = false;
-
-  void _handleTap() {
-    setState(() {
-      _isBookmarked = !_isBookmarked;
-    });
-
-    // Simple Snackbar feedback (UI-only placeholder)
-    final message = _isBookmarked ? "Stock Bookmarked!" : "Bookmark Removed!";
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(milliseconds: 700),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Determine icon and color based on state
-    final icon = _isBookmarked ? Icons.bookmark : Icons.bookmark_border;
-    final color = _isBookmarked ? widget.filledColor : widget.baseColor;
-
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 5,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: IconButton(
-        icon: Icon(
-          icon, // Toggles between outline and filled
-          color: color, // Toggles color
-          size: 24,
-        ),
-        onPressed: _handleTap,
-      ),
-    );
-  }
-}
-// ----------------------------------------------------------------------
-// END ICON TOGGLE WIDGET
-// ----------------------------------------------------------------------
-
-class StockDetailPage extends StatelessWidget {
+// --- 1. CONVERTED TO STATEFULWIDGET ---
+class StockDetailPage extends StatefulWidget {
   final Instrument instrument;
   const StockDetailPage({super.key, required this.instrument});
 
-  // Instantiate the service for use in the bottom buttons
+  @override
+  State<StockDetailPage> createState() => _StockDetailPageState();
+}
+
+class _StockDetailPageState extends State<StockDetailPage> {
+  // --- 2. ADDED SERVICE AND UID ---
+  final UserService _userService = UserService();
+  final String? uid = FirebaseAuth.instance.currentUser?.uid;
+  final UserService _bottomButtonUserService =
+      UserService(); // For bottom buttons
+
+  // --- 3. ADDED THE TOGGLE FUNCTION ---
+  void _toggleWatchlist() async {
+    if (uid == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('You must be logged in.')));
+      return;
+    }
+
+    try {
+      // Call the function from your UserService
+      await _userService.toggleWatchlistStock(uid!, widget.instrument.token);
+
+      // Feedback is handled by the StreamBuilder rebuilding the icon
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -96,166 +60,213 @@ class StockDetailPage extends StatelessWidget {
     const Color darkTextColor = Color(0xFF03314B);
     const Color lightGreyBg = Color(0xFFF5F5F5);
 
-    final ltp = (instrument.liveData['ltp'] as num?)?.toDouble() ?? 0.0;
+    final ltp = (widget.instrument.liveData['ltp'] as num?)?.toDouble() ?? 0.0;
     final netChange =
-        (instrument.liveData['netChange'] as num?)?.toDouble() ?? 0.0;
+        (widget.instrument.liveData['netChange'] as num?)?.toDouble() ?? 0.0;
     final percentChange =
-        (instrument.liveData['percentChange'] as num?)?.toDouble() ?? 0.0;
+        (widget.instrument.liveData['percentChange'] as num?)?.toDouble() ??
+        0.0;
     final changeColor = netChange >= 0 ? const Color(0xFF1EAB58) : primaryPink;
     final priceParts = ltp.toStringAsFixed(2).split('.');
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 8.0),
-          child: Container(
-            margin: const EdgeInsets.symmetric(vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
-                  spreadRadius: 1,
-                  blurRadius: 5,
-                  offset: const Offset(0, 1),
+    // --- 4. WRAPPED SCAFFOLD IN STREAMBUILDER ---
+    return StreamBuilder<UserProfileDataModel?>(
+      stream: (uid != null) ? _userService.streamUserProfile(uid!) : null,
+      builder: (context, snapshot) {
+        bool isInWatchlist = false; // Default to false
+        if (snapshot.hasData && snapshot.data != null) {
+          // Check if this instrument's token is in the user's watchlist
+          isInWatchlist = snapshot.data!.watchlist.contains(
+            widget.instrument.token,
+          );
+        }
+
+        return Scaffold(
+          backgroundColor: Colors.white,
+          appBar: AppBar(
+            backgroundColor: Colors.white,
+            elevation: 0,
+            leading: Padding(
+              padding: const EdgeInsets.only(left: 8.0),
+              child: Container(
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 1,
+                      blurRadius: 5,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: IconButton(
-              icon: const Icon(
-                Icons.arrow_back_ios_new,
-                color: Colors.black,
-                size: 20,
-              ),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ),
-        ),
-        title: Text(
-          instrument.symbol.replaceAll('-EQ', ''), // restored: show symbol
-          style: const TextStyle(
-            color: darkTextColor,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-          overflow: TextOverflow.ellipsis,
-        ),
-        centerTitle: true,
-        // --- START: Replaced with the simple IconBookmarkButton ---
-        actions: const [
-          IconBookmarkButton(
-            filledColor: primaryBlue,
-            baseColor: darkTextColor,
-          ),
-        ],
-        // --- END: IconBookmarkButton ---
-      ),
-      // --- 2. BODY USES A SINGLE SCROLL VIEW ---
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildCompanyHeader(
-                instrument,
-                percentChange,
-                changeColor,
-                darkTextColor,
-              ),
-              const SizedBox(height: 10),
-              _buildPriceDetails(
-                priceParts,
-                netChange,
-                changeColor,
-                darkTextColor,
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                height: 420, // Height for the chart
-                child: TradingViewChart(symbol: instrument.symbol),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                "Statistics",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: darkTextColor,
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.arrow_back_ios_new,
+                    color: Colors.black,
+                    size: 20,
+                  ),
+                  onPressed: () => Navigator.pop(context),
                 ),
               ),
-              const SizedBox(height: 10),
-              Consumer<InstrumentProvider>(
-                builder: (context, prov, child) {
-                  final matched =
-                      prov.getInstrumentByToken(instrument.token) ?? instrument;
-                  final apiOpen =
-                      (matched.liveData['open'] as num?)?.toDouble() ?? 0.0;
-                  final apiHigh =
-                      (matched.liveData['high'] as num?)?.toDouble() ?? 0.0;
-                  final apiLow =
-                      (matched.liveData['low'] as num?)?.toDouble() ?? 0.0;
-                  final apiVolume =
-                      (matched.liveData['tradeVolume'] as num?)?.toInt() ?? 0;
-                  final apiAvgPrice =
-                      (matched.liveData['avgPrice'] as num?)?.toDouble() ?? 0.0;
-                  final apiUpperCircuit =
-                      (matched.liveData['upperCircuit'] as num?)?.toDouble() ??
-                      0.0;
-                  final apiLowerCircuit =
-                      (matched.liveData['lowerCircuit'] as num?)?.toDouble() ??
-                      0.0;
-                  final api52WkHigh =
-                      (matched.liveData['52WeekHigh'] as num?)?.toDouble() ??
-                      0.0;
-                  final api52WkLow =
-                      (matched.liveData['52WeekLow'] as num?)?.toDouble() ??
-                      0.0;
-
-                  // --- NEW VALUES ---
-                  final double outstandingShares = matched.outstandingShares;
-                  final int avgVolume = matched.avgVolume;
-                  final double marketCap = ltp * outstandingShares;
-
-                  return _buildStatisticsCard(
-                    open: apiOpen,
-                    high: apiHigh,
-                    low: apiLow,
-                    volume: apiVolume, // This is today's tradeVolume
-                    avgPrice: apiAvgPrice,
-                    upperCircuit: apiUpperCircuit,
-                    lowerCircuit: apiLowerCircuit,
-                    fiftyTwoWeekHigh: api52WkHigh,
-                    fiftyTwoWeekLow: api52WkLow,
-                    // --- PASSING NEW VALUES ---
-                    marketCap: marketCap,
-                    avgVolume: avgVolume.toDouble(), // This is the 30-day avg
-                    outstandingShares: outstandingShares,
-                    // ---
-                    lightGreyBg: lightGreyBg,
-                    darkTextColor: darkTextColor,
-                  );
-                },
+            ),
+            title: Text(
+              widget.instrument.symbol.replaceAll(
+                '-EQ',
+                '',
+              ), // restored: show symbol
+              style: const TextStyle(
+                color: darkTextColor,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+            centerTitle: true,
+            actions: [
+              // --- 5. REPLACED WITH DYNAMIC ICONBUTTON ---
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 1,
+                      blurRadius: 5,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    isInWatchlist
+                        ? Icons.bookmark
+                        : Icons.bookmark_border_outlined,
+                    color: isInWatchlist ? primaryBlue : darkTextColor,
+                    size: 24,
+                  ),
+                  onPressed: _toggleWatchlist,
+                ),
               ),
             ],
           ),
-        ),
-      ),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 72.0,
-          child: _buildBottomButtons(context, primaryPink, primaryBlue, ltp),
-        ),
-      ),
+          body: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildCompanyHeader(
+                    widget.instrument,
+                    percentChange,
+                    changeColor,
+                    darkTextColor,
+                  ),
+                  const SizedBox(height: 10),
+                  _buildPriceDetails(
+                    priceParts,
+                    netChange,
+                    changeColor,
+                    darkTextColor,
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    height: 420, // Height for the chart
+                    child: TradingViewChart(symbol: widget.instrument.symbol),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    "Statistics",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: darkTextColor,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Consumer<InstrumentProvider>(
+                    builder: (context, prov, child) {
+                      final matched =
+                          prov.getInstrumentByToken(widget.instrument.token) ??
+                          widget.instrument;
+                      final apiOpen =
+                          (matched.liveData['open'] as num?)?.toDouble() ?? 0.0;
+                      final apiHigh =
+                          (matched.liveData['high'] as num?)?.toDouble() ?? 0.0;
+                      final apiLow =
+                          (matched.liveData['low'] as num?)?.toDouble() ?? 0.0;
+                      final apiVolume =
+                          (matched.liveData['tradeVolume'] as num?)?.toInt() ??
+                          0;
+                      final apiAvgPrice =
+                          (matched.liveData['avgPrice'] as num?)?.toDouble() ??
+                          0.0;
+                      final apiUpperCircuit =
+                          (matched.liveData['upperCircuit'] as num?)
+                              ?.toDouble() ??
+                          0.0;
+                      final apiLowerCircuit =
+                          (matched.liveData['lowerCircuit'] as num?)
+                              ?.toDouble() ??
+                          0.0;
+                      final api52WkHigh =
+                          (matched.liveData['52WeekHigh'] as num?)
+                              ?.toDouble() ??
+                          0.0;
+                      final api52WkLow =
+                          (matched.liveData['52WeekLow'] as num?)?.toDouble() ??
+                          0.0;
+
+                      final double outstandingShares =
+                          matched.outstandingShares;
+                      final int avgVolume = matched.avgVolume;
+                      final double marketCap = ltp * outstandingShares;
+
+                      return _buildStatisticsCard(
+                        open: apiOpen,
+                        high: apiHigh,
+                        low: apiLow,
+                        volume: apiVolume,
+                        avgPrice: apiAvgPrice,
+                        upperCircuit: apiUpperCircuit,
+                        lowerCircuit: apiLowerCircuit,
+                        fiftyTwoWeekHigh: api52WkHigh,
+                        fiftyTwoWeekLow: api52WkLow,
+                        marketCap: marketCap,
+                        avgVolume: avgVolume.toDouble(),
+                        outstandingShares: outstandingShares,
+                        lightGreyBg: lightGreyBg,
+                        darkTextColor: darkTextColor,
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          bottomNavigationBar: SafeArea(
+            top: false,
+            child: SizedBox(
+              height: 72.0,
+              child: _buildBottomButtons(
+                context,
+                primaryPink,
+                primaryBlue,
+                ltp,
+                widget.instrument, // Pass instrument to bottom buttons
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
-  // --- Widget Builders ---
+  // --- Widget Builders (All are identical to your provided code) ---
 
   Widget _buildCompanyHeader(
     Instrument instrument,
@@ -272,10 +283,7 @@ class StockDetailPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                instrument.symbol.replaceAll(
-                  '-EQ',
-                  '',
-                ), // restored: symbol bold
+                instrument.symbol.replaceAll('-EQ', ''),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -284,7 +292,7 @@ class StockDetailPage extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
               Text(
-                instrument.name, // restored: faded short name below symbol
+                instrument.name,
                 style: const TextStyle(
                   fontSize: 14,
                   color: Colors.grey,
@@ -377,31 +385,25 @@ class StockDetailPage extends StatelessWidget {
     required double open,
     required double high,
     required double low,
-    required int volume, // This is live tradeVolume
+    required int volume,
     required double avgPrice,
     required double upperCircuit,
     required double lowerCircuit,
     required double fiftyTwoWeekHigh,
     required double fiftyTwoWeekLow,
-    // --- NEW PARAMETERS ---
     required double marketCap,
-    required double avgVolume, // This is the 30-day avg
+    required double avgVolume,
     required double outstandingShares,
-    // ---
     required Color lightGreyBg,
     required Color darkTextColor,
   }) {
     final volumeFormatter = NumberFormat.decimalPattern('en_US');
 
-    // --- UPDATED STATS LIST ---
     final List<Map<String, String>> stats = [
       {"label": "Open", "value": "₹${open.toStringAsFixed(2)}"},
       {"label": "High", "value": "₹${high.toStringAsFixed(2)}"},
       {"label": "Low", "value": "₹${low.toStringAsFixed(2)}"},
-      {
-        "label": "Volume",
-        "value": volumeFormatter.format(volume),
-      }, // Live Volume
+      {"label": "Volume", "value": volumeFormatter.format(volume)},
       {"label": "Avg. Price", "value": "₹${avgPrice.toStringAsFixed(2)}"},
       {
         "label": "Upper Circuit",
@@ -414,7 +416,6 @@ class StockDetailPage extends StatelessWidget {
         "value": "₹${lowerCircuit.toStringAsFixed(2)}",
       },
     ];
-    // --- END UPDATED STATS LIST ---
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -425,7 +426,7 @@ class StockDetailPage extends StatelessWidget {
       child: GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        itemCount: stats.length, // Now 12 items
+        itemCount: stats.length,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 3,
           crossAxisSpacing: 12,
@@ -468,22 +469,19 @@ class StockDetailPage extends StatelessWidget {
     BuildContext context,
     Color buyColor,
     Color sellColor,
-    double ltp, // Passed current Live Price
+    double ltp,
+    Instrument instrument, // <-- Passed instrument
   ) {
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
-      // Removed the SIP button, leaving only Sell and Buy
       child: Row(
         children: [
-          // --- SELL BUTTON WITH FIREBASE LOGIC ---
           Expanded(
             child: ElevatedButton(
               onPressed: () async {
-                // 1. Get the current user's ID
                 final uid = FirebaseAuth.instance.currentUser?.uid;
                 if (uid == null) {
-                  // Handle case where user is not logged in
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -494,13 +492,11 @@ class StockDetailPage extends StatelessWidget {
                   return;
                 }
 
-                // 2. Fetch the user's profile which contains their stock holdings
-                // NOTE: You'll need an instance of UserService in your StockDetailPage class
-                final userService = UserService();
-                final userProfile = await userService.readUserProfile(uid);
+                // Use the service instance from the State
+                final userProfile = await _bottomButtonUserService
+                    .readUserProfile(uid);
 
                 if (userProfile == null || userProfile.stocks.isEmpty) {
-                  // Handle case where user has no holdings
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -511,7 +507,6 @@ class StockDetailPage extends StatelessWidget {
                   return;
                 }
 
-                // 3. Find the specific stock holding that matches the current instrument
                 StockHoldingModel? holdingToSell;
                 try {
                   final symbolToFind = instrument.symbol.replaceAll('-EQ', '');
@@ -519,11 +514,9 @@ class StockDetailPage extends StatelessWidget {
                     (holding) => holding.stockSymbol == symbolToFind,
                   );
                 } catch (e) {
-                  // This catches the error if .firstWhere finds no matching element
                   holdingToSell = null;
                 }
 
-                // 4. Navigate to the SellStockPage if the holding was found
                 if (context.mounted) {
                   if (holdingToSell != null) {
                     Navigator.push(
@@ -531,13 +524,11 @@ class StockDetailPage extends StatelessWidget {
                       MaterialPageRoute(
                         builder: (context) => SellStockPage(
                           instrument: instrument,
-                          userHolding:
-                              holdingToSell!, // Pass the found holding here
+                          userHolding: holdingToSell!,
                         ),
                       ),
                     );
                   } else {
-                    // Handle case where the user owns other stocks, but not this one
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text("You do not own this stock."),
@@ -547,7 +538,7 @@ class StockDetailPage extends StatelessWidget {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: sellColor, // Use sellColor (primaryBlue)
+                backgroundColor: sellColor,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
@@ -561,8 +552,7 @@ class StockDetailPage extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 15), // Added spacer
-          // --- BUY BUTTON WITH FIREBASE LOGIC ---
+          const SizedBox(width: 15),
           Expanded(
             child: ElevatedButton(
               onPressed: () => Navigator.push(
@@ -572,7 +562,7 @@ class StockDetailPage extends StatelessWidget {
                 ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: buyColor, // Use buyColor (primaryPink)
+                backgroundColor: buyColor,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
@@ -581,7 +571,7 @@ class StockDetailPage extends StatelessWidget {
                 elevation: 0,
               ),
               child: const Text(
-                "Buy", // Text is "Buy"
+                "Buy",
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
@@ -592,7 +582,8 @@ class StockDetailPage extends StatelessWidget {
   }
 }
 
-// --- Full-Featured TradingView Chart Widget ---
+// --- (TradingViewChart widget remains exactly the same as you provided) ---
+
 class TradingViewChart extends StatefulWidget {
   final String symbol;
 
@@ -617,7 +608,6 @@ class _TradingViewChartState extends State<TradingViewChart> {
 
   String _buildTradingViewHtml() {
     final sanitizedSymbol = widget.symbol.replaceAll('-EQ', '');
-    // Hardcoded to BSE for better compatibility with free widget
     final tradingViewSymbol = 'BSE:$sanitizedSymbol';
 
     return '''
@@ -636,7 +626,6 @@ class _TradingViewChartState extends State<TradingViewChart> {
               "autosize": true,
               "symbol": "$tradingViewSymbol",
               "interval": "D",
-              // --- UPDATED: All standard intervals ---
               "intervals": ["1", "5", "15", "30", "60", "D", "W", "M"],
               "timezone": "Asia/Kolata",
               "theme": "light",
@@ -647,7 +636,7 @@ class _TradingViewChartState extends State<TradingViewChart> {
               "withdateranges": true,
               "hide_side_toolbar": false,
               "allow_symbol_change": true,
-              "details": true, // This will show OHLC on hover
+              "details": true, 
               "hotlist": true,
               "calendar": true,
               "container_id": "tradingview_chart_container"
@@ -660,12 +649,6 @@ class _TradingViewChartState extends State<TradingViewChart> {
 
   @override
   Widget build(BuildContext context) {
-    // --- 3. GESTURE RECOGNIZERS REMOVED ---
-    // This gives the WebView gesture priority, making its UI clickable.
-    // The trade-off is you cannot scroll the page by dragging on the chart.
-    return WebViewWidget(
-      controller: _controller,
-      // gestureRecognizers: { ... } - This is now removed.
-    );
+    return WebViewWidget(controller: _controller);
   }
 }
