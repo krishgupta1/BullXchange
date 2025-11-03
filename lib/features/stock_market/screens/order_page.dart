@@ -233,7 +233,7 @@ Widget _buildOrderItem({
                 order.symbol,
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
+                  fontSize: 12,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -256,7 +256,7 @@ Widget _buildOrderItem({
             const SizedBox(height: 2),
             Text(
               "$quantity",
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
             ),
             const SizedBox(height: 2),
             Text(

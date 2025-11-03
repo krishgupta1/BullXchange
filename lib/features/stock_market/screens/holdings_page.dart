@@ -231,7 +231,7 @@ class _PortfolioStockItemState extends State<PortfolioStockItem> {
                     h.stockSymbol,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      fontSize: 12,
                     ),
                   ),
                   Text(
@@ -251,7 +251,7 @@ class _PortfolioStockItemState extends State<PortfolioStockItem> {
                     "₹${(val * h.quantity).toStringAsFixed(2)}",
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      fontSize: 12,
                     ),
                   ),
                 ),

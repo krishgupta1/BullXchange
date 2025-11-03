@@ -457,7 +457,7 @@ class _PositionStockItemState extends State<PositionStockItem> {
                     p.stockSymbol,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      fontSize: 12,
                     ),
                   ),
                   Text(
@@ -477,7 +477,7 @@ class _PositionStockItemState extends State<PositionStockItem> {
                     priceFormatter.format(val * p.quantity),
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      fontSize: 12,
                     ),
                   ),
                 ),
