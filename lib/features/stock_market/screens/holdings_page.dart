@@ -87,14 +87,12 @@ class _HoldingsPageState extends State<HoldingsPage> {
                     )
                   else
                     // 🌟 FIX APPLIED: Added .toList() to fix the iterable spread error
-                    ...userHoldings
-                        .map(
-                          (holding) => PortfolioStockItem(
-                            key: ValueKey(holding.stockSymbol),
-                            holding: holding,
-                          ),
-                        )
-                        .toList(),
+                    ...userHoldings.map(
+                      (holding) => PortfolioStockItem(
+                        key: ValueKey(holding.stockSymbol),
+                        holding: holding,
+                      ),
+                    ),
                 ],
               ),
             );

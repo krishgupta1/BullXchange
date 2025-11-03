@@ -1,4 +1,3 @@
-// lib/features/stock_market/screens/order_page.dart
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/models/order_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
@@ -129,20 +128,27 @@ Widget _buildOrderItem({
 
   // Get order info directly from the OrderModel
   final orderType = order.transactionType;
-  final orderPrice = order.limitPrice;
   final quantity = order.quantity;
+
+  // --- NEW LOGIC ---
+  // Determine the price text based on the order type from the model
+  final String priceText;
+  if (order.orderType == 'LIMIT') {
+    priceText = "At ₹${order.limitPrice.toStringAsFixed(2)}";
+  } else {
+    // Assumes anything not 'LIMIT' is 'MARKET'
+    priceText = "Market";
+  }
+  // --- END OF NEW LOGIC ---
 
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
     child: Row(
       children: [
-        // --- THIS IS THE FIX ---
-        // Conditionally build the SmartLogo if instrument is available,
-        // otherwise build the placeholder using the order's company name.
+        // Conditionally build the SmartLogo or placeholder
         instrument != null
             ? SmartLogo(instrument: instrument, radius: 20)
             : _buildLogoContainer(order.companyName, radius: 20),
-        // --- END OF FIX ---
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -206,8 +212,9 @@ Widget _buildOrderItem({
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 2),
+            // --- USE THE NEW DYNAMIC TEXT ---
             Text(
-              "At ₹${orderPrice.toStringAsFixed(2)}",
+              priceText,
               style: TextStyle(color: Colors.grey[600], fontSize: 12),
             ),
           ],
@@ -218,7 +225,6 @@ Widget _buildOrderItem({
 }
 
 /// Builds a placeholder logo based on the company name
-/// (This logic is consistent with your holdings_page.dart)
 Widget _buildLogoContainer(String name, {double radius = 20}) {
   final letter = name.isNotEmpty ? name[0].toUpperCase() : "?";
   // This logic uses the name's hashcode, creating varied colors
