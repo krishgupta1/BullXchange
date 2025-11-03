@@ -23,8 +23,6 @@ class HoldingsPage extends StatefulWidget {
 class _HoldingsPageState extends State<HoldingsPage> {
   final UserService _userService = UserService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
-
-  // --- FIX 1: Change Future to Stream ---
   Stream<List<StockHoldingModel>?>? _holdingsStream;
 
   @override
@@ -32,8 +30,6 @@ class _HoldingsPageState extends State<HoldingsPage> {
     super.initState();
     final uid = _auth.currentUser?.uid;
     if (uid != null) {
-      // --- FIX 2: Use the new streamUserProfile method ---
-      // We map the stream to only return the list of stocks.
       _holdingsStream = _userService
           .streamUserProfile(uid)
           .map((profile) => profile?.stocks);
@@ -46,12 +42,10 @@ class _HoldingsPageState extends State<HoldingsPage> {
       return const Center(child: Text("Please log in to see your holdings."));
     }
 
-    // Using Consumer here to get the provider safely.
     return Consumer<InstrumentProvider>(
       builder: (context, instrumentProvider, child) {
-        // --- FIX 3: Change FutureBuilder to StreamBuilder ---
         return StreamBuilder<List<StockHoldingModel>?>(
-          stream: _holdingsStream, // Use the stream
+          stream: _holdingsStream,
           builder: (context, snapshot) {
             if (snapshot.hasError) {
               return Center(
@@ -63,7 +57,6 @@ class _HoldingsPageState extends State<HoldingsPage> {
             final isLoading =
                 snapshot.connectionState == ConnectionState.waiting;
 
-            // --- FIX 4: Fetch live data every time holdings update ---
             if (!isLoading && userHoldings != null && userHoldings.isNotEmpty) {
               instrumentProvider.fetchLiveDataForHoldings(userHoldings);
             }
@@ -82,11 +75,10 @@ class _HoldingsPageState extends State<HoldingsPage> {
                     const Center(
                       child: Padding(
                         padding: EdgeInsets.only(top: 48.0),
-                        child: Text("Your portfolio is empty."),
+                        child: HoldingsEmptyState(),
                       ),
                     )
                   else
-                    // 🌟 FIX APPLIED: Added .toList() to fix the iterable spread error
                     ...userHoldings.map(
                       (holding) => PortfolioStockItem(
                         key: ValueKey(holding.stockSymbol),
@@ -99,6 +91,40 @@ class _HoldingsPageState extends State<HoldingsPage> {
           },
         );
       },
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 🪙 Empty State
+// ---------------------------------------------------------------------------
+
+class HoldingsEmptyState extends StatelessWidget {
+  const HoldingsEmptyState({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        SizedBox(height: 20),
+        Icon(
+          Icons.account_balance_wallet_outlined,
+          size: 48,
+          color: Colors.grey,
+        ),
+        SizedBox(height: 16),
+        Text(
+          "Your Portfolio is Empty",
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        SizedBox(height: 8),
+        Text(
+          "Buy your first stock to see your long-term holdings here.",
+          style: TextStyle(color: Colors.grey),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 }
@@ -750,8 +776,7 @@ class PortfolioSummaryCard extends StatelessWidget {
   ) {
     return Container(
       padding: const EdgeInsets.all(20),
-      margin: const EdgeInsets.all(16.0), // Added margin to fit on screen
-      height: 170,
+      margin: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         gradient: const LinearGradient(
@@ -760,34 +785,66 @@ class PortfolioSummaryCard extends StatelessWidget {
           end: Alignment.bottomRight,
         ),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Choose font size based on available width
+          final double cardWidth = constraints.maxWidth;
+          final double titleSize = cardWidth < 340 ? 12.0 : 13.0;
+          final double valueSize = cardWidth < 340 ? 14.0 : 16.0;
+
+          return Column(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildSummaryColumn("Current", cVal),
-              _buildSummaryColumn(
-                "Total returns",
-                tRet,
-                percent: tRetPct,
-                isReturn: true,
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildSummaryColumn(
+                      "Current",
+                      cVal,
+                      titleFontSize: titleSize,
+                      valueFontSize: valueSize,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildSummaryColumn(
+                      "Total returns",
+                      tRet,
+                      percent: tRetPct,
+                      isReturn: true,
+                      titleFontSize: titleSize,
+                      valueFontSize: valueSize,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildSummaryColumn(
+                      "Invested",
+                      iVal,
+                      titleFontSize: titleSize,
+                      valueFontSize: valueSize,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildSummaryColumn(
+                      "1D returns",
+                      dRet,
+                      percent: dRetPct,
+                      isReturn: true,
+                      titleFontSize: titleSize,
+                      valueFontSize: valueSize,
+                    ),
+                  ),
+                ],
               ),
             ],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildSummaryColumn("Invested", iVal),
-              _buildSummaryColumn(
-                "1D returns",
-                dRet,
-                percent: dRetPct,
-                isReturn: true,
-              ),
-            ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -797,28 +854,41 @@ class PortfolioSummaryCard extends StatelessWidget {
     double value, {
     double? percent,
     bool isReturn = false,
+    double titleFontSize = 13.0,
+    double valueFontSize = 16.0,
   }) {
     final sign = value >= 0 ? "+" : "";
-    final color = value >= 0 ? Colors.greenAccent : Colors.redAccent;
+    final Color badgeColor = value >= 0 ? Colors.greenAccent : Colors.redAccent;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
-          style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14),
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.8),
+            fontSize: titleFontSize,
+          ),
         ),
         const SizedBox(height: 6),
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text(
-              isReturn
-                  ? "$sign₹${value.toStringAsFixed(2)}"
-                  : "₹${value.toStringAsFixed(2)}",
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+            // Value with auto-scaling to avoid overflow
+            Expanded(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  isReturn
+                      ? "$sign₹${value.toStringAsFixed(2)}"
+                      : "₹${value.toStringAsFixed(2)}",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: valueFontSize,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
             if (isReturn && percent != null) ...[
@@ -826,15 +896,18 @@ class PortfolioSummaryCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.9),
+                  color: badgeColor.withOpacity(0.9),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text(
-                  "$sign${percent.toStringAsFixed(2)}%",
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    "$sign${percent.toStringAsFixed(2)}%",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),

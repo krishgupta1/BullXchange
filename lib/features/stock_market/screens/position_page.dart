@@ -152,7 +152,7 @@ class _PositionPageState extends State<PositionPage> {
     return Consumer2<UserProfileDataModel?, InstrumentProvider>(
       builder: (context, userProfile, instrumentProvider, child) {
         if (userProfile == null || userProfile.positions.isEmpty) {
-          return const _EmptyState();
+          return Center(child: const _EmptyState());
         }
 
         final userPositions = userProfile.positions;
