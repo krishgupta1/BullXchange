@@ -1,7 +1,6 @@
-// --- lib/features/stock_market/screens/buy_stock_page.dart ---
-
 import 'package:bullxchange/features/stock_market/screens/transaction_success_page.dart';
 import 'package:bullxchange/models/order_model.dart';
+import 'package:bullxchange/models/user_profile_data_model.dart';
 import 'package:bullxchange/services/firebase/charge_calculator_service.dart';
 import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:flutter/material.dart';
@@ -22,6 +21,14 @@ class BuyStockPage extends StatefulWidget {
 }
 
 class _BuyStockPageState extends State<BuyStockPage> {
+  // --- UI Constants ---
+  static const Color primaryPink = Color(0xFFF61C7A);
+  static const Color darkTextColor = Color(0xFF03314B);
+  static const Color lightGreyBg = Color(0xFFF5F5F5);
+  static const Color lightBorderColor = Color(0xFFE0E0E0);
+  static const Color secondaryTextColor = Color(0xFF6A7584);
+  // ---
+
   final _quantityController = TextEditingController();
   final _limitPriceController = TextEditingController();
 
@@ -36,15 +43,15 @@ class _BuyStockPageState extends State<BuyStockPage> {
   int _quantity = 0;
   late double _ltp;
   double _price = 0.0;
+  
+  // --- ADDED FOR AVAILABLE FUNDS ---
+  double _availableFunds = 0.0;
+  bool _isLoadingFunds = true;
+  // ---
 
   final UserService _userService = UserService();
   final ChargeCalculatorService _chargeCalculator = ChargeCalculatorService();
   bool _isPlacingOrder = false;
-
-  static const Color primaryPink = Color(0xFFF61C7A);
-  static const Color darkTextColor = Color(0xFF03314B);
-  static const Color lightGreyBg = Color(0xFFF5F5F5);
-  static const Color lightBorderColor = Color(0xFFE0E0E0);
 
   final _priceFormatter = NumberFormat.currency(
     locale: 'en_IN',
@@ -61,7 +68,33 @@ class _BuyStockPageState extends State<BuyStockPage> {
 
     _quantityController.addListener(_calculateTotal);
     _limitPriceController.addListener(_onPriceChanged);
+    
+    // --- FETCH FUNDS ---
+    _fetchAvailableFunds();
     _calculateTotal(); // Initial calculation
+  }
+  
+  // --- NEW METHOD ---
+  Future<void> _fetchAvailableFunds() async {
+    setState(() => _isLoadingFunds = true);
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        final UserProfileDataModel? user = await _userService.readUserProfile(uid);
+        if (user != null && mounted) {
+          setState(() {
+            _availableFunds = user.availableFunds;
+          });
+        }
+      }
+    } catch (e) {
+      // Handle error, maybe show a snackbar
+      print("Error fetching funds: $e");
+    } finally {
+      if (mounted) {
+        setState(() => _isLoadingFunds = false);
+      }
+    }
   }
 
   void _onPriceChanged() {
@@ -123,22 +156,18 @@ class _BuyStockPageState extends State<BuyStockPage> {
       return;
     }
 
+    // Check funds one more time before placing order
+    // Note: _availableFunds is from initState, could be stale.
+    // For production, you might re-fetch or use a state manager.
+    if (_totalAmount > _availableFunds) {
+      if (mounted) {
+        _showInsufficientFundsDialog(_availableFunds, _totalAmount);
+      }
+      setState(() => _isPlacingOrder = false);
+      return;
+    }
+
     try {
-      final userProfile = await _userService.readUserProfile(uid);
-      if (userProfile == null) {
-        throw Exception("User profile not found.");
-      }
-
-      final double availableFunds = userProfile.availableFunds;
-
-      if (_totalAmount > availableFunds) {
-        if (mounted) {
-          _showInsufficientFundsDialog(availableFunds, _totalAmount);
-        }
-        setState(() => _isPlacingOrder = false);
-        return;
-      }
-
       if (_selectedOrderType == 'Market') {
         await _executeMarketOrder(uid);
       } else {
@@ -176,7 +205,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
       executedAt: now,
       exchange: _selectedExchange,
       productType: _selectedProductType,
-      orderType: 'Market', // <-- ⭐️ THIS IS THE FIX ⭐️
+      orderType: 'Market',
     );
 
     final holdingUpdate = StockHoldingModel(
@@ -228,7 +257,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
       symbol: symbol,
       companyName: widget.instrument.name,
       transactionType: 'BUY',
-      orderType: 'LIMIT', // This is correct for the OrderModel
+      orderType: 'LIMIT',
       productType: _selectedProductType.toUpperCase(),
       quantity: _quantity,
       limitPrice: _price,
@@ -305,6 +334,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
         ),
         centerTitle: true,
       ),
+      // --- UPDATED: Added SingleChildScrollView ---
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -318,6 +348,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
           ],
         ),
       ),
+      // --- END OF UPDATE ---
       bottomNavigationBar: _buildBottomBuyButton(),
     );
   }
@@ -352,7 +383,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
                         widget.instrument.name,
                         style: const TextStyle(
                           fontSize: 14,
-                          color: Colors.grey,
+                          color: secondaryTextColor,
                           fontWeight: FontWeight.w500,
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -381,17 +412,12 @@ class _BuyStockPageState extends State<BuyStockPage> {
 
     return Column(
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: _buildSegmentedControl(
-                title: 'Type',
-                options: ['Market', 'Limit'],
-                selectedValue: _selectedOrderType,
-                onChanged: _onOrderTypeChanged,
-              ),
-            ),
-          ],
+        _buildSegmentedControl(
+          title: 'Type',
+          options: ['Market', 'Limit'],
+          selectedValue: _selectedOrderType,
+          onChanged: _onOrderTypeChanged,
+          activeColor: primaryPink, // Pass the theme color
         ),
         const SizedBox(height: 20),
         Row(
@@ -407,7 +433,8 @@ class _BuyStockPageState extends State<BuyStockPage> {
                 ),
                 decoration: InputDecoration(
                   labelText: 'Quantity',
-                  labelStyle: const TextStyle(color: Colors.grey, fontSize: 16),
+                  labelStyle:
+                      const TextStyle(color: secondaryTextColor, fontSize: 16),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(
@@ -440,7 +467,8 @@ class _BuyStockPageState extends State<BuyStockPage> {
                 ),
                 decoration: InputDecoration(
                   labelText: 'Price',
-                  labelStyle: const TextStyle(color: Colors.grey, fontSize: 16),
+                  labelStyle:
+                      const TextStyle(color: secondaryTextColor, fontSize: 16),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(
@@ -467,12 +495,46 @@ class _BuyStockPageState extends State<BuyStockPage> {
             ),
           ],
         ),
+        // --- NEW: AVAILABLE FUNDS ---
+        Padding(
+          padding: const EdgeInsets.only(top: 8.0, left: 12.0),
+          child: Row(
+            children: [
+              Text(
+                'Available Funds: ',
+                style: const TextStyle(
+                  color: secondaryTextColor,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              if (_isLoadingFunds)
+                SizedBox(
+                  height: 12,
+                  width: 12,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: secondaryTextColor,
+                  ),
+                )
+              else
+                Text(
+                  _priceFormatter.format(_availableFunds),
+                  style: const TextStyle(
+                    color: darkTextColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        // --- END NEW ---
         const SizedBox(height: 20),
         _buildSegmentedControl(
           title: 'Product',
           options: ['Delivery', 'Intraday'],
           selectedValue: _selectedProductType,
           onChanged: (value) => setState(() => _selectedProductType = value),
+          activeColor: primaryPink,
         ),
         const SizedBox(height: 20),
         _buildSegmentedControl(
@@ -480,60 +542,70 @@ class _BuyStockPageState extends State<BuyStockPage> {
           options: ['NSE', 'BSE'],
           selectedValue: _selectedExchange,
           onChanged: (value) => setState(() => _selectedExchange = value),
+          activeColor: primaryPink,
         ),
       ],
     );
   }
 
+  // --- UPDATED: Replaced with the more complex version from SellStockPage ---
   Widget _buildSegmentedControl({
     required String title,
     required List<String> options,
     required String selectedValue,
     required ValueChanged<String> onChanged,
+    bool isEnabled = true,
+    Color? activeColor, // Optional active color
   }) {
-    return Row(
-      children: [
-        Text(
-          '$title:',
-          style: const TextStyle(
-            fontSize: 16,
-            color: Colors.grey,
-            fontWeight: FontWeight.w500,
+    final color = activeColor ?? primaryPink; // Use pink as default
+    return Opacity(
+      opacity: isEnabled ? 1.0 : 0.5,
+      child: Row(
+        children: [
+          Text(
+            '$title:',
+            style: const TextStyle(
+              fontSize: 16,
+              color: secondaryTextColor,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-        ),
-        const Spacer(),
-        Container(
-          height: 40,
-          decoration: BoxDecoration(
-            color: lightGreyBg,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Row(
-            children: options.map((option) {
-              bool isSelected = selectedValue == option;
-              return GestureDetector(
-                onTap: () => onChanged(option),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: isSelected ? primaryPink : Colors.transparent,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    option,
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : darkTextColor,
-                      fontWeight: FontWeight.bold,
+          const Spacer(),
+          Container(
+            height: 40,
+            decoration: BoxDecoration(
+              color: lightGreyBg,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: options.map((option) {
+                bool isSelected = selectedValue == option;
+                return GestureDetector(
+                  onTap: () => isEnabled ? onChanged(option) : null,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? (isEnabled ? color : Colors.grey)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      option,
+                      style: TextStyle(
+                        color: isSelected ? Colors.white : darkTextColor,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
-              );
-            }).toList(),
+                );
+              }).toList(),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -566,14 +638,14 @@ class _BuyStockPageState extends State<BuyStockPage> {
                       'Charges',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.grey,
+                        color: secondaryTextColor,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     IconButton(
                       icon: const Icon(
                         Icons.info_outline,
-                        color: Colors.grey,
+                        color: secondaryTextColor,
                         size: 18,
                       ),
                       onPressed: () => _showChargeDetailsBottomSheet(context),
@@ -612,7 +684,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
             label,
             style: TextStyle(
               fontSize: 16,
-              color: isTotal ? darkTextColor : Colors.grey,
+              color: isTotal ? darkTextColor : secondaryTextColor,
               fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
             ),
           ),
@@ -810,11 +882,6 @@ class _BuyStockPageState extends State<BuyStockPage> {
                 Navigator.of(context).pop(); // Close the dialog
 
                 // TODO: Navigate to your Add Funds Page
-                // For example:
-                // Navigator.of(context).push(MaterialPageRoute(
-                //   builder: (context) => const AddFundsPage(),
-                // ));
-
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     backgroundColor: Colors.blue,

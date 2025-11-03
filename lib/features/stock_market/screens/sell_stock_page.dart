@@ -24,33 +24,31 @@ class SellStockPage extends StatefulWidget {
 }
 
 class _SellStockPageState extends State<SellStockPage> {
+  // --- UI Constants ---
+  static const Color primaryBlue = Color(0xFF3500D4);
+  static const Color darkTextColor = Color(0xFF03314B);
+  static const Color lightGreyBg = Color(0xFFF5F5F5);
+  static const Color lightBorderColor = Color(0xFFE0E0E0);
+  static const Color secondaryTextColor = Color(0xFF6A7584);
+  // ---
+
   final _quantityController = TextEditingController();
   String _selectedProductType = 'Delivery';
   String _selectedExchange = 'NSE';
 
-  // --- UPDATED CHARGES ---
   Map<String, double> _chargesBreakdown = {};
   double _totalCharges = 0.0;
-  // ---
-
+  
   double _totalAmount = 0.0;
   int _quantity = 0;
   late double _ltp;
   late int _ownedQuantity;
   String? _errorText;
+  
   final UserService _userService = UserService();
-
-  // --- ADD CALCULATOR ---
   final ChargeCalculatorService _chargeCalculator = ChargeCalculatorService();
-  // ---
-
   bool _isPlacingOrder = false;
-  static const Color primaryBlue = Color(0xFF3500D4);
-  static const Color darkTextColor = Color(0xFF03314B);
-  static const Color lightGreyBg = Color(0xFFF5F5F5);
-  static const Color lightBorderColor = Color(0xFFE0E0E0);
 
-  // Helper for formatting
   final _priceFormatter = NumberFormat.currency(
     locale: 'en_IN',
     symbol: '₹',
@@ -66,12 +64,10 @@ class _SellStockPageState extends State<SellStockPage> {
     _selectedProductType = widget.userHolding.transactionType == 'DELIVERY'
         ? 'Delivery'
         : 'Intraday';
-    // --- REMOVED _generateRandomCharges() ---
     _quantityController.addListener(_calculateTotalAndValidate);
-    _calculateTotalAndValidate(); // Calculate initial charges (which will be 0)
+    _calculateTotalAndValidate();
   }
 
-  // --- UPDATED _calculateTotalAndValidate ---
   void _calculateTotalAndValidate() {
     setState(() {
       _quantity = int.tryParse(_quantityController.text) ?? 0;
@@ -95,7 +91,6 @@ class _SellStockPageState extends State<SellStockPage> {
     super.dispose();
   }
 
-  // --- UPDATED _handleSell ---
   Future<void> _handleSell() async {
     if (_quantity <= 0 || _isPlacingOrder || _errorText != null) return;
     setState(() => _isPlacingOrder = true);
@@ -119,12 +114,12 @@ class _SellStockPageState extends State<SellStockPage> {
       transactionType: 'SELL',
       quantity: _quantity,
       price: _ltp,
-      charges: _totalCharges, // <-- Pass calculated total charges
+      charges: _totalCharges,
       totalAmount: _totalAmount,
       executedAt: now,
       exchange: _selectedExchange,
       productType: _selectedProductType,
-      orderType: '',
+      orderType: 'Market', // Sell is always a Market order in this flow
     );
 
     final holdingUpdate = StockHoldingModel(
@@ -133,7 +128,7 @@ class _SellStockPageState extends State<SellStockPage> {
       quantity: -_quantity, // Negative quantity for selling
       transactionPrice: _ltp,
       buyingTime: now,
-      charges: _totalCharges, // <-- Pass calculated total charges
+      charges: _totalCharges,
       totalAmount: _totalAmount,
       exchange: _selectedExchange,
       transactionType: _selectedProductType.toUpperCase(),
@@ -168,7 +163,6 @@ class _SellStockPageState extends State<SellStockPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Note: Re-using the class-level formatter
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -256,7 +250,7 @@ class _SellStockPageState extends State<SellStockPage> {
                         widget.instrument.name,
                         style: const TextStyle(
                           fontSize: 14,
-                          color: Colors.grey,
+                          color: secondaryTextColor,
                           fontWeight: FontWeight.w500,
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -295,7 +289,7 @@ class _SellStockPageState extends State<SellStockPage> {
           decoration: InputDecoration(
             labelText: 'Quantity',
             errorText: _errorText,
-            labelStyle: const TextStyle(color: Colors.grey, fontSize: 16),
+            labelStyle: const TextStyle(color: secondaryTextColor, fontSize: 16),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: lightBorderColor, width: 1.5),
@@ -319,7 +313,7 @@ class _SellStockPageState extends State<SellStockPage> {
           child: Text(
             'You own: $_ownedQuantity shares',
             style: const TextStyle(
-              color: Colors.grey,
+              color: secondaryTextColor,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -350,7 +344,9 @@ class _SellStockPageState extends State<SellStockPage> {
     required String selectedValue,
     required ValueChanged<String> onChanged,
     bool isEnabled = true,
+    Color? activeColor, // Optional active color
   }) {
+    final color = activeColor ?? primaryBlue;
     return Opacity(
       opacity: isEnabled ? 1.0 : 0.5,
       child: Row(
@@ -359,7 +355,7 @@ class _SellStockPageState extends State<SellStockPage> {
             '$title:',
             style: const TextStyle(
               fontSize: 16,
-              color: Colors.grey,
+              color: secondaryTextColor,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -381,7 +377,7 @@ class _SellStockPageState extends State<SellStockPage> {
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? (isEnabled ? primaryBlue : Colors.grey)
+                          ? (isEnabled ? color : Colors.grey)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -402,7 +398,6 @@ class _SellStockPageState extends State<SellStockPage> {
     );
   }
 
-  // --- UPDATED _buildOrderSummary ---
   Widget _buildOrderSummary(NumberFormat formatter) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -416,8 +411,6 @@ class _SellStockPageState extends State<SellStockPage> {
           _buildSummaryRow('Price', formatter.format(_ltp)),
           const Divider(height: 24),
           _buildSummaryRow('Subtotal', formatter.format(_quantity * _ltp)),
-
-          // --- THIS IS THE NEW CHARGES ROW ---
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 4.0),
             child: Row(
@@ -429,14 +422,14 @@ class _SellStockPageState extends State<SellStockPage> {
                       'Charges',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.grey,
+                        color: secondaryTextColor,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     IconButton(
                       icon: Icon(
                         Icons.info_outline,
-                        color: Colors.grey,
+                        color: secondaryTextColor,
                         size: 18,
                       ),
                       onPressed: () => _showChargeDetailsBottomSheet(context),
@@ -454,8 +447,6 @@ class _SellStockPageState extends State<SellStockPage> {
               ],
             ),
           ),
-
-          // --- END OF NEW ROW ---
           const Divider(height: 24),
           _buildSummaryRow(
             'Total Amount',
@@ -477,7 +468,7 @@ class _SellStockPageState extends State<SellStockPage> {
             label,
             style: TextStyle(
               fontSize: 16,
-              color: isTotal ? darkTextColor : Colors.grey,
+              color: isTotal ? darkTextColor : secondaryTextColor,
               fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
             ),
           ),
@@ -529,7 +520,6 @@ class _SellStockPageState extends State<SellStockPage> {
     );
   }
 
-  // --- NEW METHOD: _showChargeDetailsBottomSheet ---
   void _showChargeDetailsBottomSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -544,7 +534,7 @@ class _SellStockPageState extends State<SellStockPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Sell Charges Breakdown', // <-- Title changed
+                'Sell Charges Breakdown',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -562,7 +552,7 @@ class _SellStockPageState extends State<SellStockPage> {
               _buildChargeRow(
                 'Stamp Duty',
                 _chargesBreakdown['stampDuty'],
-              ), // Will show ₹0.00
+              ),
               _buildChargeRow('GST', _chargesBreakdown['gst']),
               const Divider(height: 24),
               _buildChargeRow(
