@@ -18,7 +18,7 @@ class PositionPage extends StatelessWidget {
       builder: (context, userProfile, instrumentProvider, child) {
         // --- 2. GET LIVE POSITIONS FROM USER PROFILE ---
         if (userProfile == null || userProfile.positions.isEmpty) {
-          return const _EmptyState();
+          return Center(child: const _EmptyState());
         }
 
         final userPositions = userProfile.positions;

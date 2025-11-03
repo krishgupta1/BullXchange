@@ -17,7 +17,7 @@ class OrderPage extends StatelessWidget {
       builder: (context, openOrders, provider, child) {
         // Handle case where there are no open orders
         if (openOrders.isEmpty) {
-          return const _EmptyState();
+          return Center(child: const _EmptyState());
         }
 
         return Column(

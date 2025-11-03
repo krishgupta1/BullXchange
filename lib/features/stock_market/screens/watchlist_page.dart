@@ -18,7 +18,6 @@ class WatchlistPage extends StatefulWidget {
 }
 
 class _WatchlistPageState extends State<WatchlistPage> {
-  // Create instances to use
   final UserService _userService = UserService();
   final String? uid = FirebaseAuth.instance.currentUser?.uid;
 
@@ -28,7 +27,6 @@ class _WatchlistPageState extends State<WatchlistPage> {
       return const Center(child: Text("Please log in."));
     }
 
-    // This StreamBuilder listens to real-time changes in the user's profile
     return StreamBuilder<UserProfileDataModel?>(
       stream: _userService.streamUserProfile(uid!),
       builder: (context, snapshot) {
@@ -39,11 +37,9 @@ class _WatchlistPageState extends State<WatchlistPage> {
           return const Center(child: Text("Could not load user profile."));
         }
 
-        // Get the dynamic watchlist tokens from the user's profile
         final userProfile = snapshot.data!;
         final userWatchlistTokens = userProfile.watchlist;
 
-        // The rest of your code now uses the dynamic list
         return Consumer<InstrumentProvider>(
           builder: (context, provider, child) {
             final watchlistStocks = provider.allNSEStocks
@@ -51,7 +47,7 @@ class _WatchlistPageState extends State<WatchlistPage> {
                 .toList();
 
             if (watchlistStocks.isEmpty) {
-              return const _EmptyState();
+              return const Center(child: _EmptyState());
             }
 
             return Column(
@@ -67,8 +63,6 @@ class _WatchlistPageState extends State<WatchlistPage> {
                   ),
                 ),
                 const Divider(height: 1, thickness: 1),
-
-                // --- Watchlist stocks ---
                 ...watchlistStocks.map((instrument) {
                   return InkWell(
                     onTap: () {
@@ -91,8 +85,6 @@ class _WatchlistPageState extends State<WatchlistPage> {
     );
   }
 }
-
-// --- Reusable Widgets (from your original file) ---
 
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
@@ -128,7 +120,7 @@ Widget _buildWatchlistHeader(int stockCount, BuildContext context) {
     children: [
       Text(
         "$stockCount stocks",
-        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
       ),
       const Spacer(),
       IconButton(
@@ -136,7 +128,7 @@ Widget _buildWatchlistHeader(int stockCount, BuildContext context) {
         onPressed: () {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => ViewAllPage()),
+            MaterialPageRoute(builder: (context) => const ViewAllPage()),
           );
         },
       ),
@@ -149,27 +141,34 @@ Widget _buildSortHeader() {
   return Row(
     children: [
       TextButton.icon(
-        icon: const Icon(Icons.sort, color: Colors.black54),
+        icon: const Icon(Icons.sort, color: Colors.black54, size: 18),
         label: const Text("Sort", style: TextStyle(color: Colors.black54)),
         onPressed: () {},
       ),
       const Spacer(),
       Text(
         "Mkt price / 1D <>",
-        style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.w500),
+        style: TextStyle(
+          color: Colors.grey[700],
+          fontWeight: FontWeight.w500,
+          fontSize: 12,
+        ),
       ),
     ],
   );
 }
 
+// 🔹 Updated to match ExplorePage font sizes & layout
 Widget _buildStockItem({required Instrument instrument}) {
   final ltp = (instrument.liveData['ltp'] as num?)?.toDouble() ?? 0.0;
   final netChange =
       (instrument.liveData['netChange'] as num?)?.toDouble() ?? 0.0;
-  final changeColor = netChange >= 0 ? Colors.green : Colors.red;
+  final percentChange =
+      (instrument.liveData['percentChange'] as num?)?.toDouble() ?? 0.0;
+  final changeColor = netChange >= 0 ? const Color(0xFF1EAB58) : Colors.red;
 
   return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
     child: Row(
       children: [
         SmartLogo(instrument: instrument, radius: 0),
@@ -182,7 +181,7 @@ Widget _buildStockItem({required Instrument instrument}) {
                 instrument.symbol.replaceAll('-EQ', ''),
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
+                  fontSize: 12,
                 ),
               ),
               Text(
@@ -194,8 +193,8 @@ Widget _buildStockItem({required Instrument instrument}) {
           ),
         ),
         SizedBox(
-          width: 60,
-          height: 30,
+          width: 80,
+          height: 40,
           child: MiniChart.fromInstrument(
             instrument: instrument,
             color: changeColor,
@@ -207,11 +206,22 @@ Widget _buildStockItem({required Instrument instrument}) {
           children: [
             Text(
               "₹${ltp.toStringAsFixed(2)}",
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
             ),
-            Text(
-              "(${netChange.toStringAsFixed(2)})",
-              style: TextStyle(color: changeColor, fontSize: 12),
+            Row(
+              children: [
+                Icon(
+                  percentChange >= 0
+                      ? Icons.arrow_drop_up
+                      : Icons.arrow_drop_down,
+                  color: changeColor,
+                  size: 20,
+                ),
+                Text(
+                  "${percentChange.abs().toStringAsFixed(2)}%",
+                  style: TextStyle(color: changeColor, fontSize: 12),
+                ),
+              ],
             ),
           ],
         ),
