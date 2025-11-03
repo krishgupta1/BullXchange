@@ -4,25 +4,27 @@ import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/models/stock_holding_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
+import 'package:bullxchange/provider/user_profile_provider.dart'; // Import the provider
 import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-// restored: removed company_name helper import to display original symbol/name
 
 // ----------------------------------------------------------------------
-// NEW STATEFUL WIDGET FOR ICON TOGGLE
+// FIXED STATEFUL WIDGET FOR ICON TOGGLE (REMOVED REDUNDANT LOCAL STATE)
 // ----------------------------------------------------------------------
 class IconBookmarkButton extends StatefulWidget {
+  final Instrument instrument; // Added instrument to the widget
   final Color baseColor;
   final Color filledColor;
 
   const IconBookmarkButton({
     super.key,
-    this.baseColor = const Color(0xFF03314B), // darkTextColor for outline icon
-    this.filledColor = const Color(0xFF3500D4), // primaryBlue for filled icon
+    required this.instrument, // Required
+    this.baseColor = const Color(0xFF03314B),
+    this.filledColor = const Color(0xFF3500D4),
   });
 
   @override
@@ -30,29 +32,80 @@ class IconBookmarkButton extends StatefulWidget {
 }
 
 class _IconBookmarkButtonState extends State<IconBookmarkButton> {
-  // Start with false (outline/unbookmarked state)
-  bool _isBookmarked = false;
+  // Removed the local state variable '_isBookmarked'
 
-  void _handleTap() {
-    setState(() {
-      _isBookmarked = !_isBookmarked;
-    });
+  // Removed initState as we now use context.watch in the build method.
 
-    // Simple Snackbar feedback (UI-only placeholder)
-    final message = _isBookmarked ? "Stock Bookmarked!" : "Bookmark Removed!";
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(milliseconds: 700),
-      ),
+  Future<void> _handleTap(bool isCurrentlyBookmarked) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please log in to manage watchlist.")),
+      );
+      return;
+    }
+
+    final userService = context.read<UserService>();
+    final symbol = widget.instrument.symbol.replaceAll('-EQ', '');
+
+    // 1. Create the StockHoldingModel (Watchlist entry)
+    final StockHoldingModel stockItem = StockHoldingModel(
+      stockSymbol: symbol,
+      stockName: widget.instrument.name,
+      exchange: widget.instrument.exchSeg,
+      quantity: 0,
+      transactionPrice: 0.0,
+      transactionType: 'CNC',
+      charges: 0.0,
+      totalAmount: 0.0,
+      buyingTime: DateTime.now(),
     );
+
+    // 2. Call the Firebase service to toggle the item
+    try {
+      // This atomic transaction will add the item if not present, or remove it if present.
+      await userService.toggleWatchlistItem(uid: uid, stockItem: stockItem);
+
+      // 3. Show Snackbar feedback (based on the action taken)
+      final message = isCurrentlyBookmarked
+          ? "Bookmark Removed!"
+          : "Stock Bookmarked!";
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            duration: const Duration(milliseconds: 700),
+          ),
+        );
+      }
+
+      // NOTE: The UI update happens automatically because the UserProfileProvider
+      // will receive the new Firebase data and call notifyListeners().
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Failed to update watchlist. Please try again."),
+          ),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Determine icon and color based on state
-    final icon = _isBookmarked ? Icons.bookmark : Icons.bookmark_border;
-    final color = _isBookmarked ? widget.filledColor : widget.baseColor;
+    // 1. WATCH the UserProfileProvider for the current bookmark status
+    final userProfileProvider = context.watch<UserProfileProvider>();
+    final symbol = widget.instrument.symbol.replaceAll('-EQ', '');
+
+    // This is the source of truth for the button's state.
+    final bool isBookmarkedLive = userProfileProvider.isStockInWatchlist(
+      symbol,
+    );
+
+    // 2. Determine icon and color based on the live state
+    final icon = isBookmarkedLive ? Icons.bookmark : Icons.bookmark_border;
+    final color = isBookmarkedLive ? widget.filledColor : widget.baseColor;
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
@@ -70,11 +123,12 @@ class _IconBookmarkButtonState extends State<IconBookmarkButton> {
       ),
       child: IconButton(
         icon: Icon(
-          icon, // Toggles between outline and filled
-          color: color, // Toggles color
+          icon, // Based on live state
+          color: color, // Based on live state
           size: 24,
         ),
-        onPressed: _handleTap,
+        // Pass the current live state to the handler
+        onPressed: () => _handleTap(isBookmarkedLive),
       ),
     );
   }
@@ -86,8 +140,6 @@ class _IconBookmarkButtonState extends State<IconBookmarkButton> {
 class StockDetailPage extends StatelessWidget {
   final Instrument instrument;
   const StockDetailPage({super.key, required this.instrument});
-
-  // Instantiate the service for use in the bottom buttons
 
   @override
   Widget build(BuildContext context) {
@@ -136,7 +188,7 @@ class StockDetailPage extends StatelessWidget {
           ),
         ),
         title: Text(
-          instrument.symbol.replaceAll('-EQ', ''), // restored: show symbol
+          instrument.symbol.replaceAll('-EQ', ''),
           style: const TextStyle(
             color: darkTextColor,
             fontWeight: FontWeight.bold,
@@ -145,14 +197,14 @@ class StockDetailPage extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
         centerTitle: true,
-        // --- START: Replaced with the simple IconBookmarkButton ---
-        actions: const [
+        actions: [
+          // --- UPDATED: Pass the instrument to the bookmark button ---
           IconBookmarkButton(
+            instrument: instrument, // Pass the current stock instrument
             filledColor: primaryBlue,
             baseColor: darkTextColor,
           ),
         ],
-        // --- END: IconBookmarkButton ---
       ),
       // --- 2. BODY USES A SINGLE SCROLL VIEW ---
       body: SingleChildScrollView(
@@ -425,7 +477,7 @@ class StockDetailPage extends StatelessWidget {
       child: GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        itemCount: stats.length, // Now 12 items
+        itemCount: stats.length, // Now 9 items (if original stats were 9)
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 3,
           crossAxisSpacing: 12,
@@ -473,7 +525,6 @@ class StockDetailPage extends StatelessWidget {
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
-      // Removed the SIP button, leaving only Sell and Buy
       child: Row(
         children: [
           // --- SELL BUTTON WITH FIREBASE LOGIC ---
@@ -495,8 +546,8 @@ class StockDetailPage extends StatelessWidget {
                 }
 
                 // 2. Fetch the user's profile which contains their stock holdings
-                // NOTE: You'll need an instance of UserService in your StockDetailPage class
-                final userService = UserService();
+                // NOTE: Using context.read<UserService>() is safer if it's provided higher up.
+                final userService = context.read<UserService>();
                 final userProfile = await userService.readUserProfile(uid);
 
                 if (userProfile == null || userProfile.stocks.isEmpty) {
@@ -519,7 +570,6 @@ class StockDetailPage extends StatelessWidget {
                     (holding) => holding.stockSymbol == symbolToFind,
                   );
                 } catch (e) {
-                  // This catches the error if .firstWhere finds no matching element
                   holdingToSell = null;
                 }
 
@@ -562,7 +612,7 @@ class StockDetailPage extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 15), // Added spacer
-          // --- BUY BUTTON WITH FIREBASE LOGIC ---
+          // --- BUY BUTTON ---
           Expanded(
             child: ElevatedButton(
               onPressed: () => Navigator.push(
@@ -660,12 +710,6 @@ class _TradingViewChartState extends State<TradingViewChart> {
 
   @override
   Widget build(BuildContext context) {
-    // --- 3. GESTURE RECOGNIZERS REMOVED ---
-    // This gives the WebView gesture priority, making its UI clickable.
-    // The trade-off is you cannot scroll the page by dragging on the chart.
-    return WebViewWidget(
-      controller: _controller,
-      // gestureRecognizers: { ... } - This is now removed.
-    );
+    return WebViewWidget(controller: _controller);
   }
 }

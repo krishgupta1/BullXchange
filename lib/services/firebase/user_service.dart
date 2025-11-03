@@ -1,10 +1,10 @@
-// lib/services/firebase/user_service.dart
-import 'package:bullxchange/models/order_model.dart'; // <-- 1. IMPORT ORDER MODEL
+import 'package:bullxchange/models/order_model.dart';
 import 'package:bullxchange/models/stock_holding_model.dart';
 import 'package:bullxchange/models/user_profile_data_model.dart';
 import 'package:bullxchange/models/transaction_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:async'; // Import dart:async for Stream
 
 class UserService {
   final CollectionReference usersRef = FirebaseFirestore.instance.collection(
@@ -13,12 +13,12 @@ class UserService {
   final CollectionReference transactionsRef = FirebaseFirestore.instance
       .collection('transactions');
 
-  // --- 2. ADD ORDERS COLLECTION REFERENCE ---
   final CollectionReference ordersRef = FirebaseFirestore.instance.collection(
     'orders',
   );
 
   // --- Profile Management ---
+
   Future<void> addUserProfile({
     required String uid,
     required String name,
@@ -33,7 +33,8 @@ class UserService {
       accountCreationTime: DateTime.now(),
       availableFunds: 100000.0,
       stocks: const [],
-      positions: const [], // Make sure to initialize the new list
+      positions: const [],
+      watchlist: const [], // Initialize the new list
     );
     try {
       await usersRef.doc(uid).set(profile.toJson());
@@ -46,6 +47,7 @@ class UserService {
   }
 
   // --- Read Profile (One-time fetch) ---
+
   Future<UserProfileDataModel?> readUserProfile(String uid) async {
     final docSnapshot = await usersRef.doc(uid).get();
     if (docSnapshot.exists && docSnapshot.data() != null) {
@@ -57,7 +59,8 @@ class UserService {
     return null;
   }
 
-  // --- Stream Profile (Real-time updates for Holdings) ---
+  // --- Stream Profile (Real-time updates) ---
+
   Stream<UserProfileDataModel?> streamUserProfile(String uid) {
     final docRef = usersRef.doc(uid);
     return docRef.snapshots().map((docSnapshot) {
@@ -71,7 +74,8 @@ class UserService {
     });
   }
 
-  // --- Atomic Trade Function (Used by Buy/Sell pages) ---
+  // --- Atomic Trade Function (for Holdings and Positions) ---
+
   Future<String> executeTrade({
     required String uid,
     required TransactionModel transaction,
@@ -95,7 +99,7 @@ class UserService {
         );
         final currentFunds = currentUserProfile.availableFunds;
 
-        // Check funds (this logic is the same for both types)
+        // Check funds
         if (transaction.transactionType == 'BUY' &&
             currentFunds < transaction.totalAmount) {
           throw Exception("Insufficient funds to complete the purchase.");
@@ -105,9 +109,7 @@ class UserService {
             ? currentFunds - transaction.totalAmount
             : currentFunds + transaction.totalAmount;
 
-        // --- THIS IS THE NEW ROUTING LOGIC ---
-
-        // Get mutable copies of both lists
+        // Determine which list to update (Stocks/Holdings or Positions/Intraday)
         List<StockHoldingModel> currentHoldings = List.from(
           currentUserProfile.stocks,
         );
@@ -115,7 +117,6 @@ class UserService {
           currentUserProfile.positions,
         );
 
-        // Determine which list to update
         bool isIntraday = stockHoldingUpdate.transactionType == 'INTRADAY';
 
         List<StockHoldingModel> listToUpdate = isIntraday
@@ -127,18 +128,17 @@ class UserService {
         );
 
         if (existingIndex != -1) {
-          // Stock already exists in the list, update it
+          // Update existing stock
           final oldStock = listToUpdate[existingIndex];
           final int totalQty = oldStock.quantity + stockHoldingUpdate.quantity;
 
           if (totalQty <= 0) {
-            // Remove from list if quantity is zero or less
+            // Remove if quantity is zero or less
             listToUpdate.removeAt(existingIndex);
           } else {
-            // Calculate new average price (only if it's a BUY)
+            // Calculate new average price (only when buying)
             double newAvgPrice = oldStock.transactionPrice;
             if (stockHoldingUpdate.quantity > 0) {
-              // It's a BUY
               final double totalValue =
                   (oldStock.quantity * oldStock.transactionPrice) +
                   (stockHoldingUpdate.quantity *
@@ -152,22 +152,18 @@ class UserService {
             );
           }
         } else if (stockHoldingUpdate.quantity > 0) {
-          // New stock, add to the list
+          // Add new stock
           listToUpdate.add(stockHoldingUpdate);
         }
-
-        // --- END OF NEW ROUTING LOGIC ---
 
         // Update the user document in Firestore
         firestoreTransaction.update(userDocRef, {
           'availableFunds': newFunds,
-
-          // Update both lists in Firestore
           'stocks': currentHoldings.map((s) => s.toJson()).toList(),
           'positions': currentPositions.map((p) => p.toJson()).toList(),
         });
 
-        // Log the transaction (this is the same)
+        // Log the transaction
         firestoreTransaction.set(newTransactionRef, transaction.toJson());
       });
 
@@ -180,7 +176,86 @@ class UserService {
     }
   }
 
-  // --- 3. NEW FUNCTION TO PLACE A LIMIT ORDER ---
+  // --- Watchlist Management (FIXED FOR MINIMAL DATA) ---
+
+  Future<void> toggleWatchlistItem({
+    required String uid,
+    required StockHoldingModel stockItem,
+  }) async {
+    final userDocRef = usersRef.doc(uid);
+
+    try {
+      await FirebaseFirestore.instance.runTransaction((
+        firestoreTransaction,
+      ) async {
+        final userSnapshot = await firestoreTransaction.get(userDocRef);
+        if (!userSnapshot.exists) {
+          throw Exception("User does not exist!");
+        }
+
+        final currentUserProfile = UserProfileDataModel.fromJson(
+          uid,
+          userSnapshot.data() as Map<String, dynamic>,
+        );
+
+        List<StockHoldingModel> currentWatchlist = List.from(
+          currentUserProfile.watchlist,
+        );
+
+        // Check if the item already exists in the watchlist
+        int existingIndex = currentWatchlist.indexWhere(
+          (stock) =>
+              stock.stockSymbol == stockItem.stockSymbol &&
+              stock.exchange == stockItem.exchange,
+        );
+
+        if (existingIndex != -1) {
+          // If exists, remove it (TOGGLE OFF)
+          currentWatchlist.removeAt(existingIndex);
+        } else {
+          // If it doesn't exist, add a MINIMAL version (TOGGLE ON)
+
+          // We must create a new StockHoldingModel with minimal fields
+          // because the data structure requires it.
+          final minimalWatchlistItem = StockHoldingModel(
+            stockSymbol: stockItem.stockSymbol,
+            stockName: stockItem.stockName,
+            exchange: stockItem.exchange,
+            // Set all unnecessary fields to minimal/default values:
+            quantity: 0,
+            transactionPrice: 0.0,
+            charges: 0.0,
+            totalAmount: 0.0,
+            transactionType: 'WLIST', // Indicate it's a watchlist entry
+            buyingTime: DateTime.fromMillisecondsSinceEpoch(0),
+          );
+
+          currentWatchlist.add(minimalWatchlistItem);
+        }
+
+        // Update the user document in Firestore
+        // ✨ FIX: Map the list back to JSON, ensuring only essential fields are present in new entries
+        firestoreTransaction.update(userDocRef, {
+          'watchlist': currentWatchlist.map((s) {
+            // For new entries, this map ensures ONLY minimal fields are serialized:
+            return {
+              'stockSymbol': s.stockSymbol,
+              'stockName': s.stockName,
+              'exchange': s.exchange,
+            };
+          }).toList(),
+        });
+      });
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        print("Failed to toggle watchlist item: $e\n$stackTrace");
+      }
+      rethrow;
+    }
+  }
+
+  // --- Order Management ---
+
   Future<void> placeLimitOrder(OrderModel order) async {
     try {
       await ordersRef.add(order.toJson());
@@ -192,7 +267,6 @@ class UserService {
     }
   }
 
-  // --- 4. NEW STREAM FOR OPEN ORDERS ---
   Stream<List<OrderModel>> streamOpenOrders(String uid) {
     return ordersRef
         .where('userId', isEqualTo: uid)
@@ -213,7 +287,7 @@ class UserService {
         });
   }
 
-  // --- Your Original Functions (Kept for reference) ---
+  // --- Legacy/Redundant Function (Included for completeness but should be removed) ---
 
   Future<void> addTransaction(TransactionModel transaction) async {
     try {
@@ -226,8 +300,8 @@ class UserService {
     }
   }
 
-  // NOTE: This function is now redundant because executeTrade handles all its logic.
-  // You can safely remove it if you are no longer calling it from anywhere.
+  // NOTE: updateCumulativeStockHolding is generally redundant if executeTrade is used exclusively.
+  // We leave it here as it was part of the provided context.
   Future<void> updateCumulativeStockHolding(
     String uid,
     StockHoldingModel newStockTransaction,

@@ -60,34 +60,45 @@ class StockHoldingModel {
     'transactionType': transactionType,
   };
 
-  // --- THIS FACTORY IS THE FIX ---
   factory StockHoldingModel.fromJson(Map<String, dynamic> json) {
-    // This function now safely handles both old and new date formats.
-    DateTime parseBuyingTime(dynamic timeData) {
-      if (timeData is Timestamp) {
-        // New format: Read the Timestamp
-        return timeData.toDate();
-      } else if (timeData is String) {
-        // Old format: Parse the String
-        return DateTime.parse(timeData);
-      } else {
-        // Fallback if data is missing or invalid
-        return DateTime.now();
-      }
+    // Helper function to safely read String fields
+    String safeString(String key, String defaultValue) {
+      return json[key] as String? ?? defaultValue;
     }
 
+    // Helper function to safely parse the buyingTime field
+    DateTime parseBuyingTime(dynamic timeData) {
+      if (timeData is Timestamp) {
+        return timeData.toDate();
+      } else if (timeData is String) {
+        return DateTime.tryParse(timeData) ?? DateTime.fromMillisecondsSinceEpoch(0);
+      } else {
+        // Fallback for missing or invalid data
+        return DateTime.fromMillisecondsSinceEpoch(0); 
+      }
+    }
+    
+    // CRITICAL FIX: Safe casting for all numeric fields that might be null (like in the minimal watchlist entries)
+    final quantityValue = (json['quantity'] as num?);
+    final priceValue = (json['transactionPrice'] as num?);
+    final chargesValue = (json['charges'] as num?);
+    final totalValue = (json['totalAmount'] as num?);
+
     return StockHoldingModel(
-      stockName: json['stockName'] as String,
-      stockSymbol: json['stockSymbol'] as String,
-      quantity: json['quantity'] as int,
-      transactionPrice: (json['transactionPrice'] as num).toDouble(),
+      stockName: safeString('stockName', 'N/A'),
+      stockSymbol: safeString('stockSymbol', 'N/A'),
+      
+      // Safety: Use ? and ?? to handle null or non-existent fields, defaulting to zero.
+      quantity: quantityValue?.toInt() ?? 0,
+      transactionPrice: priceValue?.toDouble() ?? 0.0,
+      charges: chargesValue?.toDouble() ?? 0.0,
+      totalAmount: totalValue?.toDouble() ?? 0.0,
+      
       buyingTime: parseBuyingTime(
         json['buyingTime'],
-      ), // Use the safe parsing function
-      charges: (json['charges'] as num).toDouble(),
-      totalAmount: (json['totalAmount'] as num).toDouble(),
-      exchange: json['exchange'] as String,
-      transactionType: json['transactionType'] as String,
+      ), 
+      exchange: safeString('exchange', 'NSE'),
+      transactionType: safeString('transactionType', 'WLIST'),
     );
   }
 }

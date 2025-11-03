@@ -1,67 +1,134 @@
 import 'package:bullxchange/models/instrument_model.dart';
+import 'package:bullxchange/models/stock_holding_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
+import 'package:bullxchange/provider/user_profile_provider.dart';
+import 'package:bullxchange/services/firebase/user_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
-import 'package:bullxchange/features/stock_market/widgets/mini_chart.dart';
-
-// --- Mock Data for User's Watchlist ---
-// In a real app, this list of tokens would be saved in user preferences.
-final List<String> userWatchlistTokens = [
-  '547', // AXISBANK-EQ
-  '13538', // SPUL-EQ
-  '11723', // IGL-EQ
-  '1727', // KRBL-EQ
-  '10184', // INDIAMART-EQ
-  '3456', // TATASTEEL-EQ
-];
+import 'package:bullxchange/features/stock_market/widgets/mini_chart.dart'; // Assuming this exists
 
 class WatchlistPage extends StatelessWidget {
   const WatchlistPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<InstrumentProvider>(
-      builder: (context, provider, child) {
-        // --- Data Processing ---
-        final watchlistStocks = provider.allNSEStocks
-            .where((stock) => userWatchlistTokens.contains(stock.token))
-            .toList();
+    // ... (Authentication and Provider initialization)
+    final User? currentUser = FirebaseAuth.instance.currentUser;
+    final String? uid = currentUser?.uid;
 
-        // Handle case where the watchlist is empty
-        if (watchlistStocks.isEmpty) {
-          return const _EmptyState();
-        }
+    final userProfileProvider = context.watch<UserProfileProvider>();
+    final instrumentProvider = context.watch<InstrumentProvider>();
+    final UserService userService = context.read<UserService>();
 
-        // ✨ FIX: Use a Column to prevent nested scrolling errors.
-        return Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  // --- Header with stock count and actions ---
-                  _buildWatchlistHeader(watchlistStocks.length),
-                  const SizedBox(height: 16),
-                  // --- Sort controls ---
-                  _buildSortHeader(),
-                ],
-              ),
-            ),
-            const Divider(height: 1, thickness: 1),
+    if (uid == null) {
+      return const Center(child: Text("Please login to view your watchlist."));
+    }
 
-            // --- Watchlist stocks ---
-            ...watchlistStocks.map((instrument) {
-              return _buildStockItem(instrument: instrument);
-            }),
-          ],
-        );
-      },
+    // ⭐ FIX 1: SYNCHRONIZATION AND LOADING CHECK
+    // यदि InstrumentProvider मास्टर लिस्ट लोड कर रहा है OR UserProfileProvider ने अभी तक Firebase से डेटा प्राप्त नहीं किया है, तो Spinner दिखाओ।
+    if (userProfileProvider.userProfile == null || instrumentProvider.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    
+    // ⭐ FIX 2: WRAP IN SCAFFOLD FOR BOUNDED CONSTRAINTS (Layout fix)
+    return Scaffold(
+      body: _buildWatchlistContent(context, uid, userProfileProvider, instrumentProvider, userService),
+    );
+  }
+  
+  // Helper to contain the main list logic
+  Widget _buildWatchlistContent(
+    BuildContext context,
+    String uid,
+    UserProfileProvider userProfileProvider,
+    InstrumentProvider instrumentProvider,
+    UserService userService,
+  ) {
+    final List<StockHoldingModel> watchlistItems =
+        userProfileProvider.userProfile?.watchlist ?? [];
+
+    final watchlistInstruments = watchlistItems
+        .map(
+          (item) => instrumentProvider.getInstrumentBySymbol(item.stockSymbol),
+        )
+        .whereType<Instrument>()
+        .toList();
+
+    // Trigger live data fetch (Prices for these specific stocks)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      instrumentProvider.fetchLiveDataFor(watchlistInstruments);
+    });
+    
+    // Check 2: Empty State
+    if (watchlistInstruments.isEmpty) {
+      return const _EmptyState();
+    }
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              _buildWatchlistHeader(watchlistInstruments.length),
+              const SizedBox(height: 16),
+              _buildSortHeader(),
+            ],
+          ),
+        ),
+        const Divider(height: 1, thickness: 1),
+
+        // --- Watchlist stocks (Renders Firebase data with live prices) ---
+        Expanded( // Now safe inside the Column which is inside a Scaffold body
+          child: ListView.builder(
+            padding: EdgeInsets.zero,
+            itemCount: watchlistInstruments.length,
+            itemBuilder: (context, index) {
+              final instrument = watchlistInstruments[index];
+
+              return InkWell(
+                onTap: () {
+                  // TODO: Navigate to Stock Details Page
+                },
+                child: _buildStockItem(
+                  instrument: instrument,
+                  trailing: IconButton(
+                    icon: const Icon(Icons.bookmark_remove, color: Colors.red),
+                    onPressed: () {
+                      final itemToRemove = StockHoldingModel(
+                        stockSymbol: instrument.symbol.replaceAll('-EQ', ''),
+                        stockName: instrument.name,
+                        exchange: instrument.exchSeg,
+                        quantity: 0,
+                        transactionPrice: 0.0,
+                        transactionType: 'WLIST',
+                        charges: 0.0,
+                        totalAmount: 0.0,
+                        buyingTime: DateTime.fromMillisecondsSinceEpoch(0),
+                      );
+
+                      userService.toggleWatchlistItem(
+                        uid: uid,
+                        stockItem: itemToRemove,
+                      );
+                    },
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
 
-// --- Reusable Widgets ---
+
+// ----------------------------------------------------------------------
+// --- Helper Widgets (Included for complete functionality) ---
+// ----------------------------------------------------------------------
 
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
@@ -69,8 +136,9 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Column(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        SizedBox(height: 20),
+        SizedBox(height: 50), // Added spacing for better center alignment
         Icon(
           Icons.star_border_purple500_outlined,
           size: 48,
@@ -100,8 +168,12 @@ Widget _buildWatchlistHeader(int stockCount) {
         style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
       ),
       const Spacer(),
-      IconButton(icon: const Icon(Icons.add_box_outlined), onPressed: () {}),
-      IconButton(icon: const Icon(Icons.edit_outlined), onPressed: () {}),
+      IconButton(icon: const Icon(Icons.add_box_outlined), onPressed: () {
+        // TODO: Navigation to stock search/add page
+      }),
+      IconButton(icon: const Icon(Icons.edit_outlined), onPressed: () {
+        // TODO: Enable edit/reorder mode
+      }),
     ],
   );
 }
@@ -112,7 +184,9 @@ Widget _buildSortHeader() {
       TextButton.icon(
         icon: const Icon(Icons.sort, color: Colors.black54),
         label: const Text("Sort", style: TextStyle(color: Colors.black54)),
-        onPressed: () {},
+        onPressed: () {
+          // TODO: Implement sort action
+        },
       ),
       const Spacer(),
       Text(
@@ -123,7 +197,7 @@ Widget _buildSortHeader() {
   );
 }
 
-Widget _buildStockItem({required Instrument instrument}) {
+Widget _buildStockItem({required Instrument instrument, Widget? trailing}) {
   final ltp = (instrument.liveData['ltp'] as num?)?.toDouble() ?? 0.0;
   final netChange =
       (instrument.liveData['netChange'] as num?)?.toDouble() ?? 0.0;
@@ -140,7 +214,8 @@ Widget _buildStockItem({required Instrument instrument}) {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                instrument.symbol.replaceAll('-EQ', ''),
+                // This displays the symbol from the Instrument (e.g., CONFIPET)
+                instrument.symbol.replaceAll('-EQ', ''), 
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
@@ -176,27 +251,14 @@ Widget _buildStockItem({required Instrument instrument}) {
             ),
           ],
         ),
+        if (trailing != null) trailing,
       ],
     ),
   );
 }
 
 Widget _buildLogoContainer(String name) {
-  if (name.toLowerCase().contains('google')) {
-    return SvgPicture.network(
-      'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg',
-      width: 40,
-      height: 40,
-    );
-  }
-  if (name.toLowerCase().contains('microsoft')) {
-    return Image.network(
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Microsoft_logo.svg/240px-Microsoft_logo.svg.png',
-      width: 40,
-      height: 40,
-    );
-  }
-
+  // Simple logo logic (using SVGs/images requires proper network access/setup)
   final letter = name.isNotEmpty ? name[0].toUpperCase() : '?';
   final color = Colors.primaries[name.hashCode % Colors.primaries.length];
   return Container(
@@ -215,5 +277,3 @@ Widget _buildLogoContainer(String name) {
     ),
   );
 }
-
-// Replaced by reusable MiniChart widget in lib/widgets/mini_chart.dart
