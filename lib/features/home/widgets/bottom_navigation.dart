@@ -48,6 +48,11 @@ class BottomNavBar extends StatelessWidget {
           activeIcon: _buildActiveIcon(Icons.auto_awesome, selectedColor),
           label: 'AI Stats',
         ),
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.person_outline),
+          activeIcon: _buildActiveIcon(Icons.person, selectedColor),
+          label: 'Account',
+        ),
       ],
     );
   }

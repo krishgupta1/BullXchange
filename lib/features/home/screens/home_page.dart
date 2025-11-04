@@ -24,12 +24,14 @@ class _HomePageState extends State<HomePage> {
   final UserService _userService = UserService();
   final String? uid = FirebaseAuth.instance.currentUser?.uid;
 
-  // --- 3. YOUR WIDGET LIST IS UNCHANGED ---
+  // --- 3. YOUR WIDGET LIST IS NOW UPDATED ---
   final List<Widget> _widgetOptions = <Widget>[
     const StockPage(),
     const Center(child: Text('F&O', style: TextStyle(fontSize: 24))),
     const Center(child: Text('Portfolio Page', style: TextStyle(fontSize: 24))),
     const Center(child: Text('AI Stats Page', style: TextStyle(fontSize: 24))),
+    // ✨ ADDED: 5th page to match the nav bar
+    const Center(child: Text('Account Page', style: TextStyle(fontSize: 24))),
   ];
 
   void _onItemTapped(int index) {
