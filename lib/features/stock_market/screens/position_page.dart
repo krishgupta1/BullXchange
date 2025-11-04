@@ -149,6 +149,12 @@ class _PositionPageState extends State<PositionPage> {
 
   @override
   Widget build(BuildContext context) {
+    // --- ⭐️ ADDED AUTH CHECK ---
+    final _auth = FirebaseAuth.instance;
+    if (_auth.currentUser?.uid == null) {
+      return const Center(child: Text("Please log in to see your positions."));
+    }
+
     return Consumer2<UserProfileDataModel?, InstrumentProvider>(
       builder: (context, userProfile, instrumentProvider, child) {
         if (userProfile == null || userProfile.positions.isEmpty) {
@@ -245,7 +251,8 @@ Widget _buildPositionSummaryCard(
   double totalInvestment, {
   required VoidCallback onExitAll, // <-- Added callback
 }) {
-  final sign = totalPnl >= 0 ? "+" : "";
+  // ⭐️ CHANGED: Use + for positive and - for negative
+  final sign = totalPnl >= 0 ? "+" : "-";
   final color = totalPnl >= 0 ? Colors.greenAccent : Colors.redAccent;
 
   double totalPnlPercent = 0.0;
@@ -275,6 +282,7 @@ Widget _buildPositionSummaryCard(
         Row(
           children: [
             Text(
+              // ⭐️ CHANGED: Use .abs() to avoid double signs (e.g., "-₹-50")
               "$sign₹${totalPnl.abs().toStringAsFixed(2)}",
               style: const TextStyle(
                 color: Colors.white,
@@ -290,6 +298,7 @@ Widget _buildPositionSummaryCard(
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
+                // ⭐️ CHANGED: Use .abs() here too for consistency
                 "$sign${totalPnlPercent.abs().toStringAsFixed(2)}%",
                 style: const TextStyle(
                   color: Colors.white,
@@ -487,10 +496,12 @@ class _PositionStockItemState extends State<PositionStockItem> {
                   builder: (_, plVal, __) => ValueListenableBuilder<double>(
                     valueListenable: _percentNotifier,
                     builder: (_, pctVal, __) {
-                      final sign = plVal >= 0 ? "+" : "";
+                      // ⭐️ CHANGED: Use + for positive and - for negative
+                      final sign = plVal >= 0 ? "+" : "-";
                       final color = plVal >= 0 ? Colors.green : Colors.red;
                       return Text(
-                        "$sign₹${plVal.toStringAsFixed(2)} (${pctVal.toStringAsFixed(2)}%)",
+                        // ⭐️ CHANGED: Apply .abs() to both values and use the sign
+                        "$sign₹${plVal.abs().toStringAsFixed(2)} ($sign${pctVal.abs().toStringAsFixed(2)}%)",
                         style: TextStyle(
                           color: color,
                           fontSize: 12,
@@ -732,7 +743,8 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
                 ValueListenableBuilder<double>(
                   valueListenable: plNotifier,
                   builder: (_, plVal, __) {
-                    final sign = plVal >= 0 ? "+" : "";
+                    // ⭐️ CHANGED: Use + for positive and - for negative
+                    final sign = plVal >= 0 ? "+" : "-";
                     final color = plVal >= 0 ? Colors.green : Colors.red;
                     final currentValue = ltpNotifier.value * position.quantity;
 
@@ -750,7 +762,8 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            "$sign₹${plVal.toStringAsFixed(2)} (${pctVal.toStringAsFixed(2)}%)",
+                            // ⭐️ CHANGED: Apply .abs() to both values and use the sign
+                            "$sign₹${plVal.abs().toStringAsFixed(2)} ($sign${pctVal.abs().toStringAsFixed(2)}%)",
                             style: TextStyle(
                               color: color,
                               fontSize: 14,

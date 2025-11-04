@@ -86,6 +86,13 @@ class OrderPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // --- ⭐️ ADDED AUTH CHECK ---
+    final _auth = FirebaseAuth.instance;
+    if (_auth.currentUser?.uid == null) {
+      // Changed "holdings" to "orders" to match the page
+      return const Center(child: Text("Please log in to see your orders."));
+    }
+
     return Consumer2<List<OrderModel>, InstrumentProvider>(
       builder: (context, openOrders, provider, child) {
         if (openOrders.isEmpty) {
