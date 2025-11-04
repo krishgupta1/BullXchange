@@ -159,8 +159,6 @@ class _BuyStockPageState extends State<BuyStockPage> {
     }
 
     // Check funds one more time before placing order
-    // Note: _availableFunds is from initState, could be stale.
-    // For production, you might re-fetch or use a state manager.
     if (_totalAmount > _availableFunds) {
       if (mounted) {
         _showInsufficientFundsDialog(_availableFunds, _totalAmount);
@@ -296,6 +294,28 @@ class _BuyStockPageState extends State<BuyStockPage> {
 
   @override
   Widget build(BuildContext context) {
+    // --- AUTH CHECK ---
+    final _auth = FirebaseAuth.instance;
+    if (_auth.currentUser?.uid == null) {
+      return Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          title: const Text(
+            'Buy Stock',
+            style: TextStyle(
+              color: darkTextColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
+          centerTitle: true,
+        ),
+        body: const Center(child: Text("Please log in to buy stocks.")),
+      );
+    }
+    // --- END OF CHECK ---
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -336,21 +356,33 @@ class _BuyStockPageState extends State<BuyStockPage> {
         ),
         centerTitle: true,
       ),
-      // --- UPDATED: Added SingleChildScrollView ---
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildStockHeader(_priceFormatter),
-            const SizedBox(height: 24),
-            _buildInputSection(),
-            const SizedBox(height: 24),
-            _buildOrderSummary(_priceFormatter),
-          ],
-        ),
+      
+      // --- ⭐️ SOLUTION: HYBRID SCROLLING BODY ---
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildStockHeader(_priceFormatter),
+                    const SizedBox(height: 24),
+                    _buildInputSection(),
+                    const SizedBox(height: 24),
+                    _buildOrderSummary(_priceFormatter),
+                    // Add padding at the bottom for scroll comfort
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
-      // --- END OF UPDATE ---
+      // --- END OF SOLUTION ---
+      
       bottomNavigationBar: _buildBottomBuyButton(),
     );
   }

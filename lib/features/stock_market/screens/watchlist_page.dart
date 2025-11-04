@@ -83,8 +83,9 @@ class _WatchlistPageState extends State<WatchlistPage> {
 
   @override
   Widget build(BuildContext context) {
+    // --- ⭐️ YOUR AUTH CHECK IS ALREADY HERE AND CORRECT ---
     if (uid == null) {
-      return const Center(child: Text("Please log in."));
+      return const Center(child: Text("Please log in to see your watchlist."));
     }
 
     return StreamBuilder<UserProfileDataModel?>(
@@ -180,7 +181,7 @@ class _EmptyState extends StatelessWidget {
       children: [
         SizedBox(height: 20),
         Icon(
-          Icons.star_border_purple500_outlined,
+          Icons.bookmark_border,
           size: 48,
           color: Colors.grey,
         ),

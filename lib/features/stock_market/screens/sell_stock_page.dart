@@ -1,4 +1,6 @@
 import 'package:bullxchange/features/stock_market/screens/transaction_success_page.dart';
+import 'package:bullxchange/models/stock_holding_model.dart';
+import 'package:bullxchange/models/transaction_model.dart';
 import 'package:bullxchange/services/firebase/charge_calculator_service.dart';
 import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:flutter/material.dart';
@@ -6,8 +8,6 @@ import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:bullxchange/models/instrument_model.dart';
-import 'package:bullxchange/models/stock_holding_model.dart';
-import 'package:bullxchange/models/transaction_model.dart';
 import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
 
 class SellStockPage extends StatefulWidget {
@@ -163,6 +163,28 @@ class _SellStockPageState extends State<SellStockPage> {
 
   @override
   Widget build(BuildContext context) {
+    // --- ⭐️ ADDED AUTH CHECK ---
+    final _auth = FirebaseAuth.instance;
+    if (_auth.currentUser?.uid == null) {
+      return Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          title: const Text(
+            'Sell Stock',
+            style: TextStyle(
+              color: darkTextColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
+          centerTitle: true,
+        ),
+        body: const Center(child: Text("Please log in to sell stocks.")),
+      );
+    }
+    // --- END OF CHECK ---
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -203,19 +225,31 @@ class _SellStockPageState extends State<SellStockPage> {
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildStockHeader(_priceFormatter),
-            const SizedBox(height: 24),
-            _buildInputSection(),
-            const SizedBox(height: 24),
-            _buildOrderSummary(_priceFormatter),
-          ],
-        ),
+      
+      // --- ⭐️ SOLUTION: HYBRID SCROLLING BODY ---
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildStockHeader(_priceFormatter),
+                  const SizedBox(height: 24),
+                  _buildInputSection(),
+                  const SizedBox(height: 24),
+                  _buildOrderSummary(_priceFormatter),
+                  // Add padding at the bottom for scroll comfort
+                  const SizedBox(height: 16),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
+      // --- END OF SOLUTION ---
+      
       bottomNavigationBar: _buildBottomSellButton(),
     );
   }
