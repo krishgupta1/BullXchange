@@ -245,7 +245,7 @@ Widget _buildPositionSummaryCard(
   double totalInvestment, {
   required VoidCallback onExitAll, // <-- Added callback
 }) {
-  final sign = totalPnl >= 0 ? "+" : "";
+  final sign = totalPnl >= 0 ? "+" : "-";
   final color = totalPnl >= 0 ? Colors.greenAccent : Colors.redAccent;
 
   double totalPnlPercent = 0.0;

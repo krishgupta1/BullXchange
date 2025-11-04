@@ -1,13 +1,11 @@
-import 'dart:math';
-import 'package:bullxchange/features/stock_market/screens/StockDetailPage.dart';
+import 'package:bullxchange/features/auth/widgets/app_back_button.dart';
 import 'package:bullxchange/features/stock_market/screens/stock_page.dart';
-import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
+import 'package:bullxchange/features/stock_market/widgets/shimmer_animation.dart';
+import 'package:bullxchange/features/stock_market/widgets/stock_list_item.dart';
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:bullxchange/features/auth/widgets/app_back_button.dart';
-import 'package:bullxchange/features/stock_market/widgets/mini_chart.dart';
 import 'package:shimmer/shimmer.dart';
 
 class ViewAllPage extends StatefulWidget {
@@ -162,7 +160,9 @@ class _ViewAllPageState extends State<ViewAllPage> {
                           return _buildLoadMoreShimmer();
                         }
                         final instrument = displayedStocks[index];
-                        return _buildStockItem(context, instrument);
+
+                        // ✨ 2. USE THE NEW WIDGET
+                        return StockListItem(instrument: instrument);
                       },
                     ),
                   );
@@ -203,54 +203,12 @@ class _ViewAllPageState extends State<ViewAllPage> {
 }
 
 // ----------------------------------------------------
-// SHIMMER HELPER WIDGETS
+// SHIMMER HELPER WIDGETS (Updated)
 // ----------------------------------------------------
 
-Widget _buildShimmerStockItem() {
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-    child: Row(
-      children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 80,
-                height: 12,
-                color: Colors.white,
-                margin: const EdgeInsets.only(bottom: 4),
-              ),
-              Container(width: 150, height: 12, color: Colors.white),
-            ],
-          ),
-        ),
-        const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Container(
-              width: 50,
-              height: 12,
-              color: Colors.white,
-              margin: const EdgeInsets.only(bottom: 4),
-            ),
-            Container(width: 40, height: 12, color: Colors.white),
-          ],
-        ),
-      ],
-    ),
-  );
-}
+// ✨ 3. THIS FUNCTION IS GONE: _buildShimmerStockItem()
+// ✨ 4. THIS FUNCTION IS GONE: _buildStockItem()
+// ✨ 5. THIS FUNCTION IS GONE: _createSimulatedChartData()
 
 Widget _buildShimmerLoadingList() {
   return Shimmer.fromColors(
@@ -259,7 +217,8 @@ Widget _buildShimmerLoadingList() {
     child: ListView.builder(
       itemCount: 10,
       itemBuilder: (context, index) {
-        return _buildShimmerStockItem();
+        // ✨ 6. USE THE NEW SHIMMER WIDGET
+        return const StockListItemShimmer();
       },
     ),
   );
@@ -270,127 +229,11 @@ Widget _buildLoadMoreShimmer() {
     baseColor: Colors.grey.shade300,
     highlightColor: Colors.grey.shade100,
     child: Column(
-      children: [_buildShimmerStockItem(), _buildShimmerStockItem()],
+      children: [
+        // ✨ 7. USE THE NEW SHIMMER WIDGET
+        const StockListItemShimmer(),
+        const StockListItemShimmer(),
+      ],
     ),
   );
-}
-
-// ----------------------------------------------------
-// 🚀 MODIFIED: STOCK ITEM WIDGET
-// ----------------------------------------------------
-
-Widget _buildStockItem(BuildContext context, Instrument instrument) {
-  // We rely on the SmartLogo's internal state for logo shimmer.
-  final ltp = instrument.liveData["ltp"]?.toString() ?? "--";
-  final percentChange =
-      num.tryParse(
-        instrument.liveData["percentChange"].toString(),
-      )?.toDouble() ??
-      0.0;
-  final changeColor = percentChange >= 0 ? const Color(0xFF1EAB58) : Colors.red;
-  final List<double> chartData = _createSimulatedChartData(instrument);
-
-  return InkWell(
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => StockDetailPage(instrument: instrument),
-        ),
-      );
-    },
-    child: Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-      child: Row(
-        children: [
-          SmartLogo(instrument: instrument, radius: 0),
-          // ⭐ SmartLogo will now handle its own shimmer internally.
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  instrument.symbol.replaceAll('-EQ', ''),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-                Text(
-                  instrument.name,
-                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-
-          // ✅ FIX: MiniChart is now displayed directly without conditional shimmer.
-          SizedBox(
-            width: 80,
-            height: 40,
-            child: MiniChart(data: chartData, color: changeColor),
-          ),
-
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                "₹$ltp",
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
-              Row(
-                children: [
-                  Icon(
-                    percentChange >= 0
-                        ? Icons.arrow_drop_up
-                        : Icons.arrow_drop_down,
-                    color: changeColor,
-                    size: 20,
-                  ),
-                  Text(
-                    "${percentChange.abs().toStringAsFixed(2)}%",
-                    style: TextStyle(color: changeColor, fontSize: 12),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-// ----------------------------------------------------
-// SIMULATED CHART DATA FUNCTION (Unchanged)
-// ----------------------------------------------------
-
-List<double> _createSimulatedChartData(Instrument instrument) {
-  final ltp =
-      num.tryParse(instrument.liveData['ltp'].toString())?.toDouble() ?? 0.0;
-  final netChange =
-      num.tryParse(instrument.liveData['netChange'].toString())?.toDouble() ??
-      0.0;
-  // If data is not available (ltp is 0.0), this returns a flat line.
-  if (ltp == 0.0) return List<double>.generate(15, (_) => 1.0);
-  final startPrice = ltp - netChange;
-  final points = <double>[];
-  final random = Random(instrument.symbol.hashCode);
-  for (int i = 0; i < 15; i++) {
-    if (i == 14) {
-      points.add(ltp);
-    } else {
-      double progress = i / 14.0;
-      double priceAtProgress = startPrice + (netChange * progress);
-      double variance = ltp * 0.01 * (random.nextDouble() - 0.5);
-      points.add(priceAtProgress + variance);
-    }
-  }
-  return points;
 }

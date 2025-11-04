@@ -148,7 +148,7 @@ class OrderPage extends StatelessWidget {
               );
 
               return _buildOrderItem(instrument: instrument, order: order);
-            }).toList(),
+            }),
           ],
         );
       },
