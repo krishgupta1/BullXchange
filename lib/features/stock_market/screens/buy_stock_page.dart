@@ -43,7 +43,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
   int _quantity = 0;
   late double _ltp;
   double _price = 0.0;
-  
+
   // --- ADDED FOR AVAILABLE FUNDS ---
   double _availableFunds = 0.0;
   bool _isLoadingFunds = true;
@@ -68,19 +68,21 @@ class _BuyStockPageState extends State<BuyStockPage> {
 
     _quantityController.addListener(_calculateTotal);
     _limitPriceController.addListener(_onPriceChanged);
-    
+
     // --- FETCH FUNDS ---
     _fetchAvailableFunds();
     _calculateTotal(); // Initial calculation
   }
-  
+
   // --- NEW METHOD ---
   Future<void> _fetchAvailableFunds() async {
     setState(() => _isLoadingFunds = true);
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid != null) {
-        final UserProfileDataModel? user = await _userService.readUserProfile(uid);
+        final UserProfileDataModel? user = await _userService.readUserProfile(
+          uid,
+        );
         if (user != null && mounted) {
           setState(() {
             _availableFunds = user.availableFunds;
@@ -433,8 +435,10 @@ class _BuyStockPageState extends State<BuyStockPage> {
                 ),
                 decoration: InputDecoration(
                   labelText: 'Quantity',
-                  labelStyle:
-                      const TextStyle(color: secondaryTextColor, fontSize: 16),
+                  labelStyle: const TextStyle(
+                    color: secondaryTextColor,
+                    fontSize: 16,
+                  ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(
@@ -467,8 +471,10 @@ class _BuyStockPageState extends State<BuyStockPage> {
                 ),
                 decoration: InputDecoration(
                   labelText: 'Price',
-                  labelStyle:
-                      const TextStyle(color: secondaryTextColor, fontSize: 16),
+                  labelStyle: const TextStyle(
+                    color: secondaryTextColor,
+                    fontSize: 16,
+                  ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(

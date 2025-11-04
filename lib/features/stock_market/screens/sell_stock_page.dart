@@ -38,13 +38,13 @@ class _SellStockPageState extends State<SellStockPage> {
 
   Map<String, double> _chargesBreakdown = {};
   double _totalCharges = 0.0;
-  
+
   double _totalAmount = 0.0;
   int _quantity = 0;
   late double _ltp;
   late int _ownedQuantity;
   String? _errorText;
-  
+
   final UserService _userService = UserService();
   final ChargeCalculatorService _chargeCalculator = ChargeCalculatorService();
   bool _isPlacingOrder = false;
@@ -289,7 +289,10 @@ class _SellStockPageState extends State<SellStockPage> {
           decoration: InputDecoration(
             labelText: 'Quantity',
             errorText: _errorText,
-            labelStyle: const TextStyle(color: secondaryTextColor, fontSize: 16),
+            labelStyle: const TextStyle(
+              color: secondaryTextColor,
+              fontSize: 16,
+            ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: lightBorderColor, width: 1.5),
@@ -549,10 +552,7 @@ class _SellStockPageState extends State<SellStockPage> {
                 _chargesBreakdown['exchangeCharges'],
               ),
               _buildChargeRow('SEBI Charges', _chargesBreakdown['sebiCharges']),
-              _buildChargeRow(
-                'Stamp Duty',
-                _chargesBreakdown['stampDuty'],
-              ),
+              _buildChargeRow('Stamp Duty', _chargesBreakdown['stampDuty']),
               _buildChargeRow('GST', _chargesBreakdown['gst']),
               const Divider(height: 24),
               _buildChargeRow(

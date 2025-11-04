@@ -6,22 +6,21 @@ import 'package:bullxchange/models/instrument_model.dart';
 import 'package:flutter/material.dart';
 
 class StockListItem extends StatelessWidget {
-  const StockListItem({
-    super.key,
-    required this.instrument,
-  });
+  const StockListItem({super.key, required this.instrument});
 
   final Instrument instrument;
 
   @override
   Widget build(BuildContext context) {
     final ltp = instrument.liveData["ltp"]?.toString() ?? "--";
-    final percentChange = num.tryParse(
+    final percentChange =
+        num.tryParse(
           instrument.liveData["percentChange"].toString(),
         )?.toDouble() ??
         0.0;
-    final changeColor =
-        percentChange >= 0 ? const Color(0xFF1EAB58) : Colors.red;
+    final changeColor = percentChange >= 0
+        ? const Color(0xFF1EAB58)
+        : Colors.red;
     final List<double> chartData = _createSimulatedChartData(instrument);
 
     return InkWell(
@@ -103,7 +102,7 @@ class StockListItem extends StatelessWidget {
         num.tryParse(instrument.liveData['ltp'].toString())?.toDouble() ?? 0.0;
     final netChange =
         num.tryParse(instrument.liveData['netChange'].toString())?.toDouble() ??
-            0.0;
+        0.0;
     if (ltp == 0.0) return List<double>.generate(15, (_) => 1.0);
     final startPrice = ltp - netChange;
     final points = <double>[];
