@@ -1,5 +1,8 @@
+// This is the full code for ViewAllPage.dart
+
+// 1. REMOVE THIS IMPORT. YOU DO NOT NEED IT.
+// import 'package:bullxchange/features/stock_market/screens/stock_page.dart';
 import 'package:bullxchange/features/auth/widgets/app_back_button.dart';
-import 'package:bullxchange/features/stock_market/screens/stock_page.dart';
 import 'package:bullxchange/features/stock_market/widgets/shimmer_animation.dart';
 import 'package:bullxchange/features/stock_market/widgets/stock_list_item.dart';
 import 'package:bullxchange/models/instrument_model.dart';
@@ -110,10 +113,10 @@ class _ViewAllPageState extends State<ViewAllPage> {
     return Scaffold(
       appBar: AppBar(
         leading: AppBackButton(
-          onPressed: () => Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const StockPage()),
-          ),
+          // -------------------------------------------------
+          // ✨ FIX 2: THIS MUST BE 'pop' TO "CLOSE" THIS PAGE
+          // -------------------------------------------------
+          onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           "Select Stocks",
@@ -137,7 +140,6 @@ class _ViewAllPageState extends State<ViewAllPage> {
             child: ClipRect(
               child: Consumer<InstrumentProvider>(
                 builder: (context, provider, child) {
-                  // Initial Shimmer for full list only if all stocks are being loaded for the first time
                   if (allStocks.isEmpty) {
                     return _buildShimmerLoadingList();
                   }
@@ -156,12 +158,9 @@ class _ViewAllPageState extends State<ViewAllPage> {
                           displayedStocks.length + (isLoadingMore ? 1 : 0),
                       itemBuilder: (context, index) {
                         if (index >= displayedStocks.length) {
-                          // Show Load More Shimmer
                           return _buildLoadMoreShimmer();
                         }
                         final instrument = displayedStocks[index];
-
-                        // ✨ 2. USE THE NEW WIDGET
                         return StockListItem(instrument: instrument);
                       },
                     ),
@@ -203,12 +202,8 @@ class _ViewAllPageState extends State<ViewAllPage> {
 }
 
 // ----------------------------------------------------
-// SHIMMER HELPER WIDGETS (Updated)
+// SHIMMER HELPER WIDGETS (Unchanged)
 // ----------------------------------------------------
-
-// ✨ 3. THIS FUNCTION IS GONE: _buildShimmerStockItem()
-// ✨ 4. THIS FUNCTION IS GONE: _buildStockItem()
-// ✨ 5. THIS FUNCTION IS GONE: _createSimulatedChartData()
 
 Widget _buildShimmerLoadingList() {
   return Shimmer.fromColors(
@@ -217,7 +212,6 @@ Widget _buildShimmerLoadingList() {
     child: ListView.builder(
       itemCount: 10,
       itemBuilder: (context, index) {
-        // ✨ 6. USE THE NEW SHIMMER WIDGET
         return const StockListItemShimmer();
       },
     ),
@@ -229,11 +223,7 @@ Widget _buildLoadMoreShimmer() {
     baseColor: Colors.grey.shade300,
     highlightColor: Colors.grey.shade100,
     child: Column(
-      children: [
-        // ✨ 7. USE THE NEW SHIMMER WIDGET
-        const StockListItemShimmer(),
-        const StockListItemShimmer(),
-      ],
+      children: [const StockListItemShimmer(), const StockListItemShimmer()],
     ),
   );
 }
