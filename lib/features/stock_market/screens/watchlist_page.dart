@@ -180,11 +180,7 @@ class _EmptyState extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         SizedBox(height: 20),
-        Icon(
-          Icons.bookmark_border,
-          size: 48,
-          color: Colors.grey,
-        ),
+        Icon(Icons.bookmark_border, size: 48, color: Colors.grey),
         SizedBox(height: 16),
         Text(
           "Your Watchlist is Empty",

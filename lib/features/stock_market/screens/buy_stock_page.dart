@@ -356,7 +356,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
         ),
         centerTitle: true,
       ),
-      
+
       // --- ⭐️ SOLUTION: HYBRID SCROLLING BODY ---
       body: Column(
         children: [
@@ -381,8 +381,8 @@ class _BuyStockPageState extends State<BuyStockPage> {
           ),
         ],
       ),
+
       // --- END OF SOLUTION ---
-      
       bottomNavigationBar: _buildBottomBuyButton(),
     );
   }
