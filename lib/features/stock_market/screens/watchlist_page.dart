@@ -225,7 +225,7 @@ Widget _buildWatchlistHeader(
         IconButton(
           icon: const Icon(Icons.add_box_outlined),
           onPressed: () {
-            Navigator.pushReplacement(
+            Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const ViewAllPage()),
             );

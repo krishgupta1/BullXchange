@@ -1,5 +1,3 @@
-// lib/pages/future_option_explore_page.dart
-
 import 'dart:math'; // For chart
 import 'package:bullxchange/features/stock_market/screens/StockDetailPage.dart'; // For navigation
 import 'package:bullxchange/features/stock_market/widgets/mini_chart.dart'; // For chart
