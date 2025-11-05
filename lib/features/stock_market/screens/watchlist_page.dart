@@ -10,14 +10,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class WatchlistPage extends StatefulWidget {
-  const WatchlistPage({super.key});
+class WatchListPage extends StatefulWidget {
+  const WatchListPage({super.key});
 
   @override
-  State<WatchlistPage> createState() => _WatchlistPageState();
+  State<WatchListPage> createState() => _WatchListPageState();
 }
 
-class _WatchlistPageState extends State<WatchlistPage> {
+class _WatchListPageState extends State<WatchListPage> {
   final UserService _userService = UserService();
   final String? uid = FirebaseAuth.instance.currentUser?.uid;
 

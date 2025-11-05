@@ -150,8 +150,8 @@ class _PositionPageState extends State<PositionPage> {
   @override
   Widget build(BuildContext context) {
     // --- ⭐️ ADDED AUTH CHECK ---
-    final _auth = FirebaseAuth.instance;
-    if (_auth.currentUser?.uid == null) {
+    final auth = FirebaseAuth.instance;
+    if (auth.currentUser?.uid == null) {
       return const Center(child: Text("Please log in to see your positions."));
     }
 

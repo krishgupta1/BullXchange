@@ -164,8 +164,8 @@ class _SellStockPageState extends State<SellStockPage> {
   @override
   Widget build(BuildContext context) {
     // --- ⭐️ ADDED AUTH CHECK ---
-    final _auth = FirebaseAuth.instance;
-    if (_auth.currentUser?.uid == null) {
+    final auth = FirebaseAuth.instance;
+    if (auth.currentUser?.uid == null) {
       return Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.white,

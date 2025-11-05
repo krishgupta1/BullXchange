@@ -40,7 +40,7 @@ class _StockPageState extends State<StockPage>
   // ✨ OPTIMIZATION: Lists are initialized empty to save memory.
   List<Instrument> _allStocks = [];
   List<Instrument> _filteredStocks = [];
-  List<Instrument> _displayedStocks = [];
+  final List<Instrument> _displayedStocks = [];
 
   bool _stocksInitialized = false; // Flag to check if _allStocks is populated
   bool _isLoadingMore = false;
@@ -273,8 +273,8 @@ class _StockPageState extends State<StockPage>
                         ExplorePage(),
                         HoldingsPage(),
                         PositionPage(),
-                        const OrderPage(),
-                        const WatchlistPage(),
+                        OrderPage(),
+                        WatchListPage(),
                       ],
                     ),
                   ] else ...[
