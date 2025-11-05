@@ -1,4 +1,5 @@
 import 'package:bullxchange/features/f&o/screens/Future_option_page.dart';
+import 'package:bullxchange/features/f&o/screens/future_option_page.dart';
 import 'package:bullxchange/features/home/widgets/bottom_navigation.dart';
 import 'package:bullxchange/features/stock_market/screens/stock_page.dart';
 import 'package:flutter/material.dart';
