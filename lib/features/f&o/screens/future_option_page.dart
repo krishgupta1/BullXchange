@@ -144,6 +144,7 @@ class _FutureOptionPageState extends State<FutureOptionPage>
                     child: IndexedStack(
                       index: _selectedActionIndex,
                       children: const [
+                        FutureOptionExplorePage(),
                         FutureOptionPositionPage(),
                         FutureOptionOrdersPage(),
                         FutureOptionWatchlistPage(),
