@@ -10,9 +10,7 @@ class FutureOptionOrdersPage extends StatelessWidget {
     return const Column(
       children: [
         SizedBox(height: 20),
-        Center(
-          child: Text('Orders Future Options Here'),
-        ),
+        Center(child: Text('Orders Future Options Here')),
         // You can add more widgets here, like your "Top Traded" list
       ],
     );

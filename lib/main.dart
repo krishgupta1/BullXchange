@@ -1,6 +1,8 @@
+import 'package:bullxchange/provider/future_option_instrument_provider.dart';
 import 'package:bullxchange/provider/auth_provider.dart';
 import 'package:bullxchange/features/auth/screens/splash_screen.dart';
 import 'package:bullxchange/features/home/screens/home_page.dart';
+import 'package:bullxchange/provider/index_provider.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -19,6 +21,8 @@ Future<void> main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => LoginProvider()),
         ChangeNotifierProvider(create: (_) => InstrumentProvider()),
+        ChangeNotifierProvider(create: (_) => FutureOptionProvider()),
+        ChangeNotifierProvider(create: (_) => IndexProvider()),
       ],
       child: const MainApp(),
     ),

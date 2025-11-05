@@ -27,7 +27,6 @@ class Instrument {
       symbol: json['symbol'] ?? '',
       name: json['name'] ?? '',
       exchSeg: json['exch_seg'] ?? '',
-
       // --- ADD DEFAULTS OR VALUES FROM YOUR JSON DATA SOURCE ---
       // Make sure your JSON data file includes these values for each stock.
       outstandingShares: (json['outstandingShares'] as num?)?.toDouble() ?? 0.0,

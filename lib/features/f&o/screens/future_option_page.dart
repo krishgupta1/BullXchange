@@ -1,4 +1,3 @@
-
 import 'package:bullxchange/features/f&o/screens/future_option_explore_page.dart';
 import 'package:bullxchange/features/f&o/screens/future_option_orders_page.dart';
 import 'package:bullxchange/features/f&o/screens/future_option_position_page.dart';
@@ -91,7 +90,8 @@ class _FutureOptionPageState extends State<FutureOptionPage>
           body: SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column( // ✨ WAS ListView
+              child: Column(
+                // ✨ WAS ListView
                 children: [
                   const SizedBox(height: 16),
                   _buildHeader(),
@@ -163,15 +163,21 @@ class _FutureOptionPageState extends State<FutureOptionPage>
   Widget _buildIndexCards(Instrument? nifty50, Instrument? bankNifty) {
     return Row(
       children: [
-        Expanded(child: _buildIndexCard(instrument: nifty50, name: "NIFTY 50")),
+        Expanded(
+          child: _buildIndexCard(instrument: nifty50, name: "NIFTY 50"),
+        ),
         const SizedBox(width: 16),
-        Expanded(child: _buildIndexCard(instrument: bankNifty, name: "BANK NIFTY")),
+        Expanded(
+          child: _buildIndexCard(instrument: bankNifty, name: "BANK NIFTY"),
+        ),
       ],
     );
   }
 
-  Widget _buildIndexCard(
-      {required Instrument? instrument, required String name}) {
+  Widget _buildIndexCard({
+    required Instrument? instrument,
+    required String name,
+  }) {
     final value = instrument?.liveData["ltp"]?.toStringAsFixed(2) ?? "0.00";
     final netChange =
         instrument?.liveData["netChange"]?.toStringAsFixed(2) ?? "0.00";
@@ -228,12 +234,7 @@ class _FutureOptionPageState extends State<FutureOptionPage>
   }
 
   Widget _buildActionButtons() {
-    final buttonLabels = [
-      "Explore",
-      "Position",
-      "Orders",
-      "Watchlist",
-    ];
+    final buttonLabels = ["Explore", "Position", "Orders", "Watchlist"];
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(

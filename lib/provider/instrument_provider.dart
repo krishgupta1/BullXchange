@@ -1,6 +1,8 @@
+// lib/provider/instrument_provider.dart
+
 import 'dart:async';
 import 'dart:convert';
-import 'package:bullxchange/models/stock_holding_model.dart'; // Import for the new method
+import 'package:bullxchange/models/stock_holding_model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:bullxchange/utils/logger.dart';
 import 'package:flutter/services.dart' show rootBundle;
@@ -20,7 +22,6 @@ class InstrumentProvider with ChangeNotifier {
 
   Timer? _refreshTimer;
 
-  // --- NEW: Map for fast symbol lookups ---
   Map<String, Instrument> _allNSEStocksMap = {};
 
   bool get isLoading => _isLoading;
@@ -35,6 +36,8 @@ class InstrumentProvider with ChangeNotifier {
       )
       .toList();
 
+  // --- SPOT INDEX GETTERS ---
+
   Instrument? get nifty50 => _allInstruments.firstWhere(
     (inst) => inst.symbol == 'Nifty 50',
     orElse: () => Instrument.fromJson({}),
@@ -43,6 +46,30 @@ class InstrumentProvider with ChangeNotifier {
     (inst) => inst.symbol == 'Nifty Bank',
     orElse: () => Instrument.fromJson({}),
   );
+
+  // --- 🔽 NEW GETTERS ADDED 🔽 ---
+  // ⚠️ You MUST check your JSON file for the exact 'symbol' names!
+  // These are my best guesses.
+  Instrument? get finNifty => _allInstruments.firstWhere(
+    (inst) => inst.symbol == 'Nifty Fin Services', // GUESS: Check this
+    orElse: () => Instrument.fromJson({}),
+  );
+
+  Instrument? get midcapNifty => _allInstruments.firstWhere(
+    (inst) => inst.symbol == 'Nifty Midcap Select', // GUESS: Check this
+    orElse: () => Instrument.fromJson({}),
+  );
+
+  Instrument? get sensex => _allInstruments.firstWhere(
+    (inst) => inst.symbol == 'SENSEX', // GUESS: Check this
+    orElse: () => Instrument.fromJson({}),
+  );
+
+  Instrument? get bankex => _allInstruments.firstWhere(
+    (inst) => inst.symbol == 'BANKEX', // GUESS: Check this
+    orElse: () => Instrument.fromJson({}),
+  );
+  // --- 🔼 END OF NEW GETTERS 🔼 ---
 
   List<Instrument> get topGainers {
     final stocks = allNSEStocks
@@ -68,10 +95,7 @@ class InstrumentProvider with ChangeNotifier {
     return stocks;
   }
 
-  /// ✨ THIS IS THE CORRECTED GETTER ✨
-  /// It now safely checks for and parses the volume data.
   List<Instrument> get mostActiveByVolume {
-    // First, filter stocks that actually have the volume key.
     final stocks = allNSEStocks
         .where(
           (inst) =>
@@ -80,7 +104,6 @@ class InstrumentProvider with ChangeNotifier {
         )
         .toList();
 
-    // Then, sort them using safe parsing, which handles both numbers and strings.
     stocks.sort((a, b) {
       final aVolume =
           num.tryParse(a.liveData['totalTradedVolume'].toString()) ?? 0;
@@ -125,8 +148,15 @@ class InstrumentProvider with ChangeNotifier {
 
   /// Fetches indices and stocks in separate, safe API calls.
   Future<void> _fetchEssentialData() async {
-    // Call 1: For indices
-    await _updateInstruments([nifty50, bankNifty]);
+    // Call 1: For ALL 6 indices
+    await _updateInstruments([
+      nifty50,
+      bankNifty,
+      finNifty, // ✨ ADDED
+      midcapNifty, // ✨ ADDED
+      sensex, // ✨ ADDED
+      bankex, // ✨ ADDED
+    ]);
 
     // Call 2: For stocks (a safe number to avoid API limits)
     await _updateInstruments(allNSEStocks.take(50).toList());
