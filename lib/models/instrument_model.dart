@@ -1,12 +1,17 @@
+// lib/models/instrument_model.dart
+
 class Instrument {
   final String token;
   final String symbol;
   final String name;
   final String exchSeg;
 
-  // --- ADD THESE TWO LINES ---
-  final double outstandingShares; // e.g., 6766000000 for Reliance
-  final int avgVolume; // e.g., 5500000 for Reliance's 30-day avg
+  // --- 🔽 ADD THIS LINE 🔽 ---
+  final String instrumentType; // e.g., 'EQUITY', 'INDICES'
+
+  // --- (Your existing fields) ---
+  final double outstandingShares;
+  final int avgVolume;
 
   Map<String, dynamic> liveData = {};
 
@@ -16,7 +21,10 @@ class Instrument {
     required this.name,
     required this.exchSeg,
 
-    // --- ADD THESE TO THE CONSTRUCTOR ---
+    // --- 🔽 ADD THIS LINE 🔽 ---
+    required this.instrumentType,
+
+    // --- (Your existing fields) ---
     required this.outstandingShares,
     required this.avgVolume,
   });
@@ -27,8 +35,12 @@ class Instrument {
       symbol: json['symbol'] ?? '',
       name: json['name'] ?? '',
       exchSeg: json['exch_seg'] ?? '',
-      // --- ADD DEFAULTS OR VALUES FROM YOUR JSON DATA SOURCE ---
-      // Make sure your JSON data file includes these values for each stock.
+
+      // --- 🔽 ADD THIS LINE 🔽 ---
+      // ⚠️ Check your JSON! Is the key 'instrumenttype' or 'instrument_type'?
+      instrumentType: json['instrumenttype'] ?? '',
+
+      // --- (Your existing fields) ---
       outstandingShares: (json['outstandingShares'] as num?)?.toDouble() ?? 0.0,
       avgVolume: (json['avgVolume'] as num?)?.toInt() ?? 0,
     );

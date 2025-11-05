@@ -47,29 +47,27 @@ class InstrumentProvider with ChangeNotifier {
     orElse: () => Instrument.fromJson({}),
   );
 
-  // --- 🔽 NEW GETTERS ADDED 🔽 ---
-  // ⚠️ You MUST check your JSON file for the exact 'symbol' names!
-  // These are my best guesses.
+  // --- 🔽 GETTERS NOW FIXED 🔽 ---
   Instrument? get finNifty => _allInstruments.firstWhere(
-    (inst) => inst.symbol == 'Nifty Fin Services', // GUESS: Check this
+    (inst) => inst.symbol == 'Nifty Fin Service', // FIXED (removed 's')
     orElse: () => Instrument.fromJson({}),
   );
 
   Instrument? get midcapNifty => _allInstruments.firstWhere(
-    (inst) => inst.symbol == 'Nifty Midcap Select', // GUESS: Check this
+    (inst) => inst.symbol == 'NIFTY MID SELECT', // FIXED
     orElse: () => Instrument.fromJson({}),
   );
+  // --- 🔼 END OF FIX 🔼 ---
 
   Instrument? get sensex => _allInstruments.firstWhere(
-    (inst) => inst.symbol == 'SENSEX', // GUESS: Check this
+    (inst) => inst.symbol == 'SENSEX', // This one was correct
     orElse: () => Instrument.fromJson({}),
   );
 
   Instrument? get bankex => _allInstruments.firstWhere(
-    (inst) => inst.symbol == 'BANKEX', // GUESS: Check this
+    (inst) => inst.symbol == 'BANKEX', // This one was correct
     orElse: () => Instrument.fromJson({}),
   );
-  // --- 🔼 END OF NEW GETTERS 🔼 ---
 
   List<Instrument> get topGainers {
     final stocks = allNSEStocks
@@ -128,6 +126,8 @@ class InstrumentProvider with ChangeNotifier {
           .map((item) => Instrument.fromJson(item as Map<String, dynamic>))
           .toList();
 
+      // --- DEBUGGING BLOCK REMOVED ---
+
       await _startPeriodicFetches();
     } catch (e, stackTrace) {
       AppLog.e("❌ ERROR in _initialize: $e\n$stackTrace");
@@ -152,10 +152,10 @@ class InstrumentProvider with ChangeNotifier {
     await _updateInstruments([
       nifty50,
       bankNifty,
-      finNifty, // ✨ ADDED
-      midcapNifty, // ✨ ADDED
-      sensex, // ✨ ADDED
-      bankex, // ✨ ADDED
+      finNifty, // Now finds the correct symbol
+      midcapNifty, // Now finds the correct symbol
+      sensex,
+      bankex,
     ]);
 
     // Call 2: For stocks (a safe number to avoid API limits)
@@ -163,20 +163,16 @@ class InstrumentProvider with ChangeNotifier {
   }
 
   //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-  // ✨ NEW METHOD ADDED FOR HOLDINGS ✨
-  /// Takes a list of user holdings and fetches live data specifically for them.
+  // ✨ HOLDINGS METHOD ✨
   Future<void> fetchLiveDataForHoldings(
     List<StockHoldingModel> holdings,
   ) async {
-    // Find the full Instrument objects that match the symbols in the user's holdings.
     final symbolsToFetch = holdings.map((h) => h.stockSymbol).toSet();
-
     final instrumentsToFetch = _allInstruments
         .where(
           (inst) => symbolsToFetch.contains(inst.symbol.replaceAll('-EQ', '')),
         )
         .toList();
-
     if (instrumentsToFetch.isNotEmpty) {
       AppLog.i("🚀 Fetching live data specifically for user holdings...");
       await _updateInstruments(instrumentsToFetch);
@@ -201,7 +197,6 @@ class InstrumentProvider with ChangeNotifier {
       tokensByExchange,
     );
 
-    // DEBUG: Log requested tokensByExchange for diagnosis
     try {
       AppLog.d(
         '🔎 _updateInstruments: requested tokensByExchange = $tokensByExchange',
@@ -209,7 +204,6 @@ class InstrumentProvider with ChangeNotifier {
     } catch (_) {}
 
     if (liveDataList.isNotEmpty) {
-      // DEBUG: Log response size and sample keys to help mapping issues
       try {
         if (liveDataList.isNotEmpty) {
           final sample = liveDataList.take(3).toList();
@@ -217,7 +211,6 @@ class InstrumentProvider with ChangeNotifier {
             final item = sample[i];
             if (item is Map<String, dynamic>) {
               AppLog.d('  sample[$i] keys = ${item.keys.toList()}');
-              // attempt to log common token fields if present
               for (var k in [
                 'symbolToken',
                 'symboltoken',
@@ -237,8 +230,6 @@ class InstrumentProvider with ChangeNotifier {
         AppLog.w('Error while logging liveDataList sample: $e');
       }
 
-      // Build a map keyed by the instrument token. The API may return different
-      // token key names depending on version/endpoint, so check several aliases.
       final Map<String, Map<String, dynamic>> liveDataMap = {};
       for (var stock in liveDataList) {
         if (stock is Map<String, dynamic>) {
@@ -278,26 +269,15 @@ class InstrumentProvider with ChangeNotifier {
     }
   }
 
-  // ---
-  // --- NEW METHOD TO FIX THE ERROR ---
-  // ---
   /// Helper to find an instrument by its stock symbol (e.g., "RELIANCE-EQ")
   Instrument? getInstrumentBySymbol(String symbol) {
-    // The symbol in StockHoldingModel is clean (e.g., "RELIANCE").
-    // The symbol in Instrument is not (e.g., "RELIANCE-EQ").
     final String eqSymbol = '$symbol-EQ';
 
     if (_allNSEStocksMap.isEmpty) {
-      // Build the map for fast lookups if it's not already built.
       _allNSEStocksMap = {for (var stock in allNSEStocks) stock.symbol: stock};
     }
-
-    // Look up the full symbol (e.g., "RELIANCE-EQ") in the map.
     return _allNSEStocksMap[eqSymbol];
   }
-  // ---
-  // --- END OF NEW METHOD ---
-  // ---
 
   Future<void> fetchLiveDataFor(List<Instrument> instruments) async {
     await _updateInstruments(instruments);
@@ -305,7 +285,6 @@ class InstrumentProvider with ChangeNotifier {
 
   Map<String, dynamic> _sanitizeLiveData(Map<String, dynamic> rawData) {
     final sanitizedData = Map<String, dynamic>.from(rawData);
-    // Normalize common alternate keys returned by different API variants.
     final Map<String, List<String>> aliases = {
       'totalTradedVolume': [
         'ttlTrdQty',
@@ -322,7 +301,6 @@ class InstrumentProvider with ChangeNotifier {
       'percentChange': ['pChange', 'pchg', 'percent_change'],
       'close': ['closePrice', 'close_price'],
       'avgPrice': ['avg_price', 'averagePrice'],
-      // Avg. volume and market cap aliases (not always provided by every API)
       'avgVolume': [
         'avgTradedQty',
         'avg_trd_qty',
@@ -351,7 +329,6 @@ class InstrumentProvider with ChangeNotifier {
       }
     }
 
-    // Now coerce numeric values to numbers for keys we expect as numeric.
     const numericKeys = [
       'ltp',
       'netChange',
