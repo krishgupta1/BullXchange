@@ -1,6 +1,7 @@
 // lib/features/stock_market/screens/stock_page.dart
 
 import 'package:bullxchange/features/auth/screens/onboarding_page_1.1.dart';
+import 'package:bullxchange/features/stock_market/screens/StockDetailPage.dart';
 import 'package:bullxchange/features/stock_market/screens/explore_page.dart';
 import 'package:bullxchange/features/stock_market/screens/holdings_page.dart';
 import 'package:bullxchange/features/stock_market/screens/order_page.dart';
@@ -11,6 +12,8 @@ import 'package:bullxchange/features/stock_market/widgets/index_card.dart';
 import 'package:bullxchange/features/stock_market/widgets/main_page_header.dart';
 import 'package:bullxchange/features/stock_market/widgets/shimmer_animation.dart';
 import 'package:bullxchange/features/stock_market/widgets/stock_list_item.dart';
+import 'package:bullxchange/features/stock_market/widgets/stock_widgets/shimmer_loading.dart';
+import 'package:bullxchange/features/stock_market/widgets/stock_widgets/stock_card.dart';
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/models/order_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
@@ -417,7 +420,15 @@ class _StockPageState extends State<StockPage>
       children: [
         ...List.generate(_displayedStocks.length, (index) {
           final instrument = _displayedStocks[index];
-          return StockListItem(instrument: instrument);
+          return StockCard(
+            instrument: instrument,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => StockDetailPage(instrument: instrument),
+              ),
+            ),
+          );
         }),
         if (_isLoadingMore) _buildLoadMoreShimmer(),
       ],
@@ -429,7 +440,7 @@ class _StockPageState extends State<StockPage>
       baseColor: Colors.grey.shade300,
       highlightColor: Colors.grey.shade100,
       child: Column(
-        children: List.generate(10, (index) => const StockListItemShimmer()),
+        children: List.generate(10, (index) => const StockShimmerItem()),
       ),
     );
   }
@@ -439,7 +450,7 @@ class _StockPageState extends State<StockPage>
       baseColor: Colors.grey.shade300,
       highlightColor: Colors.grey.shade100,
       child: Column(
-        children: [const StockListItemShimmer(), const StockListItemShimmer()],
+        children: [const StockShimmerItem(), const StockShimmerItem()],
       ),
     );
   }

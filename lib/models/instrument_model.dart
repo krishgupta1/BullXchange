@@ -14,35 +14,37 @@ class Instrument {
   final int avgVolume;
 
   Map<String, dynamic> liveData = {};
+  List<double> chartData = []; // Add this field for actual chart data
 
   Instrument({
     required this.token,
     required this.symbol,
     required this.name,
     required this.exchSeg,
-
-    // --- 🔽 ADD THIS LINE 🔽 ---
     required this.instrumentType,
-
-    // --- (Your existing fields) ---
     required this.outstandingShares,
     required this.avgVolume,
+    this.chartData = const [], // Initialize with empty list
   });
 
   factory Instrument.fromJson(Map<String, dynamic> json) {
+    // Parse chart data from API response
+    List<double> chartPoints = [];
+    if (json['chartData'] != null) {
+      chartPoints = (json['chartData'] as List)
+          .map((point) => (point as num).toDouble())
+          .toList();
+    }
+
     return Instrument(
       token: json['token'] ?? '',
       symbol: json['symbol'] ?? '',
       name: json['name'] ?? '',
       exchSeg: json['exch_seg'] ?? '',
-
-      // --- 🔽 ADD THIS LINE 🔽 ---
-      // ⚠️ Check your JSON! Is the key 'instrumenttype' or 'instrument_type'?
       instrumentType: json['instrumenttype'] ?? '',
-
-      // --- (Your existing fields) ---
       outstandingShares: (json['outstandingShares'] as num?)?.toDouble() ?? 0.0,
       avgVolume: (json['avgVolume'] as num?)?.toInt() ?? 0,
+      chartData: chartPoints, // Use actual chart data from API
     );
   }
 }

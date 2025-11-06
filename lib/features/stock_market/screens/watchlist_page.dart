@@ -1,7 +1,6 @@
 import 'package:bullxchange/features/stock_market/screens/StockDetailPage.dart';
 import 'package:bullxchange/features/stock_market/screens/view_all_page.dart';
-import 'package:bullxchange/features/stock_market/widgets/mini_chart.dart';
-import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
+import 'package:bullxchange/features/stock_market/widgets/stock_widgets/stock_card.dart';
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/models/user_profile_data_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
@@ -133,33 +132,38 @@ class _WatchListPageState extends State<WatchListPage> {
                   ),
                 ),
                 const Divider(height: 1, thickness: 1),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: watchlistStocks.length,
+                    itemBuilder: (context, index) {
+                      final instrument = watchlistStocks[index];
+                      final isSelected = _selectedTokens.contains(
+                        instrument.token,
+                      );
 
-                // --- ⭐️ FIX: The list items are spread directly into the Column. ---
-                // There is NO ListView and NO Expanded widget.
-                ...watchlistStocks.map((instrument) {
-                  final isSelected = _selectedTokens.contains(instrument.token);
-
-                  return InkWell(
-                    onTap: () {
-                      if (_isEditMode) {
-                        _toggleSelection(instrument.token);
-                      } else {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                StockDetailPage(instrument: instrument),
-                          ),
-                        );
-                      }
+                      return InkWell(
+                        onTap: () {
+                          if (_isEditMode) {
+                            _toggleSelection(instrument.token);
+                          } else {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    StockDetailPage(instrument: instrument),
+                              ),
+                            );
+                          }
+                        },
+                        child: _buildStockItem(
+                          instrument: instrument,
+                          isEditMode: _isEditMode,
+                          isSelected: isSelected,
+                        ),
+                      );
                     },
-                    child: _buildStockItem(
-                      instrument: instrument,
-                      isEditMode: _isEditMode,
-                      isSelected: isSelected,
-                    ),
-                  );
-                }),
+                  ),
+                ),
               ],
             );
           },
@@ -266,16 +270,8 @@ Widget _buildStockItem({
   bool isEditMode = false,
   bool isSelected = false,
 }) {
-  final ltp = (instrument.liveData['ltp'] as num?)?.toDouble() ?? 0.0;
-  final netChange =
-      (instrument.liveData['netChange'] as num?)?.toDouble() ?? 0.0;
-  final percentChange =
-      (instrument.liveData['percentChange'] as num?)?.toDouble() ?? 0.0;
-  final changeColor = netChange >= 0 ? const Color(0xFF1EAB58) : Colors.red;
-
   return Container(
     color: isSelected ? Colors.blue.withOpacity(0.1) : Colors.transparent,
-    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
     child: Row(
       children: [
         if (isEditMode)
@@ -289,59 +285,12 @@ Widget _buildStockItem({
               ),
             ),
           ),
-        SmartLogo(instrument: instrument, radius: 0),
-        const SizedBox(width: 12),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                instrument.symbol.replaceAll('-EQ', ''),
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
-              Text(
-                instrument.name,
-                style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ),
-        SizedBox(
-          width: 80,
-          height: 40,
-          child: MiniChart.fromInstrument(
+          child: StockCard(
             instrument: instrument,
-            color: changeColor,
+            onTap: null, // Handled by parent InkWell
+            fontSize: 12,
           ),
-        ),
-        const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              "₹${ltp.toStringAsFixed(2)}",
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-            ),
-            Row(
-              children: [
-                Icon(
-                  percentChange >= 0
-                      ? Icons.arrow_drop_up
-                      : Icons.arrow_drop_down,
-                  color: changeColor,
-                  size: 20,
-                ),
-                Text(
-                  "${percentChange.abs().toStringAsFixed(2)}%",
-                  style: TextStyle(color: changeColor, fontSize: 12),
-                ),
-              ],
-            ),
-          ],
         ),
       ],
     ),

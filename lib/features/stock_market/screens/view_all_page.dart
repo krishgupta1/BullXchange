@@ -1,10 +1,9 @@
 // This is the full code for ViewAllPage.dart
 
-// 1. REMOVE THIS IMPORT. YOU DO NOT NEED IT.
-// import 'package:bullxchange/features/stock_market/screens/stock_page.dart';
 import 'package:bullxchange/features/auth/widgets/app_back_button.dart';
-import 'package:bullxchange/features/stock_market/widgets/shimmer_animation.dart';
-import 'package:bullxchange/features/stock_market/widgets/stock_list_item.dart';
+import 'package:bullxchange/features/stock_market/screens/StockDetailPage.dart';
+import 'package:bullxchange/features/stock_market/widgets/stock_widgets/shimmer_loading.dart';
+import 'package:bullxchange/features/stock_market/widgets/stock_widgets/stock_card.dart';
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:flutter/material.dart';
@@ -161,7 +160,16 @@ class _ViewAllPageState extends State<ViewAllPage> {
                           return _buildLoadMoreShimmer();
                         }
                         final instrument = displayedStocks[index];
-                        return StockListItem(instrument: instrument);
+                        return StockCard(
+                          instrument: instrument,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  StockDetailPage(instrument: instrument),
+                            ),
+                          ),
+                        );
                       },
                     ),
                   );
@@ -212,7 +220,7 @@ Widget _buildShimmerLoadingList() {
     child: ListView.builder(
       itemCount: 10,
       itemBuilder: (context, index) {
-        return const StockListItemShimmer();
+        return const StockShimmerItem();
       },
     ),
   );
@@ -223,7 +231,7 @@ Widget _buildLoadMoreShimmer() {
     baseColor: Colors.grey.shade300,
     highlightColor: Colors.grey.shade100,
     child: Column(
-      children: [const StockListItemShimmer(), const StockListItemShimmer()],
+      children: [const StockShimmerItem(), const StockShimmerItem()],
     ),
   );
 }

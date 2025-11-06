@@ -1,4 +1,5 @@
 import 'dart:math'; // For chart
+import 'package:bullxchange/features/f&o/widgets/fno_card.dart';
 import 'package:bullxchange/features/stock_market/screens/StockDetailPage.dart'; // For navigation
 import 'package:bullxchange/features/stock_market/widgets/mini_chart.dart'; // For chart
 import 'package:bullxchange/models/instrument_model.dart';
@@ -87,91 +88,15 @@ class FutureOptionExplorePage extends StatelessWidget {
 
   // This is the helper that creates the row (Logo, Name, Chart, Price)
   Widget _buildStockItem(Instrument instrument, BuildContext context) {
-    final ltp = instrument.liveData["ltp"]?.toString() ?? "--";
-    final percentChange =
-        num.tryParse(
-          instrument.liveData["percentChange"].toString(),
-        )?.toDouble() ??
-        0.0;
-    final changeColor = percentChange >= 0
-        ? const Color(0xFF1EAB58)
-        : Colors.red;
-    final List<double> chartData = _createSimulatedChartData(instrument);
-
-    return Material(
-      color: Colors.transparent, // Required for InkWell ripple effect
-      child: InkWell(
-        onTap: () {
-          // This navigation will now work for indices too
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => StockDetailPage(instrument: instrument),
-            ),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-          child: Row(
-            children: [
-              _buildLogoContainer(instrument.name), // Use name for logo
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      instrument.symbol.replaceAll('-EQ', ''), // Use symbol
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                    Text(
-                      instrument.name, // Use name
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(
-                width: 80,
-                height: 40,
-                child: MiniChart(data: chartData, color: changeColor),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    "₹$ltp",
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      Icon(
-                        percentChange >= 0
-                            ? Icons.arrow_drop_up
-                            : Icons.arrow_drop_down,
-                        color: changeColor,
-                        size: 20,
-                      ),
-                      Text(
-                        "${percentChange.abs().toStringAsFixed(2)}%",
-                        style: TextStyle(color: changeColor, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
+    return FnOCard(
+      instrument: instrument,
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => StockDetailPage(instrument: instrument),
         ),
       ),
+      fontSize: 12,
     );
   }
 

@@ -1,5 +1,3 @@
-// lib/features/f&o/screens/future_option_page.dart
-
 import 'package:bullxchange/features/f&o/screens/future_option_explore_page.dart';
 import 'package:bullxchange/features/f&o/screens/future_option_orders_page.dart';
 import 'package:bullxchange/features/f&o/screens/future_option_position_page.dart';
@@ -144,6 +142,7 @@ class _FutureOptionPageState extends State<FutureOptionPage>
                     child: IndexedStack(
                       index: _selectedActionIndex,
                       children: const [
+                        FutureOptionExplorePage(),
                         FutureOptionPositionPage(),
                         FutureOptionOrdersPage(),
                         FutureOptionWatchlistPage(),
@@ -158,6 +157,4 @@ class _FutureOptionPageState extends State<FutureOptionPage>
       },
     );
   }
-
-  // ✨ 5. ALL _build... METHODS HAVE BEEN REMOVED
 }
