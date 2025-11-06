@@ -236,12 +236,12 @@ class _SellStockPageState extends State<SellStockPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildStockHeader(_priceFormatter),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16), // --- MODIFIED ---
                   _buildInputSection(),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16), // --- MODIFIED ---
                   _buildOrderSummary(_priceFormatter),
                   // Add padding at the bottom for scroll comfort
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 10), // --- MODIFIED ---
                 ],
               ),
             ),
@@ -355,7 +355,7 @@ class _SellStockPageState extends State<SellStockPage> {
             ),
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16), // --- MODIFIED ---
         _buildSegmentedControl(
           title: 'Product',
           options: ['Delivery', 'Intraday'],
@@ -363,7 +363,7 @@ class _SellStockPageState extends State<SellStockPage> {
           onChanged: (value) {},
           isEnabled: false,
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16), // --- MODIFIED ---
         _buildSegmentedControl(
           title: 'Exchange',
           options: ['NSE', 'BSE'],
@@ -525,7 +525,7 @@ class _SellStockPageState extends State<SellStockPage> {
   Widget _buildBottomSellButton() {
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16), // --- MODIFIED ---
       child: ElevatedButton(
         onPressed: (_quantity > 0 && !_isPlacingOrder && _errorText == null)
             ? _handleSell
