@@ -357,7 +357,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
         centerTitle: true,
       ),
 
-      // --- ⭐️ SOLUTION: HYBRID SCROLLING BODY ---
+      // --- ⭐️ BODY WITH REDUCED PADDING ---
       body: Column(
         children: [
           Expanded(
@@ -368,12 +368,12 @@ class _BuyStockPageState extends State<BuyStockPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildStockHeader(_priceFormatter),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16), // --- MODIFIED ---
                     _buildInputSection(),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16), // --- MODIFIED ---
                     _buildOrderSummary(_priceFormatter),
                     // Add padding at the bottom for scroll comfort
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10), // --- MODIFIED ---
                   ],
                 ),
               ),
@@ -453,7 +453,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
           onChanged: _onOrderTypeChanged,
           activeColor: primaryPink, // Pass the theme color
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16), // --- MODIFIED ---
         Row(
           children: [
             Expanded(
@@ -535,7 +535,10 @@ class _BuyStockPageState extends State<BuyStockPage> {
         ),
         // --- NEW: AVAILABLE FUNDS ---
         Padding(
-          padding: const EdgeInsets.only(top: 8.0, left: 12.0),
+          padding: const EdgeInsets.only(
+            top: 10.0,
+            left: 12.0,
+          ), // --- MODIFIED ---
           child: Row(
             children: [
               Text(
@@ -566,7 +569,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
           ),
         ),
         // --- END NEW ---
-        const SizedBox(height: 20),
+        const SizedBox(height: 16), // --- MODIFIED ---
         _buildSegmentedControl(
           title: 'Product',
           options: ['Delivery', 'Intraday'],
@@ -574,7 +577,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
           onChanged: (value) => setState(() => _selectedProductType = value),
           activeColor: primaryPink,
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16), // --- MODIFIED ---
         _buildSegmentedControl(
           title: 'Exchange',
           options: ['NSE', 'BSE'],
@@ -742,7 +745,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
   Widget _buildBottomBuyButton() {
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16), // --- MODIFIED ---
       child: ElevatedButton(
         onPressed: (_quantity > 0 && _price > 0 && !_isPlacingOrder)
             ? _handleBuy

@@ -1,7 +1,7 @@
 import 'dart:math'; // For chart
 import 'package:bullxchange/features/f&o/widgets/fno_card.dart';
 import 'package:bullxchange/features/stock_market/screens/StockDetailPage.dart'; // For navigation
-import 'package:bullxchange/features/stock_market/widgets/mini_chart.dart'; // For chart
+// For chart
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:flutter/material.dart';

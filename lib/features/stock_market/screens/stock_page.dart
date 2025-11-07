@@ -10,8 +10,6 @@ import 'package:bullxchange/features/stock_market/screens/watchlist_page.dart';
 import 'package:bullxchange/features/stock_market/widgets/action_tab_bar.dart';
 import 'package:bullxchange/features/stock_market/widgets/index_card.dart';
 import 'package:bullxchange/features/stock_market/widgets/main_page_header.dart';
-import 'package:bullxchange/features/stock_market/widgets/shimmer_animation.dart';
-import 'package:bullxchange/features/stock_market/widgets/stock_list_item.dart';
 import 'package:bullxchange/features/stock_market/widgets/stock_widgets/shimmer_loading.dart';
 import 'package:bullxchange/features/stock_market/widgets/stock_widgets/stock_card.dart';
 import 'package:bullxchange/models/instrument_model.dart';
