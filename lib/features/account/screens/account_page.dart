@@ -1,7 +1,10 @@
+import 'package:bullxchange/features/account/screens/edit_profile_page.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // For StreamBuilder
 import 'package:firebase_auth/firebase_auth.dart'; // To get the current user
 // import 'package:intl/intl.dart'; // Uncomment for advanced currency formatting
+
+// ⭐️ IMPORT THE EDIT PROFILE PAGE
 
 class AccountScreen extends StatelessWidget {
   const AccountScreen({super.key});
@@ -22,7 +25,8 @@ class AccountScreen extends StatelessWidget {
       backgroundColor: const Color(0xFFF3F4F8),
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(70.0),
-        child: _buildAppBar(),
+        // ⭐️ Pass userId to the AppBar builder
+        child: _buildAppBar(context, userId),
       ),
       // --- Use StreamBuilder to listen for live data ---
       body: StreamBuilder<DocumentSnapshot>(
@@ -87,7 +91,8 @@ class AccountScreen extends StatelessWidget {
   }
 
   /// Builds the custom AppBar (Profile title and Edit button)
-  Widget _buildAppBar() {
+  /// ⭐️ Now takes context and userId
+  Widget _buildAppBar(BuildContext context, String userId) {
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
@@ -103,7 +108,15 @@ class AccountScreen extends StatelessWidget {
               ),
             ),
             TextButton(
-              onPressed: () {},
+              onPressed: () {
+                // ⭐️ UPDATED NAVIGATION
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => EditProfilePage(userId: userId),
+                  ),
+                );
+              },
               child: const Text(
                 'Edit Profile',
                 style: TextStyle(

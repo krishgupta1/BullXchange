@@ -69,6 +69,34 @@ class UserService {
     });
   }
 
+  // --- ⭐️ NEW FUNCTION TO UPDATE PROFILE ⭐️ ---
+  Future<void> updateUserProfile({
+    required String uid,
+    required String name,
+    required String emailId,
+    required String mobileNo,
+  }) async {
+    // Note: This updates the Firestore document.
+    // To update the Firebase Auth email, you would need
+    // to call FirebaseAuth.instance.currentUser?.updateEmail()
+    // which requires re-authentication.
+
+    final profileData = {
+      'name': name,
+      'emailId': emailId,
+      'mobileNo': mobileNo,
+    };
+    try {
+      await usersRef.doc(uid).update(profileData);
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error updating user profile: $e');
+      }
+      rethrow;
+    }
+  }
+  // --- (End of new function) ---
+
   // --- Atomic Trade Function (Used by Buy/Sell pages) ---
   Future<String> executeTrade({
     required String uid,
@@ -195,7 +223,7 @@ class UserService {
         });
   }
 
-  // --- ⭐️ NEW FUNCTION TO CANCEL ALL PENDING ORDERS ⭐️ ---
+  // --- FUNCTION TO CANCEL ALL PENDING ORDERS ---
   Future<void> cancelAllOrders(String uid) async {
     try {
       // 1. Find all orders that are 'PENDING' for this user
