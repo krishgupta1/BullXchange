@@ -65,7 +65,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
         (widget.instrument.liveData['netChange'] as num?)?.toDouble() ?? 0.0;
     final percentChange =
         (widget.instrument.liveData['percentChange'] as num?)?.toDouble() ??
-        0.0;
+            0.0;
     final changeColor = netChange >= 0 ? const Color(0xFF1EAB58) : primaryPink;
     final priceParts = ltp.toStringAsFixed(2).split('.');
 
@@ -176,7 +176,8 @@ class _StockDetailPageState extends State<StockDetailPage> {
                   const SizedBox(height: 20),
                   SizedBox(
                     height: 420, // Height for the chart
-                    child: TradingViewChart(symbol: widget.instrument.symbol),
+                    // --- ✨ CHART FIX 1: Pass the whole instrument ---
+                    child: TradingViewChart(instrument: widget.instrument),
                   ),
                   const SizedBox(height: 20),
                   const Text(
@@ -192,7 +193,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
                     builder: (context, prov, child) {
                       final matched =
                           prov.getInstrumentByToken(widget.instrument.token) ??
-                          widget.instrument;
+                              widget.instrument;
                       final apiOpen =
                           (matched.liveData['open'] as num?)?.toDouble() ?? 0.0;
                       final apiHigh =
@@ -201,25 +202,25 @@ class _StockDetailPageState extends State<StockDetailPage> {
                           (matched.liveData['low'] as num?)?.toDouble() ?? 0.0;
                       final apiVolume =
                           (matched.liveData['tradeVolume'] as num?)?.toInt() ??
-                          0;
+                              0;
                       final apiAvgPrice =
                           (matched.liveData['avgPrice'] as num?)?.toDouble() ??
-                          0.0;
+                              0.0;
                       final apiUpperCircuit =
                           (matched.liveData['upperCircuit'] as num?)
-                              ?.toDouble() ??
-                          0.0;
+                                  ?.toDouble() ??
+                              0.0;
                       final apiLowerCircuit =
                           (matched.liveData['lowerCircuit'] as num?)
-                              ?.toDouble() ??
-                          0.0;
+                                  ?.toDouble() ??
+                              0.0;
                       final api52WkHigh =
                           (matched.liveData['52WeekHigh'] as num?)
-                              ?.toDouble() ??
-                          0.0;
+                                  ?.toDouble() ??
+                              0.0;
                       final api52WkLow =
                           (matched.liveData['52WeekLow'] as num?)?.toDouble() ??
-                          0.0;
+                              0.0;
 
                       final double outstandingShares =
                           matched.outstandingShares;
@@ -299,6 +300,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
                   fontWeight: FontWeight.w500,
                 ),
                 overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
             ],
           ),
@@ -431,7 +433,9 @@ class _StockDetailPageState extends State<StockDetailPage> {
           crossAxisCount: 3,
           crossAxisSpacing: 12,
           mainAxisSpacing: 8,
-          mainAxisExtent: 62.0,
+          // --- ✨ OVERFLOW FIX ---
+          // Increased from 62.0 to 65.0 to give space for wrapped labels
+          mainAxisExtent: 65.0,
         ),
         itemBuilder: (context, index) {
           final stat = stats[index];
@@ -582,12 +586,12 @@ class _StockDetailPageState extends State<StockDetailPage> {
   }
 }
 
-// --- (TradingViewChart widget remains exactly the same as you provided) ---
-
+// --- ✨ CHART WIDGET FIXED ---
 class TradingViewChart extends StatefulWidget {
-  final String symbol;
+  // --- Changed 'symbol' to 'instrument' ---
+  final Instrument instrument;
 
-  const TradingViewChart({super.key, required this.symbol});
+  const TradingViewChart({super.key, required this.instrument});
 
   @override
   State<TradingViewChart> createState() => _TradingViewChartState();
@@ -607,8 +611,14 @@ class _TradingViewChartState extends State<TradingViewChart> {
   }
 
   String _buildTradingViewHtml() {
-    final sanitizedSymbol = widget.symbol.replaceAll('-EQ', '');
-    final tradingViewSymbol = 'BSE:$sanitizedSymbol';
+    // --- Use instrument properties to build the correct symbol ---
+    final sanitizedSymbol = widget.instrument.symbol.replaceAll('-EQ', '');
+    
+    // Use the exchange from the instrument, default to BSE if not NSE
+    final exchange = widget.instrument.exchSeg == 'NSE' ? 'NSE' : 'BSE';
+    
+    // --- Correctly use the exchange ---
+    final tradingViewSymbol = '$exchange:$sanitizedSymbol';
 
     return '''
       <!DOCTYPE html>
@@ -624,7 +634,7 @@ class _TradingViewChartState extends State<TradingViewChart> {
           <script type="text/javascript">
             new TradingView.widget({
               "autosize": true,
-              "symbol": "$tradingViewSymbol",
+              "symbol": "$tradingViewSymbol", 
               "interval": "D",
               "intervals": ["1", "5", "15", "30", "60", "D", "W", "M"],
               "timezone": "Asia/Kolata",

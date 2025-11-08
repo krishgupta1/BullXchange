@@ -1,6 +1,6 @@
 import 'package:bullxchange/features/stock_market/screens/StockDetailPage.dart';
 import 'package:bullxchange/features/stock_market/screens/view_all_page.dart';
-import 'package:bullxchange/features/stock_market/widgets/stock_widgets/stock_card.dart';
+import 'package:bullxchange/features/stock_market/widgets/stock_card.dart';
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/models/user_profile_data_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
