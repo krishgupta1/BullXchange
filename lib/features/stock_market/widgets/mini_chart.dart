@@ -1,4 +1,3 @@
-
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
