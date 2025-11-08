@@ -1,10 +1,9 @@
 import 'package:bullxchange/features/account/screens/edit_profile_page.dart';
+import 'package:bullxchange/features/account/screens/settings_page.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // For StreamBuilder
 import 'package:firebase_auth/firebase_auth.dart'; // To get the current user
 // import 'package:intl/intl.dart'; // Uncomment for advanced currency formatting
-
-// ⭐️ IMPORT THE EDIT PROFILE PAGE
 
 class AccountScreen extends StatelessWidget {
   const AccountScreen({super.key});
@@ -77,7 +76,17 @@ class AccountScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   _buildReferralCard(),
                   const SizedBox(height: 24),
-                  _buildOptionList(),
+                  //
+                  // --- ⭐️ FIX WAS HERE ---
+                  //
+                  // Before (Error): _buildOptionList(BuildContext context),
+                  // After (Fixed): Pass the 'context' variable that
+                  //                comes from the StreamBuilder's builder.
+                  //
+                  _buildOptionList(context),
+                  //
+                  // --- ⭐️ END OF FIX ---
+                  //
                   const SizedBox(height: 24),
                   _buildFeedbackCard(),
                   const SizedBox(height: 20),
@@ -135,12 +144,33 @@ class AccountScreen extends StatelessWidget {
   /// Builds the user avatar, name, and email section
   /// --- Now accepts name and email as parameters ---
   Widget _buildProfileHeader(String name, String email) {
+    // --- Helper function to get initials from a name ---
+    String getInitials(String name) {
+      if (name.isEmpty) return '?';
+      final parts = name.trim().split(' ');
+      if (parts.isEmpty) return '?';
+
+      String initials = parts[0][0]; // First letter of the first name
+      if (parts.length > 1) {
+        initials += parts.last[0]; // First letter of the last name
+      }
+      return initials.toUpperCase();
+    }
+
     return Row(
       children: [
-        const CircleAvatar(
+        CircleAvatar(
           radius: 35,
-          backgroundColor: Color(0xFFD2CFFF),
-          child: Icon(Icons.person, size: 40, color: Color(0xFF5A4AD4)),
+          backgroundColor: const Color(0xFFD2CFFF),
+          // Show initials instead of a generic icon
+          child: Text(
+            getInitials(name),
+            style: const TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF5A4AD4),
+            ),
+          ),
         ),
         const SizedBox(width: 16),
         Column(
@@ -276,7 +306,7 @@ class AccountScreen extends StatelessWidget {
                 ),
                 SizedBox(height: 2),
                 Text(
-                  'Share your friend get \$20 of free stocks',
+                  'Share with your friends and get rewards', // Simpler text
                   style: TextStyle(fontSize: 13, color: Color(0xFF555555)),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -289,7 +319,7 @@ class AccountScreen extends StatelessWidget {
   }
 
   /// Builds the list of options (Billing, Settings, FAQ)
-  Widget _buildOptionList() {
+  Widget _buildOptionList(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -309,7 +339,12 @@ class AccountScreen extends StatelessWidget {
             icon: Icons.settings,
             color: const Color(0xFF0063F5),
             text: 'Settings',
-            onTap: () {},
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsPage()),
+              );
+            },
           ),
           const Divider(height: 24, thickness: 1, color: Color(0xFFF3F4F8)),
           _buildOptionItem(
@@ -376,7 +411,7 @@ class AccountScreen extends StatelessWidget {
           SizedBox(width: 12),
           Expanded(
             child: Text(
-              "We'd love to hear your feedback\non threads, if you have any?",
+              "We'd love to hear your feedback!", // Simpler text
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,

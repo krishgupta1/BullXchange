@@ -42,7 +42,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       );
 
       // Optionally navigate back to login
-      Navigator.pushReplacement(context, slideLeftToRight(const LoginPage()));
+      Navigator.pop(context);
     } on FirebaseAuthException catch (e) {
       String message = 'An error occurred. Please try again.';
       if (e.code == 'user-not-found') {

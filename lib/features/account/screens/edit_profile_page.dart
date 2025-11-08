@@ -1,7 +1,7 @@
 import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:flutter/material.dart';
-import 'package:bullxchange/models/user_profile_data_model.dart'; // Make sure this path is correct
-// import 'package:firebase_auth/firebase_auth.dart'; // Uncomment if userId is fetched here
+import 'package:bullxchange/models/user_profile_data_model.dart';
+// import 'package:firebase_auth/firebase_auth.dart';
 
 class EditProfilePage extends StatefulWidget {
   final String userId;
@@ -18,7 +18,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   late TextEditingController _nameController;
   late TextEditingController _emailController;
-  late TextEditingController _phoneController; // Still need to display it
+  late TextEditingController _phoneController;
 
   bool _isLoading = true;
   String _errorMessage = '';
@@ -28,7 +28,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     super.initState();
     _nameController = TextEditingController();
     _emailController = TextEditingController();
-    _phoneController = TextEditingController(); // Initialize
+    _phoneController = TextEditingController();
     _loadUserData();
   }
 
@@ -39,6 +39,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _phoneController.dispose();
     super.dispose();
   }
+
+  // --- NEW: Helper function to get initials from a name ---
+  String _getInitials(String name) {
+    if (name.isEmpty) return '?';
+    final parts = name.trim().split(' ');
+    if (parts.isEmpty) return '?';
+
+    String initials = parts[0][0]; // First letter of the first name
+    if (parts.length > 1) {
+      initials += parts.last[0]; // First letter of the last name
+    }
+    return initials.toUpperCase();
+  }
+  // --------------------------------------------------------
 
   Future<void> _loadUserData() async {
     setState(() {
@@ -52,7 +66,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
       if (userProfile != null) {
         _nameController.text = userProfile.name;
         _emailController.text = userProfile.emailId;
-        _phoneController.text = userProfile.mobileNo; // Set phone number
+        _phoneController.text = userProfile.mobileNo;
+        // This triggers a rebuild to show initials in the avatar
+        setState(() {});
       } else {
         setState(() {
           _errorMessage = 'Could not load user profile.';
@@ -71,7 +87,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) {
-      return; // Don't save if validation fails
+      return;
     }
 
     setState(() {
@@ -79,11 +95,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
     });
 
     try {
+      // Note: We pass the original phone number back,
+      // as it's not editable.
       await _userService.updateUserProfile(
         uid: widget.userId,
         name: _nameController.text.trim(),
         emailId: _emailController.text.trim(),
-        // Pass the original phone number if it's not editable
         mobileNo: _phoneController.text.trim(),
       );
 
@@ -148,7 +165,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   children: [
                     _buildProfileAvatar(),
                     const SizedBox(height: 40),
-                    // Full Name Field
                     _buildStyledTextField(
                       controller: _nameController,
                       label: 'Full name',
@@ -160,7 +176,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       },
                     ),
                     const SizedBox(height: 24),
-                    // Email Address Field
                     _buildStyledTextField(
                       controller: _emailController,
                       label: 'Email address',
@@ -173,12 +188,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       },
                     ),
                     const SizedBox(height: 24),
-                    // Phone Number Field (Disabled)
                     _buildStyledTextField(
                       controller: _phoneController,
                       label: 'Phone number',
                       keyboardType: TextInputType.phone,
-                      enabled: false, // Make it disabled/fade out
+                      enabled: false, // Field is not editable
                       validator: (value) {
                         if (value == null || value.length < 10) {
                           return 'Please enter a valid phone number';
@@ -193,9 +207,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       child: ElevatedButton(
                         onPressed: _saveProfile,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(
-                            0xFF4B00D1,
-                          ), // Deep purple
+                          backgroundColor: const Color(0xFF4B00D1),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
                           ),
@@ -210,7 +222,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20), // Bottom padding
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),
@@ -219,19 +231,24 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Widget _buildProfileAvatar() {
+    // --- UPDATED: Get initials from the name controller ---
+    final initials = _getInitials(_nameController.text);
+
     return Stack(
       children: [
-        // Placeholder for the user's avatar
-        // Using a similar purple avatar to the image
-        const CircleAvatar(
+        CircleAvatar(
           radius: 60,
-          backgroundColor: Color(0xFFE0E0E0), // Greyish background
-          child: Icon(
-            Icons.person, // Or an asset image
-            size: 80,
-            color: Color(0xFF9C27B0), // Purple icon to mimic the image's avatar
+          backgroundColor: const Color(0xFFE0E0E0),
+          // --- UPDATED: Show initials instead of icon ---
+          child: Text(
+            initials,
+            style: const TextStyle(
+              fontSize: 48,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF9C27B0), // Purple text
+            ),
           ),
-          // If you have an image URL, use:
+          // If you have an image URL, you would use:
           // backgroundImage: NetworkImage(userProfile.imageUrl),
         ),
         Positioned(
@@ -242,15 +259,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
               // TODO: Add logic to pick/upload a new image
             },
             child: Container(
-              width: 44, // Matches the radius * 2 for the circle
+              width: 44,
               height: 44,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFFD100F7), // Bright pink from image
-                border: Border.all(
-                  color: Colors.white,
-                  width: 3,
-                ), // White border
+                color: const Color(0xFFD100F7),
+                border: Border.all(color: Colors.white, width: 3),
               ),
               child: const Icon(
                 Icons.camera_alt,
@@ -264,12 +278,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
-  // Helper widget to create text fields matching your design
+  // This helper widget is perfect, no changes needed
   Widget _buildStyledTextField({
     required TextEditingController controller,
     required String label,
     TextInputType keyboardType = TextInputType.text,
-    bool enabled = true, // Added enabled property
+    bool enabled = true,
     String? Function(String?)? validator,
   }) {
     return Column(
@@ -280,9 +294,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           child: Text(
             label,
             style: TextStyle(
-              color: enabled
-                  ? const Color(0xFFF50057)
-                  : Colors.grey[600], // Pink for enabled, grey for disabled
+              color: enabled ? const Color(0xFFF50057) : Colors.grey[600],
               fontSize: 14,
               fontWeight: FontWeight.w600,
             ),
@@ -291,27 +303,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
         TextFormField(
           controller: controller,
           keyboardType: keyboardType,
-          enabled: enabled, // Apply enabled state
-          style: TextStyle(
-            color: enabled
-                ? Colors.black
-                : Colors.grey[500], // Text color for enabled/disabled
-          ),
+          enabled: enabled,
+          style: TextStyle(color: enabled ? Colors.black : Colors.grey[500]),
           validator: validator,
           decoration: InputDecoration(
             contentPadding: const EdgeInsets.symmetric(
               vertical: 18,
               horizontal: 25,
             ),
-            filled: !enabled, // Fill for disabled state
-            fillColor: Colors.grey[100], // Light grey fill for disabled
+            filled: !enabled,
+            fillColor: Colors.grey[100],
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(30),
               borderSide: BorderSide(
-                color: enabled
-                    ? const Color(0xFFB39DDB)
-                    : Colors
-                          .grey[300]!, // Light purple for enabled, lighter grey for disabled
+                color: enabled ? const Color(0xFFB39DDB) : Colors.grey[300]!,
                 width: 1.5,
               ),
             ),
@@ -325,15 +330,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(30),
               borderSide: BorderSide(
-                color: enabled
-                    ? const Color(0xFF4B00D1)
-                    : Colors
-                          .grey[300]!, // Deep purple for enabled, lighter grey for disabled
+                color: enabled ? const Color(0xFF4B00D1) : Colors.grey[300]!,
                 width: 2,
               ),
             ),
             disabledBorder: OutlineInputBorder(
-              // Explicitly define disabled border
               borderRadius: BorderRadius.circular(30),
               borderSide: BorderSide(color: Colors.grey[300]!, width: 1.5),
             ),
