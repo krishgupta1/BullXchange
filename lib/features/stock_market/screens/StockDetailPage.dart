@@ -65,7 +65,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
         (widget.instrument.liveData['netChange'] as num?)?.toDouble() ?? 0.0;
     final percentChange =
         (widget.instrument.liveData['percentChange'] as num?)?.toDouble() ??
-            0.0;
+        0.0;
     final changeColor = netChange >= 0 ? const Color(0xFF1EAB58) : primaryPink;
     final priceParts = ltp.toStringAsFixed(2).split('.');
 
@@ -193,7 +193,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
                     builder: (context, prov, child) {
                       final matched =
                           prov.getInstrumentByToken(widget.instrument.token) ??
-                              widget.instrument;
+                          widget.instrument;
                       final apiOpen =
                           (matched.liveData['open'] as num?)?.toDouble() ?? 0.0;
                       final apiHigh =
@@ -202,25 +202,25 @@ class _StockDetailPageState extends State<StockDetailPage> {
                           (matched.liveData['low'] as num?)?.toDouble() ?? 0.0;
                       final apiVolume =
                           (matched.liveData['tradeVolume'] as num?)?.toInt() ??
-                              0;
+                          0;
                       final apiAvgPrice =
                           (matched.liveData['avgPrice'] as num?)?.toDouble() ??
-                              0.0;
+                          0.0;
                       final apiUpperCircuit =
                           (matched.liveData['upperCircuit'] as num?)
-                                  ?.toDouble() ??
-                              0.0;
+                              ?.toDouble() ??
+                          0.0;
                       final apiLowerCircuit =
                           (matched.liveData['lowerCircuit'] as num?)
-                                  ?.toDouble() ??
-                              0.0;
+                              ?.toDouble() ??
+                          0.0;
                       final api52WkHigh =
                           (matched.liveData['52WeekHigh'] as num?)
-                                  ?.toDouble() ??
-                              0.0;
+                              ?.toDouble() ??
+                          0.0;
                       final api52WkLow =
                           (matched.liveData['52WeekLow'] as num?)?.toDouble() ??
-                              0.0;
+                          0.0;
 
                       final double outstandingShares =
                           matched.outstandingShares;
@@ -613,10 +613,10 @@ class _TradingViewChartState extends State<TradingViewChart> {
   String _buildTradingViewHtml() {
     // --- Use instrument properties to build the correct symbol ---
     final sanitizedSymbol = widget.instrument.symbol.replaceAll('-EQ', '');
-    
+
     // Use the exchange from the instrument, default to BSE if not NSE
     final exchange = widget.instrument.exchSeg == 'NSE' ? 'NSE' : 'BSE';
-    
+
     // --- Correctly use the exchange ---
     final tradingViewSymbol = '$exchange:$sanitizedSymbol';
 
