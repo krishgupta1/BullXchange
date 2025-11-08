@@ -1,11 +1,9 @@
-import 'dart:math'; // For chart
 import 'package:bullxchange/features/f&o/widgets/fno_card.dart';
 import 'package:bullxchange/features/stock_market/screens/StockDetailPage.dart'; // For navigation
 // For chart
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart'; // For logo
 import 'package:provider/provider.dart';
 
 class FutureOptionExplorePage extends StatelessWidget {
@@ -101,58 +99,6 @@ class FutureOptionExplorePage extends StatelessWidget {
   }
 
   // Helper to create the colored letter logo
-  Widget _buildLogoContainer(String name) {
-    if (name.toLowerCase().contains('google')) {
-      return SvgPicture.network(
-        'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg',
-        width: 40,
-        height: 40,
-      );
-    }
-    // ... (add other specific logos if you want) ...
-
-    final letter = name.isNotEmpty ? name[0].toUpperCase() : '?';
-    final color = Colors.primaries[name.hashCode % Colors.primaries.length];
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-      child: Center(
-        child: Text(
-          letter,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
 
   // Helper to create the mini-chart data
-  List<double> _createSimulatedChartData(Instrument instrument) {
-    final ltp =
-        num.tryParse(instrument.liveData['ltp'].toString())?.toDouble() ?? 0.0;
-    final netChange =
-        num.tryParse(instrument.liveData['netChange'].toString())?.toDouble() ??
-        0.0;
-
-    if (ltp == 0.0) return List<double>.generate(15, (_) => 1.0);
-    final startPrice = ltp - netChange;
-    final points = <double>[];
-    final random = Random(instrument.symbol.hashCode);
-
-    for (int i = 0; i < 15; i++) {
-      if (i == 14) {
-        points.add(ltp);
-      } else {
-        double progress = i / 14.0;
-        double priceAtProgress = startPrice + (netChange * progress);
-        double variance = ltp * 0.01 * (random.nextDouble() - 0.5);
-        points.add(priceAtProgress + variance);
-      }
-    }
-    return points;
-  }
 }

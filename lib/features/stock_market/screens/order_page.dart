@@ -195,9 +195,6 @@ Widget _buildOrderItem({
   required OrderModel order,
 }) {
   final ltp = (instrument?.liveData['ltp'] as num?)?.toDouble() ?? 0.0;
-  final netChange =
-      (instrument?.liveData['netChange'] as num?)?.toDouble() ?? 0.0;
-  final changeColor = netChange >= 0 ? Colors.green : Colors.red;
 
   final orderType = order.transactionType;
   final quantity = order.quantity;
