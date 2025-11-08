@@ -1,10 +1,11 @@
 import 'package:bullxchange/features/account/screens/edit_profile_page.dart';
+import 'package:bullxchange/features/account/screens/referralcodepage.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // For StreamBuilder
 import 'package:firebase_auth/firebase_auth.dart'; // To get the current user
 // import 'package:intl/intl.dart'; // Uncomment for advanced currency formatting
 
-// ⭐️ IMPORT THE EDIT PROFILE PAGE
+// ⭐️ IMPORT THE REFERRAL PAGE
 
 class AccountScreen extends StatelessWidget {
   const AccountScreen({super.key});
@@ -75,7 +76,8 @@ class AccountScreen extends StatelessWidget {
                   const SizedBox(height: 24),
                   _buildWalletCard(balance),
                   const SizedBox(height: 16),
-                  _buildReferralCard(),
+                  // ⭐️ Pass context for navigation
+                  _buildReferralCard(context),
                   const SizedBox(height: 24),
                   _buildOptionList(),
                   const SizedBox(height: 24),
@@ -245,45 +247,60 @@ class AccountScreen extends StatelessWidget {
   }
 
   /// Builds the Referral Code card
-  Widget _buildReferralCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE9FBF0), // Light green background
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          // Gift Icon
-          const CircleAvatar(
-            radius: 20,
-            backgroundColor: Color(0xFFE94560),
-            child: Icon(Icons.card_giftcard, color: Colors.white, size: 20),
-          ),
-          const SizedBox(width: 12),
-          // Text Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
-                  'Referral Code',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF1E1E1E),
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'Share your friend get \$20 of free stocks',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF555555)),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+  /// ⭐️ NOW INCLUDES ONTAP NAVIGATION ⭐️
+  Widget _buildReferralCard(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        // ⭐️ NAVIGATION LOGIC ⭐️
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ReferralCodePage()),
+        );
+      },
+      borderRadius: BorderRadius.circular(
+        16,
+      ), // Match container's border radius
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE9FBF0), // Light green background
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            // Gift Icon
+            const CircleAvatar(
+              radius: 20,
+              backgroundColor: Color(0xFFE94560),
+              child: Icon(Icons.card_giftcard, color: Colors.white, size: 20),
             ),
-          ),
-        ],
+            const SizedBox(width: 12),
+            // Text Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text(
+                    'Referral Code',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1E1E1E),
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Share your friend get \$20 of free stocks',
+                    style: TextStyle(fontSize: 13, color: Color(0xFF555555)),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            // ⭐️ Added arrow icon to suggest it's tappable ⭐️
+            const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
+          ],
+        ),
       ),
     );
   }
