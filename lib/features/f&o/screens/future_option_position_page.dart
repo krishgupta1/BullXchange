@@ -70,8 +70,10 @@ class _OptionChainBody extends StatelessWidget {
                 final pe = row.pe;
 
                 return Container(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 6,
+                    horizontal: 8,
+                  ),
                   decoration: BoxDecoration(
                     border: Border(
                       bottom: BorderSide(color: Colors.grey.shade300),
@@ -82,32 +84,30 @@ class _OptionChainBody extends StatelessWidget {
                       Expanded(
                         flex: 2,
                         child: Center(
-                            child:
-                                Text(_safeNum(ce?['openInterest'] ?? ''))),
+                          child: Text(_safeNum(ce?['openInterest'] ?? '')),
+                        ),
                       ),
                       Expanded(
                         flex: 2,
                         child: Center(
-                            child:
-                                Text(_safeNum(ce?['lastPrice'] ?? ''))),
+                          child: Text(_safeNum(ce?['lastPrice'] ?? '')),
+                        ),
+                      ),
+                      Expanded(
+                        flex: 2,
+                        child: Center(child: Text(row.strikePrice.toString())),
                       ),
                       Expanded(
                         flex: 2,
                         child: Center(
-                            child:
-                                Text(row.strikePrice.toString())),
+                          child: Text(_safeNum(pe?['lastPrice'] ?? '')),
+                        ),
                       ),
                       Expanded(
                         flex: 2,
                         child: Center(
-                            child:
-                                Text(_safeNum(pe?['lastPrice'] ?? ''))),
-                      ),
-                      Expanded(
-                        flex: 2,
-                        child: Center(
-                            child:
-                                Text(_safeNum(pe?['openInterest'] ?? ''))),
+                          child: Text(_safeNum(pe?['openInterest'] ?? '')),
+                        ),
                       ),
                     ],
                   ),

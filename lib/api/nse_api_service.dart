@@ -27,7 +27,8 @@ class NseApiService {
 
   /// Step 2: Actual Option Chain fetch
   Future<Map<String, dynamic>?> fetchOptionChain(String symbol) async {
-    final url = 'https://www.nseindia.com/api/option-chain-indices?symbol=$symbol';
+    final url =
+        'https://www.nseindia.com/api/option-chain-indices?symbol=$symbol';
 
     try {
       await _warmUp(); // fetch cookies first
@@ -41,7 +42,9 @@ class NseApiService {
 
       // Sometimes NSE returns HTML even with 200 status
       if (response.data is String) {
-        AppLog.e("❌ NSE returned non-JSON data (blocked): ${response.data.toString().substring(0, 80)}...");
+        AppLog.e(
+          "❌ NSE returned non-JSON data (blocked): ${response.data.toString().substring(0, 80)}...",
+        );
       }
 
       return null;

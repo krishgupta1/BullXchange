@@ -8,11 +8,7 @@ class OptionChainRow {
   final Map<String, dynamic>? ce;
   final Map<String, dynamic>? pe;
 
-  OptionChainRow({
-    required this.strikePrice,
-    this.ce,
-    this.pe,
-  });
+  OptionChainRow({required this.strikePrice, this.ce, this.pe});
 
   factory OptionChainRow.fromJson(Map<String, dynamic> json) {
     return OptionChainRow(
@@ -37,16 +33,17 @@ class OptionChainProvider with ChangeNotifier {
 
   Timer? _timer;
 
-  OptionChainProvider({
-    required this.symbol,
-  }) {
+  OptionChainProvider({required this.symbol}) {
     _init();
   }
 
   void _init() {
     fetchOptionChain();
     _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 15), (_) => fetchOptionChain());
+    _timer = Timer.periodic(
+      const Duration(seconds: 15),
+      (_) => fetchOptionChain(),
+    );
   }
 
   Future<void> fetchOptionChain() async {
