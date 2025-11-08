@@ -376,17 +376,4 @@ class AccountScreen extends StatelessWidget {
       ),
     );
   }
-
-  /// Reusable widget for a single item in the bottom nav bar
-  /// (This isn't used in the main body but was in your original file,
-  /// so I'm leaving it in case it's part of a BottomNavigationBar)
-  Widget _buildNavItem(IconData icon, bool isActive) {
-    return IconButton(
-      icon: Icon(
-        icon,
-        color: isActive ? const Color(0xFF5A4AD4) : Colors.grey[400],
-      ),
-      onPressed: () {},
-    );
-  }
 }
