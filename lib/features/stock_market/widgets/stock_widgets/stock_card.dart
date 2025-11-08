@@ -67,8 +67,8 @@ class StockCard extends StatelessWidget {
               SizedBox(
                 width: 80,
                 height: 40,
-                child: MiniChart(
-                  data: List.generate(20, (index) => index * percentChange),
+                child: MiniChart.fromInstrument(
+                  instrument: instrument,
                   color: changeColor,
                 ),
               ),

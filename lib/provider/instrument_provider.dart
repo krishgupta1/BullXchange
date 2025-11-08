@@ -159,7 +159,12 @@ class InstrumentProvider with ChangeNotifier {
     ]);
 
     // Call 2: For stocks (a safe number to avoid API limits)
-    await _updateInstruments(allNSEStocks.take(50).toList());
+    final top50Stocks = allNSEStocks.take(50).toList();
+    await _updateInstruments(top50Stocks);
+
+    // Call 3: Fetch chart data for those same stocks
+    // We do this separately as it's a different API call
+    await fetchChartDataFor(top50Stocks);
   }
 
   //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -176,6 +181,9 @@ class InstrumentProvider with ChangeNotifier {
     if (instrumentsToFetch.isNotEmpty) {
       AppLog.i("🚀 Fetching live data specifically for user holdings...");
       await _updateInstruments(instrumentsToFetch);
+
+      // Also fetch chart data for holdings
+      await fetchChartDataFor(instrumentsToFetch);
     }
   }
   //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -282,6 +290,74 @@ class InstrumentProvider with ChangeNotifier {
   Future<void> fetchLiveDataFor(List<Instrument> instruments) async {
     await _updateInstruments(instruments);
   }
+
+  // -----------------------------------------------------------------
+  // ✨ NEW FUNCTION TO FETCH CHART DATA ✨
+  // -----------------------------------------------------------------
+  Future<void> fetchChartDataFor(List<Instrument> instruments) async {
+    // Avoid refetching if chart data is already present
+    final instrumentsToFetch = instruments
+        .where((i) => i.chartData.isEmpty)
+        .toList();
+
+    if (instrumentsToFetch.isEmpty) return;
+
+    // --- Get dynamic dates ---
+    // Note: For a real app, you must get the *last trading day*, not just 'today'
+    // This is a simple implementation for now.
+    final now = DateTime.now();
+    // Angel One format is 'YYYY-MM-DD HH:mm'
+    final String dateString =
+        "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+    final String fromDate = "$dateString 09:15";
+    final String toDate = "$dateString 15:30";
+
+    // Interval for the mini-chart. "FIVE_MINUTE" gives a good number of points
+    // for a 1-day chart.
+    const String interval = "ONE_HOUR";
+
+    bool didUpdate = false;
+
+    for (var instrument in instrumentsToFetch) {
+      try {
+        // This 'fetchCandleData' method must be created in your AngelOneApiService
+        final List<dynamic>? candleList = await _apiService.fetchCandleData(
+          exchange: instrument.exchSeg,
+          symbolToken: instrument.token,
+          interval: interval,
+          fromDate: fromDate,
+          toDate: toDate,
+        );
+
+        if (candleList != null && candleList.isNotEmpty) {
+          // AngelOne API returns: [timestamp, open, high, low, close, volume]
+          // We just want the 'close' price (index 4) for the line chart.
+          final List<double> chartPoints = candleList.map((candle) {
+            if (candle is List && candle.length > 4) {
+              // Index 4 is the 'close' price
+              return num.tryParse(candle[4].toString())?.toDouble() ?? 0.0;
+            }
+            return 0.0;
+          }).toList();
+
+          // Save the real chart data to the instrument
+          instrument.chartData = chartPoints;
+          didUpdate = true;
+        }
+      } catch (e) {
+        AppLog.e("❌ Failed to fetch chart data for ${instrument.symbol}: $e");
+        // Don't block other calls, just log the error and continue
+      }
+    }
+
+    // Notify listeners only if we actually updated any chart data
+    if (didUpdate) {
+      notifyListeners();
+    }
+  }
+  // -----------------------------------------------------------------
+  // ✨ END OF NEW FUNCTION ✨
+  // -----------------------------------------------------------------
 
   Map<String, dynamic> _sanitizeLiveData(Map<String, dynamic> rawData) {
     final sanitizedData = Map<String, dynamic>.from(rawData);

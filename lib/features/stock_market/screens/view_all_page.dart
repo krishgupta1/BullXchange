@@ -89,6 +89,7 @@ class _ViewAllPageState extends State<ViewAllPage> {
 
     final provider = Provider.of<InstrumentProvider>(context, listen: false);
     provider.fetchLiveDataFor(moreItems);
+    provider.fetchChartDataFor(moreItems);
 
     setState(() => isLoadingMore = false);
   }
