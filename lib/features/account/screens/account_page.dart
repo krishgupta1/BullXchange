@@ -5,6 +5,8 @@ import 'package:cloud_firestore/cloud_firestore.dart'; // For StreamBuilder
 import 'package:firebase_auth/firebase_auth.dart'; // To get the current user
 // import 'package:intl/intl.dart'; // Uncomment for advanced currency formatting
 
+// ⭐️ IMPORT THE EDIT PROFILE PAGE
+
 class AccountScreen extends StatelessWidget {
   const AccountScreen({super.key});
 
@@ -74,6 +76,7 @@ class AccountScreen extends StatelessWidget {
                   const SizedBox(height: 24),
                   _buildWalletCard(balance),
                   const SizedBox(height: 16),
+                  // ⭐️ Pass context for navigation
                   _buildReferralCard(),
                   const SizedBox(height: 24),
                   //
@@ -306,7 +309,7 @@ class AccountScreen extends StatelessWidget {
                 ),
                 SizedBox(height: 2),
                 Text(
-                  'Share with your friends and get rewards', // Simpler text
+                  'Share your friend get \$20 of free stocks',
                   style: TextStyle(fontSize: 13, color: Color(0xFF555555)),
                   overflow: TextOverflow.ellipsis,
                 ),

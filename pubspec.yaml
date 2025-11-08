@@ -35,6 +35,7 @@ dependencies:
   path_provider: ^2.1.5
   webview_flutter: ^4.13.0
   intl: ^0.20.2
+  dotted_border: ^2.1.0
 
 dev_dependencies:
   flutter_test:
@@ -48,7 +49,6 @@ flutter:
     - .env
     - assets/fonts/
     - assets/images/
-    - assets/images/splashBottom.png
     - assets/icon/
     - assets/BullXchange Design-PNG/
     - assets/OpenAPIScripMaster.json
