@@ -1,3 +1,4 @@
+import 'package:bullxchange/features/account/screens/account_page.dart';
 import 'package:bullxchange/features/f&o/screens/Future_option_page.dart';
 import 'package:bullxchange/features/home/widgets/bottom_navigation.dart';
 import 'package:bullxchange/features/stock_market/screens/stock_page.dart';
@@ -27,7 +28,7 @@ class _HomePageState extends State<HomePage> {
     const FutureOptionPage(),
     const Center(child: Text('Portfolio Page', style: TextStyle(fontSize: 24))),
     const Center(child: Text('AI Stats Page', style: TextStyle(fontSize: 24))),
-    const Center(child: Text('Account Page', style: TextStyle(fontSize: 24))),
+    const AccountScreen(),
   ];
 
   void _onItemTapped(int index) {
