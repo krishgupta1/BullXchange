@@ -1,4 +1,6 @@
 import 'package:bullxchange/features/account/screens/edit_profile_page.dart';
+import 'package:bullxchange/features/account/screens/faq_page.dart';
+import 'package:bullxchange/features/account/screens/referralcodepage.dart';
 import 'package:bullxchange/features/account/screens/settings_page.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // For StreamBuilder
@@ -77,7 +79,18 @@ class AccountScreen extends StatelessWidget {
                   _buildWalletCard(balance),
                   const SizedBox(height: 16),
                   // ⭐️ Pass context for navigation
-                  _buildReferralCard(),
+                  GestureDetector(
+                    onTap: () => {
+                      // Navigate to EditProfilePage on tap
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ReferralCodePage(),
+                        ),
+                      ),
+                    },
+                    child: _buildReferralCard(),
+                  ),
                   const SizedBox(height: 24),
                   //
                   // --- ⭐️ FIX WAS HERE ---
@@ -354,7 +367,12 @@ class AccountScreen extends StatelessWidget {
             icon: Icons.quiz,
             color: const Color(0xFFF5A623),
             text: 'FAQ',
-            onTap: () {},
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const HelpCenterPage()),
+              );
+            },
           ),
         ],
       ),

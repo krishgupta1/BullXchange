@@ -1,3 +1,5 @@
+import 'package:bullxchange/features/account/screens/privacy_policy_page.dart';
+import 'package:bullxchange/features/account/screens/terms_and_conditions_page.dart';
 import 'package:bullxchange/features/auth/screens/reset_password_page.dart';
 import 'package:bullxchange/features/auth/screens/setup_pin_screen.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +15,11 @@ class _SettingsPageState extends State<SettingsPage> {
   // This state is for the Notification Switch
   bool _notificationsEnabled = true;
 
+  // --- ⭐️ ADDED COLORS TO MATCH IMAGE ---
+  static const Color kPrimaryBlue = Color(0xFF072A6C); // Dark blue from image
+  static const Color kPrimaryPink = Colors.pink; // Pink/Purple from image
+  static const Color kSecondaryGrey = Colors.grey;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -21,14 +28,20 @@ class _SettingsPageState extends State<SettingsPage> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
+          // --- MODIFIED --- (Changed color)
+          icon: const Icon(Icons.arrow_back_ios_new, color: kPrimaryPink),
           onPressed: () {
             Navigator.of(context).pop();
           },
         ),
         title: const Text(
           'Settings',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          // --- MODIFIED --- (Changed color and size)
+          style: TextStyle(
+            color: kPrimaryBlue,
+            fontWeight: FontWeight.bold,
+            fontSize: 24,
+          ),
         ),
         centerTitle: true,
       ),
@@ -45,10 +58,11 @@ class _SettingsPageState extends State<SettingsPage> {
                     alignment: Alignment.centerLeft,
                     child: Text(
                       'General',
+                      // --- MODIFIED --- (Changed color and weight)
                       style: TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey,
+                        fontWeight: FontWeight.w600, // Less bold than titles
+                        color: kSecondaryGrey,
                       ),
                     ),
                   ),
@@ -72,7 +86,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         });
                         // Implement logic to update notification settings
                       },
-                      activeColor: Colors.pink, // Matches image's switch color
+                      activeColor: kPrimaryPink, // Matches image's vibe
                     ),
                   ),
                   //
@@ -92,10 +106,11 @@ class _SettingsPageState extends State<SettingsPage> {
                     alignment: Alignment.centerLeft,
                     child: Text(
                       'Security',
+                      // --- MODIFIED --- (Matched 'General' style)
                       style: TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey,
+                        fontWeight: FontWeight.w600,
+                        color: kSecondaryGrey,
                       ),
                     ),
                   ),
@@ -129,10 +144,11 @@ class _SettingsPageState extends State<SettingsPage> {
                     alignment: Alignment.centerLeft,
                     child: Text(
                       'Privacy & Legal',
+                      // --- MODIFIED --- (Matched 'General' style)
                       style: TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey,
+                        fontWeight: FontWeight.w600,
+                        color: kSecondaryGrey,
                       ),
                     ),
                   ),
@@ -140,14 +156,24 @@ class _SettingsPageState extends State<SettingsPage> {
                   _buildSettingsTile(
                     'Privacy Policy',
                     onTap: () {
-                      // Handle privacy policy tap
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const PrivacyPolicyPage(),
+                        ),
+                      );
                     },
                     subtitle: 'Choose what data you share with us',
                   ),
                   _buildSettingsTile(
                     'Legal',
                     onTap: () {
-                      // Handle legal tap
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const TermsAndConditionsPage(),
+                        ),
+                      );
                     },
                   ),
                 ],
@@ -187,7 +213,11 @@ class _SettingsPageState extends State<SettingsPage> {
             // Updated footer text
             const Text(
               '© 2025 BullXchange • Ver 1.0',
-              style: TextStyle(color: Colors.grey, fontSize: 13),
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             const SizedBox(height: 20),
           ],
@@ -209,17 +239,26 @@ class _SettingsPageState extends State<SettingsPage> {
           contentPadding: EdgeInsets.zero,
           title: Text(
             title,
-            style: const TextStyle(fontSize: 16, color: Colors.black87),
+            // --- MODIFIED --- (Applied bold font, size, and primary blue color)
+            style: const TextStyle(
+              fontSize: 18, // Made larger to match image
+              color: kPrimaryBlue,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           subtitle: subtitle != null
               ? Text(
                   subtitle,
-                  style: const TextStyle(fontSize: 13, color: Colors.grey),
+                  style: const TextStyle(fontSize: 13, color: kSecondaryGrey),
                 )
               : null,
           trailing:
               trailing ??
-              const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 18),
+              const Icon(
+                Icons.arrow_forward_ios,
+                color: kSecondaryGrey,
+                size: 18,
+              ),
           onTap: onTap,
         ),
       ],

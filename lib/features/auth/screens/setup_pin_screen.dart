@@ -76,7 +76,26 @@ class _SetupPinScreenState extends State<SetupPinScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-              SizedBox(width: 40, height: 40),
+              // --- UPDATED BACK BUTTON ---
+              SizedBox(
+                width: 40,
+                height: 40,
+                child: Center(
+                  child: IconButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    padding: EdgeInsets.zero,
+                    alignment: Alignment.center,
+                    icon: const Icon(
+                      Icons.arrow_back_ios, // From your example
+                      color: Color(0xFF0F2B46), // Matching screen theme
+                      size: 18, // From your example
+                    ),
+                  ),
+                ),
+              ),
+              // --- END OF CHANGE ---
               const SizedBox(height: 24),
               Center(
                 child: Container(
@@ -120,7 +139,6 @@ class _SetupPinScreenState extends State<SetupPinScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              // Stack to overlay the eye icon ---
               Center(
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -138,7 +156,6 @@ class _SetupPinScreenState extends State<SetupPinScreen> {
                         onCompleted: (_) => _submit(),
                       ),
                     ),
-                    // Positioned widget can be used for more precise control if needed
                     Padding(
                       padding: const EdgeInsets.only(left: 8.0),
                       child: IconButton(

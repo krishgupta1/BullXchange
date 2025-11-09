@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:bullxchange/features/auth/screens/login_page.dart';
-import 'package:bullxchange/features/auth/navigation/route_transitions.dart';
 
 class ResetPasswordPage extends StatefulWidget {
   const ResetPasswordPage({super.key});
@@ -76,11 +74,10 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 height: 40,
                 child: Center(
                   child: IconButton(
+                    // --- MODIFIED ---
+                    // Changed from pushReplacement to pop to go back to the previous screen.
                     onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        slideLeftToRight(const LoginPage()),
-                      );
+                      Navigator.pop(context);
                     },
                     padding: EdgeInsets.zero,
                     alignment: Alignment.center,
