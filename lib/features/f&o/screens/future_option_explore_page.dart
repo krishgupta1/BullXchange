@@ -1,30 +1,39 @@
-import 'package:bullxchange/features/f&o/screens/option_chain_page.dart';
-import 'package:bullxchange/features/f&o/widgets/fno_card.dart';
-import 'package:bullxchange/models/instrument_model.dart';
-import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:bullxchange/features/f&o/screens/option_chain_page.dart';
+import 'package:bullxchange/models/instrument_model.dart';
+import 'package:bullxchange/provider/instrument_provider.dart';
+
+// --- ⭐️ 1. 'SmartLogo' WIDGET IMPORT KIYA (LOGO KE LIYE) ---
+import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
 
 class FutureOptionExplorePage extends StatelessWidget {
   const FutureOptionExplorePage({super.key});
+
+  // Helper to get the correct option chain symbol
+  // (Yeh bug fix waise hi hai)
+  String _getOptionChainSymbol(Instrument instrument) {
+    final name = instrument.name.toUpperCase();
+
+    if (name.contains('NIFTY 50')) return 'NIFTY';
+    if (name.contains('NIFTY BANK')) return 'BANKNIFTY';
+    if (name.contains('FIN SERVICE')) return 'FINNIFTY';
+    if (name.contains('MIDCAP')) return 'MIDCPNIFTY';
+    if (name.contains('SENSEX')) return 'SENSEX';
+    if (name.contains('BANKEX')) return 'BANKEX';
+
+    return instrument.symbol.replaceAll('-INDEX', '');
+  }
 
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 20), // Add some top padding
-          // --- 1. Top Traded Section (Spot Indices) ---
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: _buildSectionHeader(context, "Top Traded"),
-          ),
-          const SizedBox(height: 10),
-
-          // This Consumer now builds a vertical list, just like Top Gainers
+          _buildSectionHeader(context, "Indices"),
           Consumer<InstrumentProvider>(
             builder: (context, instProvider, child) {
-              // Get all 6 spot indices
               final List<Instrument?> allIndices = [
                 instProvider.nifty50,
                 instProvider.bankNifty,
@@ -34,7 +43,6 @@ class FutureOptionExplorePage extends StatelessWidget {
                 instProvider.bankex,
               ];
 
-              // Filter out any empty/loading instruments
               final List<Instrument> validIndices = allIndices
                   .whereType<Instrument>()
                   .where((inst) => inst.token.isNotEmpty)
@@ -47,57 +55,138 @@ class FutureOptionExplorePage extends StatelessWidget {
                 );
               }
 
-              // Use the _buildStockList helper (copied from ExplorePage)
-              return _buildStockList(validIndices, context);
+              // --- ⭐️ 2. LAYOUT: 'GridView' WAPAS AA GAYA ---
+              return GridView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2, // 2 cards per row
+                  childAspectRatio: 1.1, // Card ki height/width
+                  crossAxisSpacing: 12, // Beech mein space
+                  mainAxisSpacing: 12, // Beech mein space
+                ),
+                itemCount: validIndices.length,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemBuilder: (context, index) {
+                  final instrument = validIndices[index];
+                  final optionSymbol = _getOptionChainSymbol(instrument);
+
+                  // --- ⭐️ 3. CARD: WHITE CARD '_IndexGridCard' USE HO RAHA HAI ---
+                  return _IndexGridCard(
+                    instrument: instrument,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            OptionChainPage(symbol: optionSymbol),
+                      ),
+                    ),
+                  );
+                },
+              );
             },
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 100), // Bottom padding
         ],
       ),
     );
   }
 
-  // ---
-  // --- ALL HELPERS BELOW ARE COPIED/ADAPTED FROM EXPLOREPAGE.DART ---
-  // ---
-
+  // Header (Waise hi hai)
   Widget _buildSectionHeader(BuildContext context, String title) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16.0, 20.0, 16.0, 16.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// --- ⭐️ 4. WHITE CARD WIDGET 'Modern Touch' KE SAATH ---
+class _IndexGridCard extends StatelessWidget {
+  final Instrument instrument;
+  final VoidCallback onTap;
+
+  const _IndexGridCard({required this.instrument, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final ltp = (instrument.liveData['ltp'] as num?)?.toDouble() ?? 0.0;
+    final change = (instrument.liveData['change'] as num?)?.toDouble() ?? 0.0;
+    final changePercent =
+        (instrument.liveData['change_percent'] as num?)?.toDouble() ?? 0.0;
+
+    final color = change >= 0 ? Colors.green : Colors.red;
+    final sign = change >= 0 ? '+' : '';
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          // --- Background: White (ya dark mode mein dark) ---
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(12),
+          // --- Modern Touch: Halka border ---
+          border: Border.all(color: Colors.grey.withOpacity(0.2)),
+          // --- Modern Touch: Halka shadow ---
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        // No "View all" button needed here
-      ],
-    );
-  }
-
-  // This is the helper that creates the vertical list
-  Widget _buildStockList(List<Instrument> topStocks, BuildContext context) {
-    return Column(
-      children: topStocks
-          .map((instrument) => _buildStockItem(instrument, context))
-          .toList(),
-    );
-  }
-
-  // This is the helper that creates the row (Logo, Name, Chart, Price)
-  Widget _buildStockItem(Instrument instrument, BuildContext context) {
-    return FnOCard(
-      instrument: instrument,
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const OptionChainPage(symbol: 'NIFTY'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // --- Logo 'SmartLogo' se aa raha hai ---
+                SmartLogo(instrument: instrument, radius: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    instrument.name,
+                    // --- Text Color: Default (black in light mode) ---
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const Spacer(),
+            Text(
+              ltp.toStringAsFixed(2),
+              // --- Text Color: Default (black in light mode) ---
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '$sign${change.toStringAsFixed(2)} ($sign${changePercent.toStringAsFixed(2)}%)',
+              style: TextStyle(
+                color: color, // Yeh green/red rahega
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ),
-      fontSize: 12,
     );
   }
-
-  // Helper to create the colored letter logo
-
-  // Helper to create the mini-chart data
 }
