@@ -1,3 +1,6 @@
+import 'dart:async'; // ⭐️ ADDED THIS IMPORT
+import 'package:bullxchange/features/stock_market/screens/buy_stock_page.dart';
+import 'package:bullxchange/features/stock_market/screens/sell_stock_page.dart';
 import 'package:bullxchange/models/stock_holding_model.dart';
 import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -6,10 +9,6 @@ import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
-
-// ⭐️ ADDED IMPORTS FOR NAVIGATION TARGETS
-import 'package:bullxchange/features/stock_market/screens/buy_stock_page.dart';
-import 'package:bullxchange/features/stock_market/screens/sell_stock_page.dart';
 // ---------------------------------------------------------------------------
 
 /// Holdings page with shimmer and live price updates.
@@ -20,10 +19,16 @@ class HoldingsPage extends StatefulWidget {
   State<HoldingsPage> createState() => _HoldingsPageState();
 }
 
+// -----------------------------------------------------------------
+// ⬇️ MODIFIED WIDGET: _HoldingsPageState (This is the fix)
+// -----------------------------------------------------------------
+
 class _HoldingsPageState extends State<HoldingsPage> {
   final UserService _userService = UserService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   Stream<List<StockHoldingModel>?>? _holdingsStream;
+
+  StreamSubscription<List<StockHoldingModel>?>? _holdingsSubscription;
 
   @override
   void initState() {
@@ -33,62 +38,115 @@ class _HoldingsPageState extends State<HoldingsPage> {
       _holdingsStream = _userService
           .streamUserProfile(uid)
           .map((profile) => profile?.stocks);
+
+      final instrumentProvider =
+          Provider.of<InstrumentProvider>(context, listen: false);
+
+      _holdingsSubscription = _holdingsStream?.listen((userHoldings) {
+        if (userHoldings != null && userHoldings.isNotEmpty) {
+          instrumentProvider.fetchLiveDataForHoldings(userHoldings);
+        }
+      });
     }
   }
 
+  @override
+  void dispose() {
+    _holdingsSubscription?.cancel();
+    super.dispose();
+  }
+
+List<StockHoldingModel> _aggregateHoldings(
+      List<StockHoldingModel> holdings) {
+    final Map<String, StockHoldingModel> aggregatedMap = {};
+
+    for (final holding in holdings) {
+      final symbol = holding.stockSymbol;
+      if (aggregatedMap.containsKey(symbol)) {
+        // If we already have this stock, aggregate it
+        final existingHolding = aggregatedMap[symbol]!;
+
+        // Calculate new weighted average price
+        final double existingValue =
+            existingHolding.transactionPrice * existingHolding.quantity;
+        final double newValue =
+            holding.transactionPrice * holding.quantity;
+        final int totalQuantity =
+            existingHolding.quantity + holding.quantity;
+        
+        // Avoid division by zero if quantity is 0
+        final double newAvgPrice = totalQuantity > 0 
+            ? (existingValue + newValue) / totalQuantity 
+            : 0;
+
+        // ⭐️ THIS IS THE FIX: Use copyWith instead of the constructor
+        // This copies all other fields (like buyingTime) from the first
+        // entry, and only changes the ones we care about.
+        aggregatedMap[symbol] = existingHolding.copyWith(
+          quantity: totalQuantity,
+          transactionPrice: newAvgPrice,
+        );
+
+      } else {
+        // This is the first time we've seen this stock, add it to the map
+        aggregatedMap[symbol] = holding;
+      }
+    }
+    // Return the list of aggregated values
+    return aggregatedMap.values.toList();
+  }
   @override
   Widget build(BuildContext context) {
     if (_auth.currentUser?.uid == null) {
       return const Center(child: Text("Please log in to see your holdings."));
     }
 
-    return Consumer<InstrumentProvider>(
-      builder: (context, instrumentProvider, child) {
-        return StreamBuilder<List<StockHoldingModel>?>(
-          stream: _holdingsStream,
-          builder: (context, snapshot) {
-            if (snapshot.hasError) {
-              return Center(
-                child: Text("Error fetching portfolio: ${snapshot.error}"),
-              );
-            }
+    return StreamBuilder<List<StockHoldingModel>?>(
+      stream: _holdingsStream,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(
+            child: Text("Error fetching portfolio: ${snapshot.error}"),
+          );
+        }
 
-            final userHoldings = snapshot.data;
-            final isLoading =
-                snapshot.connectionState == ConnectionState.waiting;
+        final userHoldings = snapshot.data;
+        final isLoading = snapshot.connectionState == ConnectionState.waiting;
 
-            if (!isLoading && userHoldings != null && userHoldings.isNotEmpty) {
-              instrumentProvider.fetchLiveDataForHoldings(userHoldings);
-            }
+        // ⭐️ ADDED: Call the aggregation function here
+        final List<StockHoldingModel> aggregatedHoldings =
+            (userHoldings == null || userHoldings.isEmpty)
+                ? []
+                : _aggregateHoldings(userHoldings);
 
-            return SingleChildScrollView(
-              child: Column(
-                children: [
-                  PortfolioSummaryCard(
-                    holdings: userHoldings,
-                    isLoading: isLoading,
-                  ),
-                  const SizedBox(height: 16),
-                  if (isLoading)
-                    const HoldingsListSkeleton()
-                  else if (userHoldings == null || userHoldings.isEmpty)
-                    const Center(
-                      child: Padding(
-                        padding: EdgeInsets.only(top: 48.0),
-                        child: HoldingsEmptyState(),
-                      ),
-                    )
-                  else
-                    ...userHoldings.map(
-                      (holding) => PortfolioStockItem(
-                        key: ValueKey(holding.stockSymbol),
-                        holding: holding,
-                      ),
-                    ),
-                ],
+        return SingleChildScrollView(
+          child: Column(
+            children: [
+              PortfolioSummaryCard(
+                // ⭐️ CHANGED: Pass aggregated holdings to the summary
+                holdings: aggregatedHoldings,
+                isLoading: isLoading,
               ),
-            );
-          },
+              const SizedBox(height: 16),
+              if (isLoading)
+                const HoldingsListSkeleton()
+              else if (aggregatedHoldings.isEmpty) // ⭐️ CHANGED
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.only(top: 48.0),
+                    child: HoldingsEmptyState(),
+                  ),
+                )
+              else
+                // ⭐️ CHANGED: Map over the aggregated list
+                ...aggregatedHoldings.map(
+                  (holding) => PortfolioStockItem(
+                    key: ValueKey(holding.stockSymbol), // Keys are now unique
+                    holding: holding,
+                  ),
+                ),
+            ],
+          ),
         );
       },
     );

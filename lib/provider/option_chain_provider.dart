@@ -1,128 +1,169 @@
-import 'package:bullxchange/api/nse_api_service.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:bullxchange/utils/logger.dart'; // Your Logger
+import 'package:firebase_database/firebase_database.dart';
+import 'dart:math' as math; // Used for maxOi
 
-// ⭐️ STEP 1: DEFINE THE MODEL
-// (This class is unchanged)
+// Model for a single row in the chain
 class OptionChainRow {
-  final dynamic strikePrice;
-  final Map<String, dynamic>? ce; // 'ce' (lowercase) for your UI
-  final Map<String, dynamic>? pe; // 'pe' (lowercase) for your UI
+  final double strikePrice;
+  final Map<String, dynamic>? ce; // Call Option data
+  final Map<String, dynamic>? pe; // Put Option data
 
   OptionChainRow({required this.strikePrice, this.ce, this.pe});
 
-  /// This "factory" constructor is the translator.
-  factory OptionChainRow.fromMap(Map<String, dynamic> map) {
+  // Factory to parse the clean JSON from your backend
+  factory OptionChainRow.fromJson(Map<dynamic, dynamic> json) {
     return OptionChainRow(
-      strikePrice: map['strikePrice'],
-      ce: map['CE'] as Map<String, dynamic>?,
-      pe: map['PE'] as Map<String, dynamic>?,
+      strikePrice: (json['strikePrice'] as num).toDouble(),
+      ce: json['ce'] != null ? Map<String, dynamic>.from(json['ce']) : null,
+      pe: json['pe'] != null ? Map<String, dynamic>.from(json['pe']) : null,
     );
   }
 }
 
-// -----------------------------------------------------------------
+class OptionChainProvider with ChangeNotifier {
+  final String symbol; // e.g., "Nifty 50"
+  late DatabaseReference _dbRef;
+  StreamSubscription<DatabaseEvent>? _dbSubscription;
 
-// ⭐️ STEP 2: CREATE THE PROVIDER
-class OptionChainProvider extends ChangeNotifier {
-  final NseApiService _apiService = NseApiService();
-  final String symbol;
-
-  // --- State Variables ---
-  bool _isLoading = false;
-  String? _error;
-  List<OptionChainRow> _rows = [];
-  double? _underlyingLtp; // ⭐️ To store the LTP
-  int? _atmIndex; // ⭐️ To store the index of the ATM strike
-
-  // --- Getters for the UI ---
+  bool _isLoading = true;
   bool get isLoading => _isLoading;
+
+  String? _error;
   String? get error => _error;
+
+  double? _underlyingLtp;
+  double? get underlyingLtp => _underlyingLtp;
+
+  double? _underlyingLtpChange;
+  double? get underlyingLtpChange => _underlyingLtpChange;
+
+  double? _underlyingLtpPercent;
+  double? get underlyingLtpPercent => _underlyingLtpPercent;
+
+  // ✨ NEW FIELDS FOR APP BAR
+  String _expiry = '';
+  String get expiry => _expiry;
+  String _currency = '₹';
+  String get currency => _currency;
+  // ✨ --- ✨
+
+  List<OptionChainRow> _rows = [];
   List<OptionChainRow> get rows => _rows;
-  double? get underlyingLtp => _underlyingLtp; // ⭐️ Getter for LTP
-  int? get atmIndex => _atmIndex; // ⭐️ Getter for ATM index
+
+  int? _atmIndex;
+  int? get atmIndex => _atmIndex;
+
+  // ✨ NEW: This is the highest OI on the screen,
+  // used for scaling the bar graphs.
+  double _maxOi = 0;
+  double get maxOi => _maxOi;
 
   OptionChainProvider({required this.symbol}) {
-    fetchOptionChain(); // Automatically fetch data when the provider is created
+    _dbRef = FirebaseDatabase.instance.ref("option_chain/$symbol");
+    _listenToData();
   }
 
-  /// Fetches and parses the option chain data
-  Future<void> fetchOptionChain() async {
+  void _listenToData() {
     _isLoading = true;
     _error = null;
-    _atmIndex = null; // Reset on fetch
+    notifyListeners();
 
-    if (_rows.isEmpty) {
-      notifyListeners();
-    }
+    _dbSubscription = _dbRef.onValue.listen(
+      (DatabaseEvent event) {
+        final data = event.snapshot.value;
 
-    try {
-      // 1. Call your API Service
-      final rawData = await _apiService.fetchOptionChain(symbol);
+        if (data != null && data is Map) {
+          try {
+            final mapData = data;
 
-      if (rawData == null) {
-        _error = "Failed to fetch data. API returned null.";
-      } else {
-        // ⭐️ 2. Get the LTP
-        // The underlying value is in 'records'
-        _underlyingLtp = (rawData['records']?['underlyingValue'] as num?)
-            ?.toDouble();
+            // ✨ NEW: Parse all the new data from the backend
+            _underlyingLtp = (mapData['underlyingLtp'] as num?)?.toDouble();
+            _underlyingLtpChange = (mapData['underlyingLtpChange'] as num?)
+                ?.toDouble();
+            _underlyingLtpPercent = (mapData['underlyingLtpPercent'] as num?)
+                ?.toDouble();
+            _expiry = mapData['expiry'] as String? ?? '';
+            _currency = mapData['currency'] as String? ?? '₹';
+            // ✨ --- ✨
 
-        // 3. Get the list of data
-        final List<dynamic>? dataList = rawData['filtered']?['data'];
+            if (mapData['rows'] != null) {
+              final List<dynamic> rawRows = mapData['rows'] as List;
+              _rows = rawRows
+                  .map(
+                    (row) =>
+                        OptionChainRow.fromJson(row as Map<dynamic, dynamic>),
+                  )
+                  .toList();
+            }
 
-        if (dataList == null || dataList.isEmpty) {
-          _error = "No option chain data found for $symbol.";
-          _rows = [];
+            _calculateAtmAndMaxOi(); // ✨ NEW: Call new helper
+            _isLoading = false;
+            _error = null;
+          } catch (e) {
+            _error = "Error parsing data. Is the backend running? \n($e)";
+            _isLoading = false;
+          }
         } else {
-          // 4. Transform the raw data
-          _rows = dataList
-              .map(
-                (item) => OptionChainRow.fromMap(item as Map<String, dynamic>),
-              )
-              .toList();
-          AppLog.i(
-            "✅ Successfully parsed ${_rows.length} LIVE option chain rows.",
-          );
-
-          // ⭐️ 5. Find the ATM (At-The-Money) Index
-          _findAtmIndex();
+          _error =
+              "No option chain data found for '$symbol'. (Waiting for backend...)";
+          _isLoading = false;
         }
-      }
-    } catch (e, st) {
-      AppLog.e("💥 Error in OptionChainProvider: $e\n$st");
-      _error = "An unexpected error occurred. Please try again.";
-      _rows = []; // Clear data on error
-    } finally {
-      _isLoading = false;
-      notifyListeners(); // Tell the UI to rebuild with the new data (or error)
-    }
+        notifyListeners(); // Tell the UI to rebuild
+      },
+      onError: (Object o) {
+        _error = "Database connection error: $o";
+        _isLoading = false;
+        notifyListeners();
+      },
+    );
   }
 
-  /// ⭐️ Helper function to find the index of the strike
-  /// just below the underlying LTP.
-  void _findAtmIndex() {
-    if (_underlyingLtp == null || _rows.isEmpty) {
+  // ✨ NEW: This helper now finds both ATM and Max OI
+  void _calculateAtmAndMaxOi() {
+    if (_rows.isEmpty) {
       _atmIndex = null;
+      _maxOi = 0;
       return;
     }
 
-    // Find the index of the first strike price GREATER than or EQUAL to the LTP
-    int firstOtmIndex = _rows.indexWhere(
-      (row) => (row.strikePrice as num) >= _underlyingLtp!,
-    );
+    double maxOiFound = 0;
+    int foundIndex = -1; // Default to -1 (not found)
 
-    if (firstOtmIndex == 0) {
-      // If the first strike is already >= LTP, highlight it
-      _atmIndex = 0;
-    } else if (firstOtmIndex > 0) {
-      // This is the "Out of the Money" (OTM) strike.
-      // We want to highlight the one just BEFORE it (the ATM strike).
-      _atmIndex = firstOtmIndex - 1;
-    } else {
-      // This means all strikes are < LTP (e.g., deep in the money)
-      // Highlight the last one
-      _atmIndex = _rows.length - 1;
+    for (int i = 0; i < _rows.length; i++) {
+      final row = _rows[i];
+
+      // 1. Find Max OI
+      final double ceOi = (row.ce?['openInterest'] as num?)?.toDouble() ?? 0;
+      final double peOi = (row.pe?['openInterest'] as num?)?.toDouble() ?? 0;
+      maxOiFound = math.max(maxOiFound, ceOi);
+      maxOiFound = math.max(maxOiFound, peOi);
+
+      // 2. Find ATM Index
+      // This is now the index of the strike *just below* the LTP
+      if (_underlyingLtp != null) {
+        if (_rows[i].strikePrice < _underlyingLtp!) {
+          // Keep updating the index as long as the strike is below the LTP
+          foundIndex = i;
+        }
+      }
     }
+
+    _atmIndex = foundIndex;
+    _maxOi = maxOiFound;
+  }
+
+  Future<void> fetchOptionChain() async {
+    _isLoading = true;
+    notifyListeners();
+    await Future.delayed(const Duration(milliseconds: 500));
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _dbSubscription?.cancel();
+    super.dispose();
   }
 }

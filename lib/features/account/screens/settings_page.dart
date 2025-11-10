@@ -72,7 +72,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         });
                         // Implement logic to update notification settings
                       },
-                      activeColor: Colors.pink, // Matches image's switch color
+                      activeThumbColor: Colors.pink, // Matches image's switch color
                     ),
                   ),
                   //

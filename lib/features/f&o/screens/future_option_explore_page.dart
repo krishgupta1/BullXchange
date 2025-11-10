@@ -90,7 +90,8 @@ class FutureOptionExplorePage extends StatelessWidget {
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => const OptionChainPage(symbol: 'NIFTY'),
+          // ✨ FIX: Pass the symbol from the instrument that was tapped
+          builder: (context) => OptionChainPage(symbol: instrument.symbol),
         ),
       ),
       fontSize: 12,

@@ -278,23 +278,23 @@ class _StockPageState extends State<StockPage>
                         children: [
                           SingleChildScrollView(
                             physics: const BouncingScrollPhysics(),
-                            child: ExplorePage(),
+                            child: const ExplorePage(),
                           ),
                           SingleChildScrollView(
                             physics: const BouncingScrollPhysics(),
-                            child: HoldingsPage(),
+                            child: const HoldingsPage(),
                           ),
                           SingleChildScrollView(
                             physics: const BouncingScrollPhysics(),
-                            child: PositionPage(),
+                            child: const PositionPage(),
                           ),
                           SingleChildScrollView(
                             physics: const BouncingScrollPhysics(),
-                            child: OrderPage(),
+                            child: const OrderPage(),
                           ),
                           SingleChildScrollView(
                             physics: const BouncingScrollPhysics(),
-                            child: WatchListPage(),
+                            child: const WatchListPage(),
                           ),
                         ],
                       ),
