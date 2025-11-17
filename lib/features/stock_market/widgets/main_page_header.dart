@@ -7,6 +7,7 @@ class MainPageHeader extends StatelessWidget {
   final String defaultUserName;
   final String welcomeMessage;
   final List<Widget> actions;
+  final VoidCallback? onProfileTap; // <-- ⭐️ 1. ADDED THIS CALLBACK
 
   const MainPageHeader({
     super.key,
@@ -14,16 +15,27 @@ class MainPageHeader extends StatelessWidget {
     this.defaultUserName = 'User', // A sensible overall default
     required this.welcomeMessage,
     this.actions = const [], // Default to an empty list
+    this.onProfileTap, // <-- ⭐️ 2. ADDED TO CONSTRUCTOR
   });
 
   @override
   Widget build(BuildContext context) {
+    // --- ⭐️ 3. GET THEME COLORS ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Row(
       children: [
-        const CircleAvatar(
-          radius: 24,
-          backgroundColor: Color(0xFFEAE2FF),
-          child: Icon(Icons.person, color: Color(0xFF7A4DFF), size: 28),
+        // --- ⭐️ 4. WRAPPED AVATAR IN GESTUREDETECTOR ---
+        GestureDetector(
+          onTap: onProfileTap, // <-- 5. USED THE CALLBACK
+          child: CircleAvatar(
+            radius: 24,
+            // --- ⭐️ 6. MADE COLORS THEME-AWARE ---
+            backgroundColor: colorScheme.primary.withOpacity(0.1),
+            child: Icon(Icons.person, color: colorScheme.primary, size: 28),
+          ),
         ),
         const SizedBox(width: 12),
         Column(
@@ -31,12 +43,21 @@ class MainPageHeader extends StatelessWidget {
           children: [
             Text(
               'Hi, ${userName ?? defaultUserName}!',
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                // --- ⭐️ 7. MADE TEXT THEME-AWARE ---
+                color: colorScheme.onSurface,
+              ),
             ),
             const SizedBox(height: 2),
             Text(
               welcomeMessage,
-              style: const TextStyle(fontSize: 14, color: Colors.grey),
+              style: TextStyle(
+                fontSize: 14,
+                // --- ⭐️ 8. MADE TEXT THEME-AWARE ---
+                color: textTheme.bodySmall?.color,
+              ),
             ),
           ],
         ),

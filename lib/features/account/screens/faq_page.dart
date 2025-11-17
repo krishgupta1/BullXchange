@@ -1,22 +1,31 @@
 import 'package:flutter/material.dart';
 
-class HelpCenterPage extends StatefulWidget {
-  const HelpCenterPage({super.key});
+// --- ⭐️ FIX: Class ka naam file se match kiya ---
+class FaqPage extends StatefulWidget {
+  const FaqPage({super.key});
 
   @override
-  State<HelpCenterPage> createState() => _HelpCenterPageState();
+  State<FaqPage> createState() => _FaqPageState();
 }
 
-class _HelpCenterPageState extends State<HelpCenterPage> {
+// --- ⭐️ FIX: Class ka naam file se match kiya ---
+class _FaqPageState extends State<FaqPage> {
   @override
   Widget build(BuildContext context) {
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Scaffold(
-      backgroundColor: Colors.white, // Ensure the background is white
+      // --- ⭐️ MODIFIED: Theme background color ---
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
+        // --- ⭐️ MODIFIED: Theme app bar color ---
+        backgroundColor: theme.appBarTheme.backgroundColor,
+        elevation: theme.appBarTheme.elevation,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
+          icon: Icon(Icons.arrow_back_ios_new, color: colorScheme.secondary),
           onPressed: () {
             if (Navigator.canPop(context)) {
               Navigator.pop(context);
@@ -30,21 +39,21 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Updated: Top Image/Icon
+              // Top Image/Icon
               Center(
                 child: SizedBox(
                   width: 150,
                   height: 150,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.grey[100], // Light grey background
+                      // --- ⭐️ MODIFIED: Theme surface color ---
+                      color: colorScheme.surface,
                       shape: BoxShape.circle,
                     ),
                     child: Center(
-                      // Replace this with your actual image asset
                       child: Image.asset(
-                        'assets/images/FAQ.png', // <-- Make sure this path is correct
-                        height: 70, // Adjust size as needed
+                        'assets/images/FAQ.png',
+                        height: 70,
                         width: 70,
                         fit: BoxFit.contain,
                       ),
@@ -60,28 +69,32 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
                   'How can we help you?',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                    // --- ⭐️ MODIFIED: Theme text color ---
+                    color: colorScheme.onSurface,
                   ),
                 ),
               ),
               const SizedBox(height: 20),
 
-              // Updated: Search Bar
+              // Search Bar
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
+                  // --- ⭐️ MODIFIED: Theme surface color ---
+                  color: colorScheme.surface,
                   borderRadius: BorderRadius.circular(12.0),
                 ),
-                child: const TextField(
+                child: TextField(
                   decoration: InputDecoration(
                     hintText: 'Search topics or questions...',
-                    hintStyle: TextStyle(color: Colors.grey),
+                    // --- ⭐️ MODIFIED: Theme hint color ---
+                    hintStyle: TextStyle(color: textTheme.bodySmall?.color),
                     prefixIcon: Icon(
                       Icons.search,
-                      color: Colors.grey,
-                    ), // Search icon as prefix
+                      // --- ⭐️ MODIFIED: Theme hint color ---
+                      color: textTheme.bodySmall?.color,
+                    ),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(vertical: 16.0),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 16.0),
                   ),
                 ),
               ),
@@ -89,32 +102,47 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
 
               // Horizontal Topic Cards
               SizedBox(
-                height: 120, // Maintain a fixed height for the cards
+                height: 120,
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   children: [
                     _buildTopicCard(
+                      context, // ⭐️ Pass context
                       icon: Icons.notifications_none_rounded,
-                      text:
-                          'Questions about\nGetting Started', // Text adjusted for two lines
-                      color: const Color(0xFFF0F5FF), // Light blue background
-                      iconColor: const Color(0xFF5B71DA), // Darker blue icon
-                    ),
-                    const SizedBox(width: 12), // Space between cards
-                    _buildTopicCard(
-                      icon: Icons.insights_outlined, // Line graph icon
-                      text:
-                          'Questions about\nHow to Invest', // Text adjusted for two lines
-                      color: const Color(0xFFE6FFF2), // Light green background
-                      iconColor: const Color(0xFF1E8D5F), // Darker green icon
+                      text: 'Questions about\nGetting Started',
+                      // --- ⭐️ MODIFIED: Dynamic colors ---
+                      color: theme.brightness == Brightness.light
+                          ? const Color(0xFFF0F5FF)
+                          : colorScheme.primary.withOpacity(0.1),
+                      iconColor: theme.brightness == Brightness.light
+                          ? const Color(0xFF5B71DA)
+                          : colorScheme.primary,
                     ),
                     const SizedBox(width: 12),
                     _buildTopicCard(
-                      icon: Icons.credit_card_outlined, // Payment icon
-                      text:
-                          'Questions about\nPayments', // This card is off-screen as in the image
-                      color: const Color(0xFFFFF0F5), // Light pink background
-                      iconColor: const Color(0xFFDA5B71), // Darker pink icon
+                      context, // ⭐️ Pass context
+                      icon: Icons.insights_outlined,
+                      text: 'Questions about\nHow to Invest',
+                      // --- ⭐️ MODIFIED: Dynamic colors ---
+                      color: theme.brightness == Brightness.light
+                          ? const Color(0xFFE6FFF2)
+                          : Colors.green.withOpacity(0.1),
+                      iconColor: theme.brightness == Brightness.light
+                          ? const Color(0xFF1E8D5F)
+                          : Colors.green,
+                    ),
+                    const SizedBox(width: 12),
+                    _buildTopicCard(
+                      context, // ⭐️ Pass context
+                      icon: Icons.credit_card_outlined,
+                      text: 'Questions about\nPayments',
+                      // --- ⭐️ MODIFIED: Dynamic colors ---
+                      color: theme.brightness == Brightness.light
+                          ? const Color(0xFFFFF0F5)
+                          : colorScheme.secondary.withOpacity(0.1),
+                      iconColor: theme.brightness == Brightness.light
+                          ? const Color(0xFFDA5B71)
+                          : colorScheme.secondary,
                     ),
                   ],
                 ),
@@ -129,7 +157,8 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
                     'Top Questions',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                      // --- ⭐️ MODIFIED: Theme text color ---
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   TextButton(
@@ -137,7 +166,8 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
                     child: Text(
                       'View all',
                       style: TextStyle(
-                        color: Colors.pink.shade400,
+                        // --- ⭐️ MODIFIED: Theme accent color ---
+                        color: colorScheme.secondary,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -147,8 +177,8 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
               const SizedBox(height: 10),
 
               // FAQ List
-              _buildFaqList(),
-              const SizedBox(height: 20), // Padding at the bottom
+              _buildFaqList(context), // ⭐️ Pass context
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -157,33 +187,37 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
   }
 
   // Helper widget for the horizontal topic cards
-  Widget _buildTopicCard({
+  Widget _buildTopicCard(
+    BuildContext context, {
     required IconData icon,
     required String text,
     required Color color,
     required Color iconColor,
   }) {
+    // --- ⭐️ Theme se colors lo ---
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
-      width: 160, // Slightly wider cards to fit text
+      width: 160,
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        color: color,
+        color: color, // Color ab dynamic hai
         borderRadius: BorderRadius.circular(16.0),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: iconColor, size: 30),
+          Icon(icon, color: iconColor, size: 30), // Icon color dynamic hai
           const SizedBox(height: 8),
           Flexible(
-            // Ensures text wraps if it's too long
             child: Text(
               text,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 15,
-                color: Colors.black87,
-                height: 1.3, // Line height for multi-line text
+                // --- ⭐️ MODIFIED: Theme text color ---
+                color: colorScheme.onSurface,
+                height: 1.3,
               ),
             ),
           ),
@@ -193,22 +227,27 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
   }
 
   // Helper widget for the FAQ list
-  Widget _buildFaqList() {
+  Widget _buildFaqList(BuildContext context) {
+    // ⭐️ Added context
     return Column(
       children: [
         _buildExpansionTile(
+          context, // ⭐️ Pass context
           'How to create a account?',
           'Open the Tradebase app to get started and follow the steps. Tradebase doesn\'t charge a fee to create or maintain your Tradebase account.',
         ),
         _buildExpansionTile(
+          context, // ⭐️ Pass context
           'How to add a payment method?',
           'You can add a payment method by navigating to your "Wallet" or "Profile" section and selecting "Add Payment Method". We support various options including bank transfers and debit/credit cards.',
         ),
         _buildExpansionTile(
+          context, // ⭐️ Pass context
           'Is Tradebase secure?',
           'Yes, Tradebase uses industry-standard encryption and security protocols to protect your data and transactions. Your security is our top priority.',
         ),
         _buildExpansionTile(
+          context, // ⭐️ Pass context
           'What is KYC verification?',
           'KYC (Know Your Customer) verification is a mandatory process to verify your identity. This helps us comply with financial regulations and ensures a safe trading environment for everyone.',
         ),
@@ -217,38 +256,48 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
   }
 
   // Helper widget for a single FAQ item with +/- icons
-  Widget _buildExpansionTile(String title, String answer) {
+  Widget _buildExpansionTile(
+    BuildContext context,
+    String title,
+    String answer,
+  ) {
+    // ⭐️ Added context
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Theme(
-      data: ThemeData().copyWith(
-        dividerColor: Colors.transparent,
-      ), // Remove default divider
+      data: theme.copyWith(
+        dividerColor: Colors.transparent, // Theme ka divider color use kiya
+      ),
       child: ExpansionTile(
-        key: PageStorageKey(
-          title,
-        ), // Important for state management if list is long
+        key: PageStorageKey(title),
         title: Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 16,
-            color: Colors.black,
+            // --- ⭐️ MODIFIED: Theme text color ---
+            color: colorScheme.onSurface,
           ),
         ),
-        initiallyExpanded:
-            title ==
-            'How to create a account?', // Make this one expanded by default
+        initiallyExpanded: title == 'How to create a account?',
         trailing: Builder(
           builder: (context) {
-            final ExpansionTileController controller =
-                ExpansionTileController.of(context);
+            final ExpansibleController controller = ExpansibleController.of(
+              context,
+            );
             return AnimatedBuilder(
               animation: controller,
               builder: (context, child) {
                 return Icon(
                   controller.isExpanded ? Icons.remove : Icons.add,
+                  // --- ⭐️ MODIFIED: Theme colors ---
                   color: controller.isExpanded
-                      ? Colors.pink.shade400
-                      : Colors.grey.shade600,
+                      ? colorScheme
+                            .secondary // Pink
+                      : textTheme.bodySmall?.color, // Grey
                   size: 20,
                 );
               },
@@ -266,9 +315,10 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
           Text(
             answer,
             style: TextStyle(
-              color: Colors.black.withOpacity(0.7),
+              // --- ⭐️ MODIFIED: Theme text color (thoda halka) ---
+              color: colorScheme.onSurface.withOpacity(0.7),
               fontSize: 14,
-              height: 1.5, // Line height
+              height: 1.5,
             ),
           ),
         ],

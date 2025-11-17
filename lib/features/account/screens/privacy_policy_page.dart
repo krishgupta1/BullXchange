@@ -3,51 +3,55 @@ import 'package:flutter/material.dart';
 class PrivacyPolicyPage extends StatelessWidget {
   const PrivacyPolicyPage({super.key});
 
-  static const Color kPrimaryBlue = Color(0xFF072A6C);
-  static const Color kPrimaryPink = Colors.pink;
-  static const Color kSecondaryGrey = Colors.grey;
+  // --- ⭐️ REMOVED HARDCODED COLORS ---
+  // static const Color kPrimaryBlue = ...
+  // static const Color kPrimaryPink = ...
+  // static const Color kSecondaryGrey = ...
 
   @override
   Widget build(BuildContext context) {
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      // --- ⭐️ MODIFIED: Theme background color ---
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        // --- ⭐️ MODIFIED: Theme app bar colors ---
+        backgroundColor: theme.appBarTheme.backgroundColor,
         elevation: 3,
-        shadowColor: kPrimaryPink.withOpacity(0.2),
+        shadowColor: colorScheme.secondary.withOpacity(0.2),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: kPrimaryPink),
+          // --- ⭐️ MODIFIED: Theme icon color ---
+          icon: Icon(Icons.arrow_back_ios_new, color: colorScheme.secondary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Privacy Policy',
-          style: TextStyle(
-            color: kPrimaryBlue,
-            fontWeight: FontWeight.w800,
+          // --- ⭐️ MODIFIED: Theme title style ---
+          style: theme.appBarTheme.titleTextStyle?.copyWith(
             fontSize: 22,
+            fontWeight: FontWeight.w800,
           ),
         ),
         centerTitle: true,
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.white, Color(0xFFF8FAFF)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
+        // --- ⭐️ MODIFIED: Remove hardcoded gradient ---
+        // (Page background ab scaffold se aa raha hai)
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            _buildMetaHeader(),
+            // --- ⭐️ MODIFIED: Pass context ---
+            _buildMetaHeader(context),
             const SizedBox(height: 18),
-            _buildSection('💡 Overview', [
+            _buildSection(context, '💡 Overview', [
               'BullXchange is your risk-free stock market playground! 📊',
               'We let you learn, test, and practice trading — all with **virtual money**. No fear. No loss. Just skill-building. 💪',
               'Your privacy matters. Here’s how we protect your data while you grow as a trader. 🛡️',
             ]),
-            _buildSection('📥 What We Collect', [
+            _buildSection(context, '📥 What We Collect', [
               'We may collect some basic info to make your experience smooth:',
               '• 👤 Name, email, and phone number',
               '• 📈 Your simulated trades & portfolio data',
@@ -55,7 +59,7 @@ class PrivacyPolicyPage extends StatelessWidget {
               '• 🎯 Referral data (if you were invited)',
               '⚙️ All trading activity here is **virtual** — nothing involves real money.',
             ]),
-            _buildSection('🤖 How We Use Your Data', [
+            _buildSection(context, '🤖 How We Use Your Data', [
               'We use your info only to:',
               '• 🧠 Improve app performance & insights',
               '• 📊 Track your simulated portfolio',
@@ -63,37 +67,38 @@ class PrivacyPolicyPage extends StatelessWidget {
               '• 🧾 Offer AI-based tips & feedback',
               '🚫 We never sell your data. Ever.',
             ]),
-            _buildSection('🔗 Data Sharing', [
+            _buildSection(context, '🔗 Data Sharing', [
               'We only share when necessary:',
               '• 💼 With secure analytics or hosting providers',
               '• ⚖️ When required by Indian law',
               '• 🏦 With broker partners (only if YOU opt-in)',
             ]),
-            _buildSection('🧱 Security First', [
+            _buildSection(context, '🧱 Security First', [
               'We use 🔐 encryption (HTTPS), secure servers, and limited access.',
               'But remember — no internet system is 100% hack-proof. Stay smart. 🧠',
             ]),
-            _buildSection('⚙️ Your Rights', [
+            _buildSection(context, '⚙️ Your Rights', [
               'You’re always in control:',
               '• ✏️ Edit or delete your account anytime',
               '• 💬 Withdraw consent when you wish',
               '• 📧 Mail us at support@bullxchange.in for help',
             ]),
-            _buildSection('🧒 Minors', [
+            _buildSection(context, '🧒 Minors', [
               'BullXchange is built for traders **18+** only. 🚫👶',
               'We don’t knowingly collect data from minors.',
             ]),
-            _buildSection('🔁 Updates', [
+            _buildSection(context, '🔁 Updates', [
               'We keep things fresh! 💫',
               'If we change this policy, you’ll see a new “Last Updated” date above.',
             ]),
-            _buildSection('📩 Contact Us', [
+            _buildSection(context, '📩 Contact Us', [
               'Questions? Feedback? We’re all ears! 👂',
               '📧 Email: support@bullxchange.in',
               '🌐 Website: https://www.bullxchange.in',
             ]),
             const SizedBox(height: 20),
-            _buildSummary(),
+            // --- ⭐️ MODIFIED: Pass context ---
+            _buildSummary(context),
             const SizedBox(height: 60),
           ],
         ),
@@ -102,14 +107,20 @@ class PrivacyPolicyPage extends StatelessWidget {
   }
 
   // --- Meta Info Card ---
-  Widget _buildMetaHeader() {
+  Widget _buildMetaHeader(BuildContext context) {
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        // --- ⭐️ MODIFIED: Theme surface color ---
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: kPrimaryPink.withOpacity(0.15),
+            // --- ⭐️ MODIFIED: Theme shadow color ---
+            color: colorScheme.secondary.withOpacity(0.15),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -119,26 +130,37 @@ class PrivacyPolicyPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _metaLine('🗓️ Last Updated', '[Insert Date]'),
-          _metaLine('🏢 Developer', 'BullXchange Technologies Pvt. Ltd.'),
-          _metaLine('📧 Email', 'support@bullxchange.in'),
-          _metaLine('🌐 Website', 'https://www.bullxchange.in'),
+          // --- ⭐️ MODIFIED: Pass context ---
+          _metaLine(context, '🗓️ Last Updated', '[Insert Date]'),
+          _metaLine(
+            context,
+            '🏢 Developer',
+            'BullXchange Technologies Pvt. Ltd.',
+          ),
+          _metaLine(context, '📧 Email', 'support@bullxchange.in'),
+          _metaLine(context, '🌐 Website', 'https://www.bullxchange.in'),
         ],
       ),
     );
   }
 
-  Widget _metaLine(String label, String value) {
+  Widget _metaLine(BuildContext context, String label, String value) {
+    // --- ⭐️ Theme se colors lo ---
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: RichText(
         text: TextSpan(
-          style: const TextStyle(fontSize: 14, color: kSecondaryGrey),
+          // --- ⭐️ MODIFIED: Theme grey color ---
+          style: TextStyle(fontSize: 14, color: textTheme.bodySmall?.color),
           children: [
             TextSpan(
               text: '$label: ',
-              style: const TextStyle(
-                color: kPrimaryBlue,
+              style: TextStyle(
+                // --- ⭐️ MODIFIED: Theme primary color ---
+                color: colorScheme.primary,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -150,17 +172,28 @@ class PrivacyPolicyPage extends StatelessWidget {
   }
 
   // --- Policy Section Card ---
-  Widget _buildSection(String title, List<String> points) {
+  Widget _buildSection(
+    BuildContext context,
+    String title,
+    List<String> points,
+  ) {
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        // --- ⭐️ MODIFIED: Theme surface color ---
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.shade200),
+        // --- ⭐️ MODIFIED: Theme divider color ---
+        border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
-            color: kPrimaryBlue.withOpacity(0.05),
+            // --- ⭐️ MODIFIED: Theme shadow color ---
+            color: colorScheme.primary.withOpacity(0.05),
             blurRadius: 6,
             offset: const Offset(0, 3),
           ),
@@ -171,8 +204,9 @@ class PrivacyPolicyPage extends StatelessWidget {
         children: [
           Text(
             title,
-            style: const TextStyle(
-              color: kPrimaryBlue,
+            style: TextStyle(
+              // --- ⭐️ MODIFIED: Theme primary color ---
+              color: colorScheme.primary,
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
@@ -183,9 +217,10 @@ class PrivacyPolicyPage extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 6.0),
               child: Text(
                 text,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
-                  color: Colors.black87,
+                  // --- ⭐️ MODIFIED: Theme text color ---
+                  color: colorScheme.onSurface,
                   height: 1.5,
                 ),
               ),
@@ -197,19 +232,24 @@ class PrivacyPolicyPage extends StatelessWidget {
   }
 
   // --- Summary Gradient Card ---
-  Widget _buildSummary() {
+  Widget _buildSummary(BuildContext context) {
+    // --- ⭐️ Theme se colors lo ---
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [kPrimaryBlue, kPrimaryPink],
+          // --- ⭐️ MODIFIED: Theme gradient colors ---
+          colors: [colorScheme.primary, colorScheme.secondary],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: kPrimaryPink.withOpacity(0.3),
+            // --- ⭐️ MODIFIED: Theme shadow color ---
+            color: colorScheme.secondary.withOpacity(0.3),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),

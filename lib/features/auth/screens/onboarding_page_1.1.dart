@@ -7,8 +7,14 @@ class OnboardingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F5FF),
+      // --- ⭐️ MODIFIED: Theme background color ---
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -47,7 +53,8 @@ class OnboardingPage extends StatelessWidget {
                               ?.copyWith(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 24,
-                                color: const Color(0xFF0F2B46),
+                                // --- ⭐️ MODIFIED: Theme text color ---
+                                color: colorScheme.onSurface,
                               ),
                         ),
                         const SizedBox(height: 60),
@@ -57,7 +64,8 @@ class OnboardingPage extends StatelessWidget {
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.bodyLarge
                               ?.copyWith(
-                                color: const Color(0xFF8AA0B2),
+                                // --- ⭐️ MODIFIED: Theme grey color ---
+                                color: textTheme.bodySmall?.color,
                                 height: 1.4,
                               ),
                         ),
@@ -88,19 +96,22 @@ class OnboardingPage extends StatelessWidget {
                             ).push(slideRightToLeft(const OnboardingPage12()));
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF4318FF),
-                            foregroundColor: Colors.white,
+                            // --- ⭐️ MODIFIED: Theme button color ---
+                            backgroundColor: colorScheme.primary,
+                            foregroundColor: colorScheme.onPrimary,
                             minimumSize: const Size.fromHeight(64),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(24),
                             ),
                             elevation: 0,
                           ),
-                          child: const Text(
+                          child: Text(
                             'Next',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
+                              // --- ⭐️⭐️ FIX: Text color ko onPrimary (White) kiya ---
+                              color: colorScheme.onPrimary,
                             ),
                           ),
                         ),
@@ -118,8 +129,7 @@ class OnboardingPage extends StatelessWidget {
   }
 }
 
-// Using shared transitions from route_transitions.dart
-
+// --- ⭐️ MODIFIED: _Dot widget ab theme-aware hai ---
 class _Dot extends StatelessWidget {
   const _Dot({required this.active, this.isLong = false});
 
@@ -128,8 +138,14 @@ class _Dot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color activeColor = const Color(0xFF4318FF);
-    final Color inactiveColor = const Color(0xFFC7CFE6);
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    // --- ⭐️ MODIFIED: Colors ab theme se aa rahe hain ---
+    final Color activeColor = colorScheme.primary;
+    final Color inactiveColor = theme.dividerColor.withOpacity(0.5);
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
       height: 8,

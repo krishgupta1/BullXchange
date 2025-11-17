@@ -39,7 +39,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         ),
       );
 
-      // Optionally navigate back to login
       Navigator.pop(context);
     } on FirebaseAuthException catch (e) {
       String message = 'An error occurred. Please try again.';
@@ -53,14 +52,22 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         context,
       ).showSnackBar(SnackBar(content: Text(message)));
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      // --- ⭐️ MODIFIED: Theme background color ---
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -74,16 +81,15 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 height: 40,
                 child: Center(
                   child: IconButton(
-                    // --- MODIFIED ---
-                    // Changed from pushReplacement to pop to go back to the previous screen.
                     onPressed: () {
                       Navigator.pop(context);
                     },
                     padding: EdgeInsets.zero,
                     alignment: Alignment.center,
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.arrow_back_ios,
-                      color: Colors.black,
+                      // --- ⭐️ MODIFIED: Theme accent color (Pink) ---
+                      color: colorScheme.secondary,
                       size: 18,
                     ),
                   ),
@@ -91,63 +97,76 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
               ),
               const SizedBox(height: 40),
               // Title
-              const Text(
+              Text(
                 'Password Recovery',
                 style: TextStyle(
                   fontFamily: 'EudoxusSans',
                   fontSize: 28,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF0F2B46),
+                  // --- ⭐️ MODIFIED: Theme text color ---
+                  color: colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 12),
-              const Text(
+              Text(
                 'Enter your email to recover your password',
                 style: TextStyle(
                   fontFamily: 'EudoxusSans',
                   fontSize: 16,
                   fontWeight: FontWeight.w400,
-                  color: Color(0xFF8AA0B2),
+                  // --- ⭐️ MODIFIED: Theme grey color ---
+                  color: textTheme.bodySmall?.color,
                 ),
               ),
               const SizedBox(height: 32),
-              // Email label + field
-              const Padding(
-                padding: EdgeInsets.only(bottom: 8.0),
+              // Email label
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
                 child: Text(
                   'Email address',
                   style: TextStyle(
                     fontFamily: 'EudoxusSans',
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: Colors.black,
+                    // --- ⭐️ MODIFIED: Theme text color ---
+                    color: colorScheme.onSurface,
                   ),
                 ),
               ),
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
+                // --- ⭐️ MODIFIED: Theme text color ---
+                style: TextStyle(color: colorScheme.onSurface),
                 decoration: InputDecoration(
                   hintText: 'username@mail.com',
-                  hintStyle: const TextStyle(
+                  // --- ⭐️ MODIFIED: Theme hint color ---
+                  hintStyle: TextStyle(
                     fontFamily: 'EudoxusSans',
-                    color: Color(0xFF0F2B46),
+                    color: textTheme.bodySmall?.color,
                     fontSize: 16,
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(20),
-                    borderSide: const BorderSide(color: Color(0xFFBDB2FF)),
+                    borderSide: BorderSide(
+                      color: theme.dividerColor.withOpacity(0.5),
+                    ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(20),
-                    borderSide: const BorderSide(color: Color(0xFFBDB2FF)),
+                    // --- ⭐️ MODIFIED: Theme border color ---
+                    borderSide: BorderSide(
+                      color: theme.dividerColor.withOpacity(0.5),
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(20),
-                    borderSide: const BorderSide(color: Color(0xFF4318FF)),
+                    // --- ⭐️ MODIFIED: Theme primary color ---
+                    borderSide: BorderSide(color: colorScheme.primary),
                   ),
                   filled: true,
-                  fillColor: Colors.white,
+                  // --- ⭐️ MODIFIED: Theme surface color ---
+                  fillColor: colorScheme.surface,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 20,
                     vertical: 18,
@@ -162,21 +181,24 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _sendResetEmail,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4318FF),
-                    foregroundColor: Colors.white,
+                    // --- ⭐️ MODIFIED: Theme button colors ---
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
                     elevation: 0,
                   ),
                   child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
+                      ? CircularProgressIndicator(color: colorScheme.onPrimary)
+                      : Text(
                           'Send Reset Password Link',
                           style: TextStyle(
                             fontFamily: 'EudoxusSans',
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
+                            // --- ⭐️ MODIFIED: Theme text color ---
+                            color: colorScheme.onPrimary,
                           ),
                         ),
                 ),

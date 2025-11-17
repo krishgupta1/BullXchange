@@ -3,28 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'setup_pin_screen.dart';
 
-// --- Placeholder for the page you navigate to on "Reset password?" ---
-// You will replace this with your actual password reset page.
-
 // --- Custom Route Transition Function ---
-// This function creates a PageRouteBuilder for a slide transition from right to left.
-PageRouteBuilder slideRightToLeft(Widget page) {
-  return PageRouteBuilder(
-    pageBuilder: (context, animation, secondaryAnimation) => page,
-    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      const begin = Offset(1.0, 0.0); // Start off-screen to the right
-      const end = Offset.zero; // End at the current screen position
-      const curve = Curves.ease;
-
-      final tween = Tween(
-        begin: begin,
-        end: end,
-      ).chain(CurveTween(curve: curve));
-
-      return SlideTransition(position: animation.drive(tween), child: child);
-    },
-  );
-}
+// (Yeh function maine yahaan se hata diya hai, yeh aapki `route_transitions.dart` file mein hona chahiye)
+// PageRouteBuilder slideRightToLeft(Widget page) { ... }
 // ----------------------------------------
 
 class PasswordConfirmationScreen extends StatefulWidget {
@@ -49,7 +30,6 @@ class _PasswordConfirmationScreenState
   }
 
   Future<void> _verifyPassword() async {
-    // Hide keyboard
     FocusScope.of(context).unfocus();
 
     setState(() {
@@ -71,7 +51,6 @@ class _PasswordConfirmationScreenState
       await user.reauthenticateWithCredential(credential);
 
       if (!mounted) return;
-      // Use pushReplacement to prevent going back to this screen from SetupPinScreen
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const SetupPinScreen()),
@@ -91,148 +70,204 @@ class _PasswordConfirmationScreenState
 
   @override
   Widget build(BuildContext context) {
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      // --- ⭐️ MODIFIED: Theme background color ---
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        // --- ⭐️ MODIFIED: Theme app bar colors ---
+        backgroundColor: theme.appBarTheme.backgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 18),
+          // --- ⭐️ MODIFIED: Theme icon color (Pink) ---
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: colorScheme.secondary,
+            size: 18,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         centerTitle: true,
-        title: const Text(
+        title: Text(
           "Confirm Password",
-          style: TextStyle(
+          // --- ⭐️ MODIFIED: Theme title style ---
+          style: theme.appBarTheme.titleTextStyle?.copyWith(
             fontSize: 20,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF0F2B46),
           ),
         ),
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Column(
-            children: [
-              const SizedBox(height: 48),
-              Center(
-                child: Container(
-                  width: 150,
-                  height: 150,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Color(0xFFF1EEFF),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(28.0),
-                    child: Image.asset(
-                      'assets/images/lock.png',
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                ),
+        // --- ⭐️⭐️ FIX: Column ko SingleChildScrollView mein wrap kiya ⭐️⭐️ ---
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            // --- ⭐️⭐️ FIX: IntrinsicHeight use kiya taaki page poori height le ⭐️⭐️ ---
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight:
+                    MediaQuery.of(context).size.height -
+                    (AppBar().preferredSize.height +
+                        MediaQuery.of(context).padding.top),
               ),
-              const SizedBox(height: 24),
-              const Text(
-                "Enter your account password\nto reset your PIN",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF0F2B46),
-                ),
-              ),
-              const SizedBox(height: 40),
-              TextField(
-                controller: _passwordController,
-                obscureText: _obscurePassword,
-                decoration: InputDecoration(
-                  hintText: "Enter Password",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE5E5E5)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF4318FF)),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_off
-                          : Icons.visibility,
-                      color: Colors.grey,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              // --- New: Reset Password Button ---
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () => Navigator.pushReplacement(
-                    context,
-                    slideRightToLeft(const ResetPasswordPage()),
-                  ),
-                  child: const Text(
-                    'Reset password?',
-                    style: TextStyle(color: Color(0xFF4318FF)),
-                  ),
-                ),
-              ),
-              // --- End New ---
-              if (_errorMessage != null)
-                Text(
-                  _errorMessage!,
-                  style: const TextStyle(color: Colors.red, fontSize: 14),
-                ),
-              const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _verifyPassword,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4318FF),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2.5,
-                          ),
-                        )
-                      : const Text(
-                          "Verify",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+              child: IntrinsicHeight(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 48),
+                    Center(
+                      child: Container(
+                        width: 150,
+                        height: 150,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          // --- ⭐️ MODIFIED: Theme color ---
+                          color: colorScheme.primary.withOpacity(0.1),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(28.0),
+                          child: Image.asset(
+                            'assets/images/lock.png',
+                            fit: BoxFit.contain,
+                            // --- ⭐️ MODIFIED: Theme color ---
+                            color: colorScheme.primary,
                           ),
                         ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      "Enter your account password\nto reset your PIN",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        // --- ⭐️ MODIFIED: Theme text color ---
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                    TextField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      // --- ⭐️ MODIFIED: Theme text color ---
+                      style: TextStyle(color: colorScheme.onSurface),
+                      decoration: InputDecoration(
+                        hintText: "Enter Password",
+                        // --- ⭐️ MODIFIED: Theme hint color ---
+                        hintStyle: TextStyle(color: textTheme.bodySmall?.color),
+                        // --- ⭐️ MODIFIED: Theme surface color ---
+                        filled: true,
+                        fillColor: colorScheme.surface,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          // --- ⭐️ MODIFIED: Theme border color ---
+                          borderSide: BorderSide(
+                            color: theme.dividerColor.withOpacity(0.5),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          // --- ⭐️ MODIFIED: Theme primary color ---
+                          borderSide: BorderSide(
+                            color: colorScheme.primary,
+                            width: 2,
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            // --- ⭐️ MODIFIED: Theme grey color ---
+                            color: textTheme.bodySmall?.color,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () => Navigator.pushReplacement(
+                          context,
+                          // slideRightToLeft(const ResetPasswordPage()), // Yeh aapki transitions file se aana chahiye
+                          MaterialPageRoute(
+                            builder: (context) => const ResetPasswordPage(),
+                          ),
+                        ),
+                        child: Text(
+                          'Reset password?',
+                          // --- ⭐️ MODIFIED: Theme primary color ---
+                          style: TextStyle(color: colorScheme.primary),
+                        ),
+                      ),
+                    ),
+                    if (_errorMessage != null)
+                      Text(
+                        _errorMessage!,
+                        // --- ⭐️ MODIFIED: Theme error color ---
+                        style: TextStyle(
+                          color: colorScheme.error,
+                          fontSize: 14,
+                        ),
+                      ),
+                    // --- ⭐️⭐️ FIX: Spacer() ko SizedBox se replace kiya ⭐️⭐️ ---
+                    const Spacer(),
+                    const SizedBox(height: 32),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _verifyPassword,
+                        style: ElevatedButton.styleFrom(
+                          // --- ⭐️ MODIFIED: Theme button colors ---
+                          backgroundColor: colorScheme.primary,
+                          foregroundColor: colorScheme.onPrimary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: _isLoading
+                            ? SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: CircularProgressIndicator(
+                                  // --- ⭐️ MODIFIED: Theme text color ---
+                                  color: colorScheme.onPrimary,
+                                  strokeWidth: 2.5,
+                                ),
+                              )
+                            : const Text(
+                                "Verify",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                 ),
               ),
-              const SizedBox(height: 24),
-            ],
+            ),
           ),
         ),
       ),

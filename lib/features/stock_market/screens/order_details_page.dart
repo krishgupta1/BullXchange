@@ -13,12 +13,15 @@ class OrderDetailsPage extends StatelessWidget {
     required this.transactionId,
   });
 
-  static const Color darkTextColor = Color(0xFF03314B);
-  static const Color lightBorderColor = Color(0xFFE0E0E0);
-  static const Color lightGreyBg = Color(0xFFF5F5F5);
+  // --- ⭐️ REMOVED HARDCODED COLORS ---
 
   @override
   Widget build(BuildContext context) {
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     final priceFormatter = NumberFormat.currency(
       locale: 'en_IN',
       symbol: '₹',
@@ -27,53 +30,52 @@ class OrderDetailsPage extends StatelessWidget {
     final bool isBuy = transaction.transactionType == 'BUY';
     final Color typeColor = isBuy ? const Color(0xFF1EAB58) : Colors.red;
 
-    // --- ⭐️ 1. AUTOMATE ORDER TYPE AND PRICE LABEL ---
-    // This assumes you added `orderType` to your TransactionModel
     final bool isMarketOrder = transaction.orderType == 'Market';
     final String orderTypeLabel = isMarketOrder ? 'Market' : 'Limit';
     final String priceLabel = isMarketOrder ? 'Avg. Price' : 'Order Price';
 
-    // Generate a placeholder NSE ID
     final String nseOrderId =
         "00${transaction.executedAt.millisecondsSinceEpoch.toString().substring(5)}";
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      // --- ⭐️ MODIFIED: Theme background color ---
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        // --- ⭐️ MODIFIED: Theme app bar colors ---
+        backgroundColor: theme.appBarTheme.backgroundColor,
         elevation: 0,
         leading: Padding(
           padding: const EdgeInsets.only(left: 8.0),
           child: Container(
             margin: const EdgeInsets.symmetric(vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white,
+              // --- ⭐️ MODIFIED: Theme surface color ---
+              color: colorScheme.surface,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
+                  // --- ⭐️ MODIFIED: Theme shadow color ---
+                  color: theme.shadowColor.withOpacity(0.1),
                   spreadRadius: 1,
                   blurRadius: 5,
                 ),
               ],
             ),
             child: IconButton(
-              icon: const Icon(
+              icon: Icon(
                 Icons.arrow_back_ios_new,
-                color: Colors.black,
+                // --- ⭐️ MODIFIED: Theme icon color ---
+                color: colorScheme.onSurface,
                 size: 20,
               ),
               onPressed: () => Navigator.pop(context),
             ),
           ),
         ),
-        title: const Text(
+        title: Text(
           'Order details',
-          style: TextStyle(
-            color: darkTextColor,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
+          // --- ⭐️ MODIFIED: Theme title style ---
+          style: theme.appBarTheme.titleTextStyle?.copyWith(fontSize: 18),
         ),
         centerTitle: true,
       ),
@@ -84,17 +86,20 @@ class OrderDetailsPage extends StatelessWidget {
           children: [
             Text(
               '${transaction.quantity} Shares',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
-                color: darkTextColor,
+                // --- ⭐️ MODIFIED: Theme text color ---
+                color: colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                border: Border.all(color: lightBorderColor),
+                // --- ⭐️ MODIFIED: Theme border and surface color ---
+                border: Border.all(color: theme.dividerColor.withOpacity(0.5)),
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -105,10 +110,11 @@ class OrderDetailsPage extends StatelessWidget {
                     children: [
                       Text(
                         transaction.companyName,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: darkTextColor,
+                          // --- ⭐️ MODIFIED: Theme text color ---
+                          color: colorScheme.onSurface,
                         ),
                       ),
                       Container(
@@ -136,30 +142,31 @@ class OrderDetailsPage extends StatelessWidget {
                     priceFormatter.format(transaction.totalAmount),
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.grey[600],
+                      // --- ⭐️ MODIFIED: Theme grey color ---
+                      color: textTheme.bodySmall?.color,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   const Divider(height: 32),
-
-                  // --- ⭐️ 2. USE THE AUTOMATED LABELS ---
                   _buildDetailRow(
+                    context, // ⭐️ Pass context
                     'Order',
-                    orderTypeLabel, // <-- Automated
-                    priceLabel, // <-- Automated
+                    orderTypeLabel,
+                    priceLabel,
                     priceFormatter.format(transaction.price),
                   ),
-
                   _buildDetailRow(
+                    context, // ⭐️ Pass context
                     'Type',
-                    transaction.productType, // From TransactionModel
+                    transaction.productType,
                     'Exchange',
-                    transaction.exchange, // From TransactionModel
+                    transaction.exchange,
                   ),
                   _buildDetailRow(
+                    context, // ⭐️ Pass context
                     'Charges',
                     priceFormatter.format(transaction.charges),
-                    'Avg Price', // This is always true for an executed order
+                    'Avg Price',
                     priceFormatter.format(transaction.price),
                   ),
                   const Divider(height: 32),
@@ -167,39 +174,48 @@ class OrderDetailsPage extends StatelessWidget {
                     children: [
                       Text(
                         'Order ID: $transactionId',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                        // --- ⭐️ MODIFIED: Theme grey color ---
+                        style: TextStyle(
+                          color: textTheme.bodySmall?.color,
+                          fontSize: 12,
+                        ),
                       ),
                       const SizedBox(width: 8),
-                      _buildCopyIcon(context, transactionId),
+                      _buildCopyIcon(context, transactionId), // ⭐️ Pass context
                     ],
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'ORDER STATUS',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey,
+                // --- ⭐️ MODIFIED: Theme grey color ---
+                color: textTheme.bodySmall?.color,
               ),
             ),
             const SizedBox(height: 16),
             _buildStatusStep(
+              context: context, // ⭐️ Pass context
               title: 'Request Verified',
               subtitle: 'Bullxchange ID: ${transaction.userId}',
-              context: context,
               idToCopy: transactionId,
               isFirst: true,
             ),
             _buildStatusStep(
+              context: context, // ⭐️ Pass context
               title: 'Order Placed with ${transaction.exchange}',
               subtitle: '${transaction.exchange} Order ID: $nseOrderId',
-              context: context,
               idToCopy: nseOrderId,
             ),
-            _buildStatusStep(title: 'Order Executed', isLast: true),
+            _buildStatusStep(
+              context: context, // ⭐️ Pass context
+              title: 'Order Executed',
+              isLast: true,
+            ),
           ],
         ),
       ),
@@ -207,11 +223,16 @@ class OrderDetailsPage extends StatelessWidget {
   }
 
   Widget _buildDetailRow(
+    BuildContext context, // ⭐️ Added context
     String label1,
     String value1,
     String label2,
     String value2,
   ) {
+    // --- ⭐️ Theme se colors lo ---
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
@@ -222,13 +243,18 @@ class OrderDetailsPage extends StatelessWidget {
               children: [
                 Text(
                   label1,
-                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  // --- ⭐️ MODIFIED: Theme grey color ---
+                  style: TextStyle(
+                    color: textTheme.bodySmall?.color,
+                    fontSize: 14,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   value1,
-                  style: const TextStyle(
-                    color: darkTextColor,
+                  style: TextStyle(
+                    // --- ⭐️ MODIFIED: Theme text color ---
+                    color: colorScheme.onSurface,
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                   ),
@@ -242,13 +268,18 @@ class OrderDetailsPage extends StatelessWidget {
               children: [
                 Text(
                   label2,
-                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  // --- ⭐️ MODIFIED: Theme grey color ---
+                  style: TextStyle(
+                    color: textTheme.bodySmall?.color,
+                    fontSize: 14,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   value2,
-                  style: const TextStyle(
-                    color: darkTextColor,
+                  style: TextStyle(
+                    // --- ⭐️ MODIFIED: Theme text color ---
+                    color: colorScheme.onSurface,
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                   ),
@@ -262,13 +293,17 @@ class OrderDetailsPage extends StatelessWidget {
   }
 
   Widget _buildStatusStep({
+    required BuildContext context, // ⭐️ Added context
     required String title,
     String? subtitle,
     String? idToCopy,
-    BuildContext? context,
     bool isFirst = false,
     bool isLast = false,
   }) {
+    // --- ⭐️ Theme se colors lo ---
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -294,10 +329,11 @@ class OrderDetailsPage extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: darkTextColor,
+                    // --- ⭐️ MODIFIED: Theme text color ---
+                    color: colorScheme.onSurface,
                   ),
                 ),
                 if (subtitle != null) ...[
@@ -308,14 +344,15 @@ class OrderDetailsPage extends StatelessWidget {
                         child: Text(
                           subtitle,
                           style: TextStyle(
-                            color: Colors.grey[600],
+                            // --- ⭐️ MODIFIED: Theme grey color ---
+                            color: textTheme.bodySmall?.color,
                             fontSize: 12,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      if (idToCopy != null && context != null)
-                        _buildCopyIcon(context, idToCopy),
+                      if (idToCopy != null)
+                        _buildCopyIcon(context, idToCopy), // ⭐️ Pass context
                     ],
                   ),
                 ],
@@ -328,6 +365,10 @@ class OrderDetailsPage extends StatelessWidget {
   }
 
   Widget _buildCopyIcon(BuildContext context, String textToCopy) {
+    // ⭐️ Added context
+    // --- ⭐️ Theme se colors lo ---
+    final textTheme = Theme.of(context).textTheme;
+
     return InkWell(
       onTap: () {
         Clipboard.setData(ClipboardData(text: textToCopy));
@@ -340,7 +381,8 @@ class OrderDetailsPage extends StatelessWidget {
       },
       child: Padding(
         padding: const EdgeInsets.all(4.0),
-        child: Icon(Icons.copy, color: Colors.grey[500], size: 16),
+        // --- ⭐️ MODIFIED: Theme grey color ---
+        child: Icon(Icons.copy, color: textTheme.bodySmall?.color, size: 16),
       ),
     );
   }
