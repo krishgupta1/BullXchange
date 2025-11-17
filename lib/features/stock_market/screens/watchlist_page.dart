@@ -1,6 +1,7 @@
 import 'package:bullxchange/features/stock_market/screens/StockDetailPage.dart';
 import 'package:bullxchange/features/stock_market/screens/view_all_page.dart';
-import 'package:bullxchange/features/stock_market/widgets/stock_card.dart';
+import 'package:bullxchange/features/stock_market/widgets/mini_chart.dart';
+import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/models/user_profile_data_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
@@ -82,7 +83,6 @@ class _WatchListPageState extends State<WatchListPage> {
 
   @override
   Widget build(BuildContext context) {
-    // --- ⭐️ YOUR AUTH CHECK IS ALREADY HERE AND CORRECT ---
     if (uid == null) {
       return const Center(child: Text("Please log in to see your watchlist."));
     }
@@ -93,6 +93,20 @@ class _WatchListPageState extends State<WatchListPage> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Text(
+                "Error loading watchlist data: ${snapshot.error}",
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.red),
+              ),
+            ),
+          );
+        }
+
         if (!snapshot.hasData || snapshot.data == null) {
           return const Center(child: Text("Could not load user profile."));
         }
@@ -110,13 +124,17 @@ class _WatchListPageState extends State<WatchListPage> {
               return const Center(child: _EmptyState());
             }
 
-            // --- ⭐️ FIX: The root widget is a COLUMN. ---
-            // It is NOT scrollable. Its parent page provides the scrolling.
+            // Since this whole widget is inside a scrollable (as shown by your error logs),
+            // this Column MUST be set to mainAxisSize.min and MUST NOT use Expanded.
             return Column(
+              // FIX 1: Tell the Column to be only as tall as its children.
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
+                    mainAxisSize: MainAxisSize
+                        .min, // Header content should take minimum space
                     children: [
                       _buildWatchlistHeader(
                         watchlistStocks.length,
@@ -132,37 +150,44 @@ class _WatchListPageState extends State<WatchListPage> {
                   ),
                 ),
                 const Divider(height: 1, thickness: 1),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: watchlistStocks.length,
-                    itemBuilder: (context, index) {
-                      final instrument = watchlistStocks[index];
-                      final isSelected = _selectedTokens.contains(
-                        instrument.token,
-                      );
 
-                      return InkWell(
-                        onTap: () {
-                          if (_isEditMode) {
-                            _toggleSelection(instrument.token);
-                          } else {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    StockDetailPage(instrument: instrument),
-                              ),
-                            );
-                          }
-                        },
-                        child: _buildStockItem(
-                          instrument: instrument,
-                          isEditMode: _isEditMode,
-                          isSelected: isSelected,
-                        ),
-                      );
-                    },
-                  ),
+                // FIX 2: REMOVE THE EXPANDED WIDGET
+                // This ListView will now build all its children, calculate its
+                // total height (shrinkWrap: true), and disable its own scrolling
+                // (physics) to let the parent scrollable handle it.
+                ListView.builder(
+                  // FIX 3: Add shrinkWrap: true
+                  shrinkWrap: true,
+                  // FIX 4: Add physics to disable nested scrolling
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: watchlistStocks.length,
+                  itemBuilder: (context, index) {
+                    final instrument = watchlistStocks[index];
+                    final isSelected = _selectedTokens.contains(
+                      instrument.token,
+                    );
+
+                    return InkWell(
+                      onTap: () {
+                        if (_isEditMode) {
+                          _toggleSelection(instrument.token);
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  StockDetailPage(instrument: instrument),
+                            ),
+                          );
+                        }
+                      },
+                      child: _buildStockItem(
+                        instrument: instrument,
+                        isEditMode: _isEditMode,
+                        isSelected: isSelected,
+                      ),
+                    );
+                  },
                 ),
               ],
             );
@@ -172,8 +197,6 @@ class _WatchListPageState extends State<WatchListPage> {
     );
   }
 }
-
-// --- (All other widgets below this are unchanged and correct) ---
 
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
@@ -229,7 +252,7 @@ Widget _buildWatchlistHeader(
         IconButton(
           icon: const Icon(Icons.add_box_outlined),
           onPressed: () {
-            Navigator.push(
+            Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => const ViewAllPage()),
             );
@@ -270,8 +293,16 @@ Widget _buildStockItem({
   bool isEditMode = false,
   bool isSelected = false,
 }) {
+  final ltp = (instrument.liveData['ltp'] as num?)?.toDouble() ?? 0.0;
+  final netChange =
+      (instrument.liveData['netChange'] as num?)?.toDouble() ?? 0.0;
+  final percentChange =
+      (instrument.liveData['percentChange'] as num?)?.toDouble() ?? 0.0;
+  final changeColor = netChange >= 0 ? const Color(0xFF1EAB58) : Colors.red;
+
   return Container(
     color: isSelected ? Colors.blue.withOpacity(0.1) : Colors.transparent,
+    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
     child: Row(
       children: [
         if (isEditMode)
@@ -285,12 +316,59 @@ Widget _buildStockItem({
               ),
             ),
           ),
+        SmartLogo(instrument: instrument, radius: 0),
+        const SizedBox(width: 12),
         Expanded(
-          child: StockCard(
-            instrument: instrument,
-            onTap: null, // Handled by parent InkWell
-            fontSize: 12,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                instrument.symbol.replaceAll('-EQ', ''),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+              Text(
+                instrument.name,
+                style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
+        ),
+        SizedBox(
+          width: 80,
+          height: 40,
+          child: MiniChart.fromInstrument(
+            instrument: instrument,
+            color: changeColor,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              "₹${ltp.toStringAsFixed(2)}",
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+            ),
+            Row(
+              children: [
+                Icon(
+                  percentChange >= 0
+                      ? Icons.arrow_drop_up
+                      : Icons.arrow_drop_down,
+                  color: changeColor,
+                  size: 20,
+                ),
+                Text(
+                  "${percentChange.abs().toStringAsFixed(2)}%",
+                  style: TextStyle(color: changeColor, fontSize: 12),
+                ),
+              ],
+            ),
+          ],
         ),
       ],
     ),

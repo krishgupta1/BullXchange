@@ -61,6 +61,7 @@ class _HoldingsPageState extends State<HoldingsPage> {
               instrumentProvider.fetchLiveDataForHoldings(userHoldings);
             }
 
+            // The main structure remains a SingleChildScrollView wrapping a Column.
             return SingleChildScrollView(
               child: Column(
                 children: [
@@ -79,16 +80,45 @@ class _HoldingsPageState extends State<HoldingsPage> {
                       ),
                     )
                   else
-                    ...userHoldings.map(
-                      (holding) => PortfolioStockItem(
-                        key: ValueKey(holding.stockSymbol),
-                        holding: holding,
-                      ),
-                    ),
+                    // FIX: Replaced the spread operator (...) with the new
+                    // HoldingsList widget to solve the Unbounded Constraints issue
+                    // and encapsulate the key logic.
+                    HoldingsList(holdings: userHoldings),
                 ],
               ),
             );
           },
+        );
+      },
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// ⭐ NEW WIDGET: HoldingsList (Fixes Duplicate Keys & Unbounded Constraints)
+// ---------------------------------------------------------------------------
+
+class HoldingsList extends StatelessWidget {
+  final List<StockHoldingModel> holdings;
+
+  const HoldingsList({super.key, required this.holdings});
+
+  @override
+  Widget build(BuildContext context) {
+    // FIX: Using ListView.builder with shrinkWrap: true and NeverScrollableScrollPhysics.
+    // This allows the list to be correctly sized inside the parent SingleChildScrollView
+    // (fixing the unbounded constraints error) while handling a large number of items.
+    return ListView.builder(
+      physics: const NeverScrollableScrollPhysics(),
+      shrinkWrap: true,
+      itemCount: holdings.length,
+      itemBuilder: (context, index) {
+        final holding = holdings[index];
+        return PortfolioStockItem(
+          // FIX for Duplicate Keys: Use a combination of stockSymbol and index
+          // to guarantee a unique key for every item, even if symbols are repeated.
+          key: ValueKey('${holding.stockSymbol}_$index'),
+          holding: holding,
         );
       },
     );
@@ -134,6 +164,7 @@ class HoldingsEmptyState extends StatelessWidget {
 // -----------------------------------------------------------------
 class PortfolioStockItem extends StatefulWidget {
   final StockHoldingModel holding;
+  // Note: The key is now correctly passed from the parent widget (HoldingsList)
   const PortfolioStockItem({super.key, required this.holding});
 
   @override

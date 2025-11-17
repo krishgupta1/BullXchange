@@ -36,7 +36,7 @@ class InstrumentProvider with ChangeNotifier {
       )
       .toList();
 
-  // --- SPOT INDEX GETTERS ---
+  // --- SPOT INDEX GETTERS (Using your corrected symbols) ---
 
   Instrument? get nifty50 => _allInstruments.firstWhere(
     (inst) => inst.symbol == 'Nifty 50',
@@ -46,26 +46,24 @@ class InstrumentProvider with ChangeNotifier {
     (inst) => inst.symbol == 'Nifty Bank',
     orElse: () => Instrument.fromJson({}),
   );
-
-  // --- 🔽 GETTERS NOW FIXED 🔽 ---
+  // Corrected symbol: 'Nifty Fin Service' (without 's')
   Instrument? get finNifty => _allInstruments.firstWhere(
-    (inst) => inst.symbol == 'Nifty Fin Service', // FIXED (removed 's')
+    (inst) => inst.symbol == 'Nifty Fin Service',
     orElse: () => Instrument.fromJson({}),
   );
-
+  // Corrected symbol: 'NIFTY MID SELECT'
   Instrument? get midcapNifty => _allInstruments.firstWhere(
-    (inst) => inst.symbol == 'NIFTY MID SELECT', // FIXED
+    (inst) => inst.symbol == 'NIFTY MID SELECT',
     orElse: () => Instrument.fromJson({}),
   );
-  // --- 🔼 END OF FIX 🔼 ---
 
   Instrument? get sensex => _allInstruments.firstWhere(
-    (inst) => inst.symbol == 'SENSEX', // This one was correct
+    (inst) => inst.symbol == 'SENSEX',
     orElse: () => Instrument.fromJson({}),
   );
 
   Instrument? get bankex => _allInstruments.firstWhere(
-    (inst) => inst.symbol == 'BANKEX', // This one was correct
+    (inst) => inst.symbol == 'BANKEX',
     orElse: () => Instrument.fromJson({}),
   );
 
@@ -126,8 +124,6 @@ class InstrumentProvider with ChangeNotifier {
           .map((item) => Instrument.fromJson(item as Map<String, dynamic>))
           .toList();
 
-      // --- DEBUGGING BLOCK REMOVED ---
-
       await _startPeriodicFetches();
     } catch (e, stackTrace) {
       AppLog.e("❌ ERROR in _initialize: $e\n$stackTrace");
@@ -141,7 +137,8 @@ class InstrumentProvider with ChangeNotifier {
   Future<void> _startPeriodicFetches() async {
     await _fetchEssentialData();
     _refreshTimer?.cancel();
-    _refreshTimer = Timer.periodic(const Duration(seconds: 7), (timer) {
+    // ⭐️ FIX 1: Reduce duration to 1 second for near real-time updates
+    _refreshTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       _fetchEssentialData();
     });
   }
@@ -149,11 +146,12 @@ class InstrumentProvider with ChangeNotifier {
   /// Fetches indices and stocks in separate, safe API calls.
   Future<void> _fetchEssentialData() async {
     // Call 1: For ALL 6 indices
+    // ⭐️ FIX 2: Included all 6 indices for periodic updates
     await _updateInstruments([
       nifty50,
       bankNifty,
-      finNifty, // Now finds the correct symbol
-      midcapNifty, // Now finds the correct symbol
+      finNifty,
+      midcapNifty,
       sensex,
       bankex,
     ]);
@@ -163,7 +161,7 @@ class InstrumentProvider with ChangeNotifier {
     await _updateInstruments(top50Stocks);
 
     // Call 3: Fetch chart data for those same stocks
-    // We do this separately as it's a different API call
+    // We keep this call as requested, assuming the underlying API service is correct
     await fetchChartDataFor(top50Stocks);
   }
 
@@ -292,7 +290,7 @@ class InstrumentProvider with ChangeNotifier {
   }
 
   // -----------------------------------------------------------------
-  // ✨ NEW FUNCTION TO FETCH CHART DATA ✨
+  // ✨ CHART DATA FETCH FUNCTION (Kept as requested) ✨
   // -----------------------------------------------------------------
   Future<void> fetchChartDataFor(List<Instrument> instruments) async {
     // Avoid refetching if chart data is already present
@@ -302,25 +300,20 @@ class InstrumentProvider with ChangeNotifier {
 
     if (instrumentsToFetch.isEmpty) return;
 
-    // --- Get dynamic dates ---
-    // Note: For a real app, you must get the *last trading day*, not just 'today'
-    // This is a simple implementation for now.
     final now = DateTime.now();
-    // Angel One format is 'YYYY-MM-DD HH:mm'
     final String dateString =
         "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
     final String fromDate = "$dateString 09:15";
     final String toDate = "$dateString 15:30";
 
-    // Interval for the mini-chart. "FIVE_MINUTE" gives a good number of points
-    // for a 1-day chart.
     const String interval = "ONE_HOUR";
 
     bool didUpdate = false;
 
     for (var instrument in instrumentsToFetch) {
       try {
-        // This 'fetchCandleData' method must be created in your AngelOneApiService
+        // NOTE: This requires the implementation of 'fetchCandleData'
+        // in your AngelOneApiService to work correctly.
         final List<dynamic>? candleList = await _apiService.fetchCandleData(
           exchange: instrument.exchSeg,
           symbolToken: instrument.token,
@@ -331,32 +324,27 @@ class InstrumentProvider with ChangeNotifier {
 
         if (candleList != null && candleList.isNotEmpty) {
           // AngelOne API returns: [timestamp, open, high, low, close, volume]
-          // We just want the 'close' price (index 4) for the line chart.
           final List<double> chartPoints = candleList.map((candle) {
             if (candle is List && candle.length > 4) {
-              // Index 4 is the 'close' price
               return num.tryParse(candle[4].toString())?.toDouble() ?? 0.0;
             }
             return 0.0;
           }).toList();
 
-          // Save the real chart data to the instrument
           instrument.chartData = chartPoints;
           didUpdate = true;
         }
       } catch (e) {
         AppLog.e("❌ Failed to fetch chart data for ${instrument.symbol}: $e");
-        // Don't block other calls, just log the error and continue
       }
     }
 
-    // Notify listeners only if we actually updated any chart data
     if (didUpdate) {
       notifyListeners();
     }
   }
   // -----------------------------------------------------------------
-  // ✨ END OF NEW FUNCTION ✨
+  // ✨ END OF CHART DATA FETCH FUNCTION ✨
   // -----------------------------------------------------------------
 
   Map<String, dynamic> _sanitizeLiveData(Map<String, dynamic> rawData) {
