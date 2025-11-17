@@ -143,7 +143,7 @@ class _FutureOptionPageState extends State<FutureOptionPage>
                       index: _selectedActionIndex,
                       children: const [
                         FutureOptionExplorePage(),
-                        FutureOptionPositionPage(),
+                        FnoPositionsPage(),
                         FutureOptionOrdersPage(),
                         FutureOptionWatchlistPage(),
                       ],

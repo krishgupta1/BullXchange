@@ -1,4 +1,6 @@
 import 'package:bullxchange/features/stock_market/screens/transaction_success_page.dart';
+import 'package:bullxchange/models/instrument_model.dart';
+
 import 'package:bullxchange/models/stock_holding_model.dart';
 import 'package:bullxchange/models/transaction_model.dart';
 import 'package:bullxchange/services/firebase/charge_calculator_service.dart';
@@ -7,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
 
 class SellStockPage extends StatefulWidget {
@@ -24,13 +25,7 @@ class SellStockPage extends StatefulWidget {
 }
 
 class _SellStockPageState extends State<SellStockPage> {
-  // --- UI Constants ---
-  static const Color primaryBlue = Color(0xFF3500D4);
-  static const Color darkTextColor = Color(0xFF03314B);
-  static const Color lightGreyBg = Color(0xFFF5F5F5);
-  static const Color lightBorderColor = Color(0xFFE0E0E0);
-  static const Color secondaryTextColor = Color(0xFF6A7584);
-  // ---
+  // --- ⭐️ REMOVED HARDCODED COLORS ---
 
   final _quantityController = TextEditingController();
   String _selectedProductType = 'Delivery';
@@ -67,6 +62,8 @@ class _SellStockPageState extends State<SellStockPage> {
     _quantityController.addListener(_calculateTotalAndValidate);
     _calculateTotalAndValidate();
   }
+
+  // --- (initState, dispose, _calculateTotalAndValidate, _handleSell functions unchanged in logic) ---
 
   void _calculateTotalAndValidate() {
     setState(() {
@@ -161,54 +158,68 @@ class _SellStockPageState extends State<SellStockPage> {
     }
   }
 
+  // --- UI WIDGETS ---
+
   @override
   Widget build(BuildContext context) {
-    // --- ⭐️ ADDED AUTH CHECK ---
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    // --- AUTH CHECK ---
     final auth = FirebaseAuth.instance;
     if (auth.currentUser?.uid == null) {
       return Scaffold(
+        // --- ⭐️ MODIFIED: Theme colors ---
+        backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: theme.appBarTheme.backgroundColor,
           elevation: 0,
-          title: const Text(
+          title: Text(
             'Sell Stock',
-            style: TextStyle(
-              color: darkTextColor,
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
+            style: theme.appBarTheme.titleTextStyle?.copyWith(fontSize: 18),
           ),
           centerTitle: true,
         ),
-        body: const Center(child: Text("Please log in to sell stocks.")),
+        body: Center(
+          child: Text(
+            "Please log in to sell stocks.",
+            style: TextStyle(color: colorScheme.onSurface),
+          ),
+        ),
       );
     }
     // --- END OF CHECK ---
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      // --- ⭐️ MODIFIED: Theme background color ---
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        // --- ⭐️ MODIFIED: Theme app bar colors ---
+        backgroundColor: theme.appBarTheme.backgroundColor,
         elevation: 0,
         leading: Padding(
           padding: const EdgeInsets.only(left: 8.0),
           child: Container(
             margin: const EdgeInsets.symmetric(vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white,
+              // --- ⭐️ MODIFIED: Theme surface color ---
+              color: colorScheme.surface,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
+                  // --- ⭐️ MODIFIED: Theme shadow color ---
+                  color: theme.shadowColor.withOpacity(0.1),
                   spreadRadius: 1,
                   blurRadius: 5,
                 ),
               ],
             ),
             child: IconButton(
-              icon: const Icon(
+              icon: Icon(
                 Icons.arrow_back_ios_new,
-                color: Colors.black,
+                // --- ⭐️ MODIFIED: Theme icon color ---
+                color: colorScheme.onSurface,
                 size: 20,
               ),
               onPressed: () => Navigator.pop(context),
@@ -217,16 +228,11 @@ class _SellStockPageState extends State<SellStockPage> {
         ),
         title: Text(
           'Sell ${widget.instrument.symbol.replaceAll('-EQ', '')}',
-          style: const TextStyle(
-            color: darkTextColor,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
+          // --- ⭐️ MODIFIED: Theme title style ---
+          style: theme.appBarTheme.titleTextStyle?.copyWith(fontSize: 18),
         ),
         centerTitle: true,
       ),
-
-      // --- ⭐️ SOLUTION: HYBRID SCROLLING BODY ---
       body: Column(
         children: [
           Expanded(
@@ -235,30 +241,38 @@ class _SellStockPageState extends State<SellStockPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildStockHeader(_priceFormatter),
-                  const SizedBox(height: 16), // --- MODIFIED ---
-                  _buildInputSection(),
-                  const SizedBox(height: 16), // --- MODIFIED ---
-                  _buildOrderSummary(_priceFormatter),
-                  // Add padding at the bottom for scroll comfort
-                  const SizedBox(height: 10), // --- MODIFIED ---
+                  _buildStockHeader(
+                    context,
+                    _priceFormatter,
+                  ), // ⭐️ Pass context
+                  const SizedBox(height: 16),
+                  _buildInputSection(context), // ⭐️ Pass context
+                  const SizedBox(height: 16),
+                  _buildOrderSummary(
+                    context,
+                    _priceFormatter,
+                  ), // ⭐️ Pass context
+                  const SizedBox(height: 10),
                 ],
               ),
             ),
           ),
         ],
       ),
-
-      // --- END OF SOLUTION ---
-      bottomNavigationBar: _buildBottomSellButton(),
+      bottomNavigationBar: _buildBottomSellButton(context), // ⭐️ Pass context
     );
   }
 
-  Widget _buildStockHeader(NumberFormat formatter) {
+  Widget _buildStockHeader(BuildContext context, NumberFormat formatter) {
+    // --- ⭐️ Theme se colors lo ---
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: lightGreyBg,
+        // --- ⭐️ MODIFIED: Theme surface color ---
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -274,17 +288,19 @@ class _SellStockPageState extends State<SellStockPage> {
                     children: [
                       Text(
                         widget.instrument.symbol.replaceAll('-EQ', ''),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: darkTextColor,
+                          // --- ⭐️ MODIFIED: Theme text color ---
+                          color: colorScheme.onSurface,
                         ),
                       ),
                       Text(
                         widget.instrument.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
-                          color: secondaryTextColor,
+                          // --- ⭐️ MODIFIED: Theme grey color ---
+                          color: textTheme.bodySmall?.color,
                           fontWeight: FontWeight.w500,
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -297,10 +313,11 @@ class _SellStockPageState extends State<SellStockPage> {
           ),
           Text(
             formatter.format(_ltp),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: darkTextColor,
+              // --- ⭐️ MODIFIED: Theme text color ---
+              color: colorScheme.onSurface,
             ),
           ),
         ],
@@ -308,40 +325,52 @@ class _SellStockPageState extends State<SellStockPage> {
     );
   }
 
-  Widget _buildInputSection() {
+  Widget _buildInputSection(BuildContext context) {
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         TextField(
           controller: _quantityController,
           keyboardType: TextInputType.number,
-          style: const TextStyle(
+          // --- ⭐️ MODIFIED: Theme text color ---
+          style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: darkTextColor,
+            color: colorScheme.onSurface,
           ),
           decoration: InputDecoration(
             labelText: 'Quantity',
             errorText: _errorText,
-            labelStyle: const TextStyle(
-              color: secondaryTextColor,
+            labelStyle: TextStyle(
+              // --- ⭐️ MODIFIED: Theme grey color ---
+              color: textTheme.bodySmall?.color,
               fontSize: 16,
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: lightBorderColor, width: 1.5),
+              // --- ⭐️ MODIFIED: Theme border color ---
+              borderSide: BorderSide(
+                color: theme.dividerColor.withOpacity(0.5),
+                width: 1.5,
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: primaryBlue, width: 2.0),
+              // --- ⭐️ MODIFIED: Theme primary color ---
+              borderSide: BorderSide(color: colorScheme.primary, width: 2.0),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.red, width: 1.5),
+              borderSide: BorderSide(color: colorScheme.error, width: 1.5),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.red, width: 2.0),
+              borderSide: BorderSide(color: colorScheme.error, width: 2.0),
             ),
           ),
         ),
@@ -349,22 +378,25 @@ class _SellStockPageState extends State<SellStockPage> {
           padding: const EdgeInsets.only(top: 8.0, left: 12.0),
           child: Text(
             'You own: $_ownedQuantity shares',
-            style: const TextStyle(
-              color: secondaryTextColor,
+            style: TextStyle(
+              // --- ⭐️ MODIFIED: Theme grey color ---
+              color: textTheme.bodySmall?.color,
               fontWeight: FontWeight.w500,
             ),
           ),
         ),
-        const SizedBox(height: 16), // --- MODIFIED ---
+        const SizedBox(height: 16),
         _buildSegmentedControl(
+          context: context, // ⭐️ Pass context
           title: 'Product',
           options: ['Delivery', 'Intraday'],
           selectedValue: _selectedProductType,
           onChanged: (value) {},
           isEnabled: false,
         ),
-        const SizedBox(height: 16), // --- MODIFIED ---
+        const SizedBox(height: 16),
         _buildSegmentedControl(
+          context: context, // ⭐️ Pass context
           title: 'Exchange',
           options: ['NSE', 'BSE'],
           selectedValue: _selectedExchange,
@@ -376,23 +408,28 @@ class _SellStockPageState extends State<SellStockPage> {
   }
 
   Widget _buildSegmentedControl({
+    required BuildContext context, // ⭐️ Added context
     required String title,
     required List<String> options,
     required String selectedValue,
     required ValueChanged<String> onChanged,
     bool isEnabled = true,
-    Color? activeColor, // Optional active color
   }) {
-    final color = activeColor ?? primaryBlue;
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Opacity(
       opacity: isEnabled ? 1.0 : 0.5,
       child: Row(
         children: [
           Text(
             '$title:',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
-              color: secondaryTextColor,
+              // --- ⭐️ MODIFIED: Theme grey color ---
+              color: textTheme.bodySmall?.color,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -400,8 +437,11 @@ class _SellStockPageState extends State<SellStockPage> {
           Container(
             height: 40,
             decoration: BoxDecoration(
-              color: lightGreyBg,
+              // --- ⭐️ MODIFIED: Theme surface color ---
+              color: colorScheme.surface,
               borderRadius: BorderRadius.circular(10),
+              // --- ⭐️ MODIFIED: Theme border ---
+              border: Border.all(color: theme.dividerColor.withOpacity(0.5)),
             ),
             child: Row(
               children: options.map((option) {
@@ -414,14 +454,20 @@ class _SellStockPageState extends State<SellStockPage> {
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? (isEnabled ? color : Colors.grey)
+                          // --- ⭐️ MODIFIED: Theme primary color ---
+                          ? (isEnabled
+                                ? colorScheme.primary
+                                : theme.disabledColor)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
                       option,
                       style: TextStyle(
-                        color: isSelected ? Colors.white : darkTextColor,
+                        // --- ⭐️ MODIFIED: Theme text colors ---
+                        color: isSelected
+                            ? colorScheme.onPrimary
+                            : colorScheme.onSurface,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -435,57 +481,43 @@ class _SellStockPageState extends State<SellStockPage> {
     );
   }
 
-  Widget _buildOrderSummary(NumberFormat formatter) {
+  Widget _buildOrderSummary(BuildContext context, NumberFormat formatter) {
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: lightBorderColor, width: 1.5),
+        // --- ⭐️ MODIFIED: Theme border color ---
+        border: Border.all(
+          color: theme.dividerColor.withOpacity(0.5),
+          width: 1.5,
+        ),
       ),
       child: Column(
         children: [
-          _buildSummaryRow('Quantity', _quantity.toString()),
-          _buildSummaryRow('Price', formatter.format(_ltp)),
-          const Divider(height: 24),
-          _buildSummaryRow('Subtotal', formatter.format(_quantity * _ltp)),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      'Charges',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: secondaryTextColor,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.info_outline,
-                        color: secondaryTextColor,
-                        size: 18,
-                      ),
-                      onPressed: () => _showChargeDetailsBottomSheet(context),
-                    ),
-                  ],
-                ),
-                Text(
-                  "-${formatter.format(_totalCharges)}", // Note the minus sign
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: darkTextColor,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          _buildSummaryRow(
+            context,
+            'Quantity',
+            _quantity.toString(),
+          ), // ⭐️ Pass context
+          _buildSummaryRow(
+            context,
+            'Price',
+            formatter.format(_ltp),
+          ), // ⭐️ Pass context
           const Divider(height: 24),
           _buildSummaryRow(
+            context,
+            'Subtotal',
+            formatter.format(_quantity * _ltp),
+          ), // ⭐️ Pass context
+          _buildChargesRow(context, formatter), // ⭐️ Pass context
+          const Divider(height: 24),
+          _buildSummaryRow(
+            // ⭐️ Pass context
+            context,
             'Total Amount',
             formatter.format(_totalAmount),
             isTotal: true,
@@ -495,7 +527,59 @@ class _SellStockPageState extends State<SellStockPage> {
     );
   }
 
-  Widget _buildSummaryRow(String label, String value, {bool isTotal = false}) {
+  Widget _buildChargesRow(BuildContext context, NumberFormat formatter) {
+    // --- ⭐️ Theme se colors lo ---
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Text(
+                'Charges',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: textTheme.bodySmall?.color,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              IconButton(
+                icon: Icon(
+                  Icons.info_outline,
+                  color: textTheme.bodySmall?.color,
+                  size: 18,
+                ),
+                onPressed: () => _showChargeDetailsBottomSheet(context),
+              ),
+            ],
+          ),
+          Text(
+            "-${formatter.format(_totalCharges)}", // Note the minus sign
+            style: TextStyle(
+              fontSize: 16,
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow(
+    BuildContext context,
+    String label,
+    String value, {
+    bool isTotal = false,
+  }) {
+    // --- ⭐️ Theme se colors lo ---
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
@@ -505,7 +589,10 @@ class _SellStockPageState extends State<SellStockPage> {
             label,
             style: TextStyle(
               fontSize: 16,
-              color: isTotal ? darkTextColor : secondaryTextColor,
+              // --- ⭐️ MODIFIED: Theme text/grey color ---
+              color: isTotal
+                  ? colorScheme.onSurface
+                  : textTheme.bodySmall?.color,
               fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
             ),
           ),
@@ -513,7 +600,8 @@ class _SellStockPageState extends State<SellStockPage> {
             value,
             style: TextStyle(
               fontSize: 16,
-              color: darkTextColor,
+              // --- ⭐️ MODIFIED: Theme text color ---
+              color: colorScheme.onSurface,
               fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
             ),
           ),
@@ -522,30 +610,38 @@ class _SellStockPageState extends State<SellStockPage> {
     );
   }
 
-  Widget _buildBottomSellButton() {
+  Widget _buildBottomSellButton(BuildContext context) {
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16), // --- MODIFIED ---
+      // --- ⭐️ MODIFIED: Theme nav bar color ---
+      color: theme.bottomNavigationBarTheme.backgroundColor,
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: ElevatedButton(
         onPressed: (_quantity > 0 && !_isPlacingOrder && _errorText == null)
             ? _handleSell
             : null,
         style: ElevatedButton.styleFrom(
-          backgroundColor: primaryBlue,
-          foregroundColor: Colors.white,
+          // --- ⭐️ MODIFIED: Theme primary color (Blue) ---
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
           elevation: 2,
-          disabledBackgroundColor: Colors.blue.shade100,
+          // --- ⭐️ MODIFIED: Theme disabled color ---
+          disabledBackgroundColor: colorScheme.primary.withOpacity(0.3),
         ),
         child: _isPlacingOrder
-            ? const SizedBox(
+            ? SizedBox(
                 height: 24,
                 width: 24,
                 child: CircularProgressIndicator(
-                  color: Colors.white,
+                  // --- ⭐️ MODIFIED: Theme text color ---
+                  color: colorScheme.onPrimary,
                   strokeWidth: 3,
                 ),
               )
@@ -558,9 +654,14 @@ class _SellStockPageState extends State<SellStockPage> {
   }
 
   void _showChargeDetailsBottomSheet(BuildContext context) {
+    // --- ⭐️ Theme se colors lo ---
+    final colorScheme = Theme.of(context).colorScheme;
+
     showModalBottomSheet(
       context: context,
-      shape: RoundedRectangleBorder(
+      // --- ⭐️ MODIFIED: Theme background color ---
+      backgroundColor: colorScheme.surface,
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
@@ -575,21 +676,36 @@ class _SellStockPageState extends State<SellStockPage> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: darkTextColor,
+                  // --- ⭐️ MODIFIED: Theme text color ---
+                  color: colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 16),
-              _buildChargeRow('Brokerage', _chargesBreakdown['brokerage']),
-              _buildChargeRow('STT (Sell)', _chargesBreakdown['stt']),
               _buildChargeRow(
+                context,
+                'Brokerage',
+                _chargesBreakdown['brokerage'],
+              ),
+              _buildChargeRow(context, 'STT (Sell)', _chargesBreakdown['stt']),
+              _buildChargeRow(
+                context,
                 'Exchange Charges',
                 _chargesBreakdown['exchangeCharges'],
               ),
-              _buildChargeRow('SEBI Charges', _chargesBreakdown['sebiCharges']),
-              _buildChargeRow('Stamp Duty', _chargesBreakdown['stampDuty']),
-              _buildChargeRow('GST', _chargesBreakdown['gst']),
+              _buildChargeRow(
+                context,
+                'SEBI Charges',
+                _chargesBreakdown['sebiCharges'],
+              ),
+              _buildChargeRow(
+                context,
+                'Stamp Duty',
+                _chargesBreakdown['stampDuty'],
+              ),
+              _buildChargeRow(context, 'GST', _chargesBreakdown['gst']),
               const Divider(height: 24),
               _buildChargeRow(
+                context,
                 'Total Charges',
                 _chargesBreakdown['total'],
                 isTotal: true,
@@ -601,7 +717,16 @@ class _SellStockPageState extends State<SellStockPage> {
     );
   }
 
-  Widget _buildChargeRow(String label, double? value, {bool isTotal = false}) {
+  Widget _buildChargeRow(
+    BuildContext context,
+    String label,
+    double? value, {
+    bool isTotal = false,
+  }) {
+    // --- ⭐️ Theme se colors lo ---
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
@@ -611,7 +736,10 @@ class _SellStockPageState extends State<SellStockPage> {
             label,
             style: TextStyle(
               fontSize: 16,
-              color: isTotal ? darkTextColor : Colors.grey[700],
+              // --- ⭐️ MODIFIED: Theme text/grey color ---
+              color: isTotal
+                  ? colorScheme.onSurface
+                  : textTheme.bodySmall?.color,
               fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
             ),
           ),
@@ -619,7 +747,8 @@ class _SellStockPageState extends State<SellStockPage> {
             _priceFormatter.format(value ?? 0.0),
             style: TextStyle(
               fontSize: 16,
-              color: darkTextColor,
+              // --- ⭐️ MODIFIED: Theme text color ---
+              color: colorScheme.onSurface,
               fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
             ),
           ),

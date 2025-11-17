@@ -10,39 +10,31 @@ class ReferralCodePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      // --- ⭐️ MODIFIED: Theme background color ---
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        // --- ⭐️ MODIFIED: Theme app bar colors ---
+        backgroundColor: theme.appBarTheme.backgroundColor,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: Padding(
-          padding: const EdgeInsets.all(10.0),
-          child: InkWell(
-            onTap: () => Navigator.of(context).pop(),
-            borderRadius: BorderRadius.circular(20),
-            child: Container(
-              height: 40,
-              width: 40,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.grey.shade300, width: 1.5),
-              ),
-              child: const Icon(
-                Icons.arrow_back_ios_new,
-                color: Color(0xFF0D0D26),
-                size: 18,
-              ),
-            ),
-          ),
+
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new, color: colorScheme.secondary),
+          onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
+
+        title: Text(
           'Referral Code',
-          style: TextStyle(
-            color: Color(0xFF0D0D26),
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
+          // --- ⭐️⭐️ FIX: 'color' override hata diya ⭐️⭐️ ---
+          // Ab yeh theme_provider.dart se color lega
+          // (Light mode mein blue, Dark mode mein white)
+          style: theme.appBarTheme.titleTextStyle?.copyWith(fontSize: 20),
         ),
         centerTitle: true,
       ),
@@ -61,12 +53,12 @@ class ReferralCodePage extends StatelessWidget {
               errorBuilder: (context, error, stackTrace) {
                 return Container(
                   height: 250,
-                  color: Colors.grey[100],
+                  color: colorScheme.surface,
                   alignment: Alignment.center,
                   child: Text(
                     'Error: Image not found\n at assets/images/refer_page.png',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.red[700], fontSize: 12),
+                    style: TextStyle(color: colorScheme.error, fontSize: 12),
                   ),
                 );
               },
@@ -74,24 +66,24 @@ class ReferralCodePage extends StatelessWidget {
             const SizedBox(height: 40),
 
             // --- "Refer & Earn" Title ---
-            const Text(
+            Text(
               'Refer & Earn',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF0D0D26),
+                color: colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 16),
 
             // --- Description Text ---
-            const Text(
+            Text(
               'Share this code with your friend and\nboth of you will get \$10 free stocks.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
-                color: Color(0xFF8A8A8A),
+                color: textTheme.bodySmall?.color,
                 height: 1.5,
               ),
             ),
@@ -99,13 +91,12 @@ class ReferralCodePage extends StatelessWidget {
 
             // --- Referral Code Box (with DottedBorder) ---
             DottedBorder(
-              color: const Color(0xFFF50057), // Pink color from image
-              strokeWidth: 3.0, // <-- BOLDER STROKE
+              color: colorScheme.secondary,
+              strokeWidth: 3.0,
               borderType: BorderType.RRect,
               radius: const Radius.circular(24),
-              dashPattern: const [8, 4], // 8px dash, 4px gap
-              padding:
-                  EdgeInsets.zero, // Let the inner container handle padding
+              dashPattern: const [8, 4],
+              padding: EdgeInsets.zero,
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(
@@ -113,7 +104,7 @@ class ReferralCodePage extends StatelessWidget {
                   vertical: 20,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: colorScheme.surface,
                   borderRadius: BorderRadius.circular(24),
                 ),
                 child: Row(
@@ -121,10 +112,10 @@ class ReferralCodePage extends StatelessWidget {
                   children: [
                     Text(
                       _referralCode,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF0D0D26),
+                        color: colorScheme.onSurface,
                         letterSpacing: 1.1,
                       ),
                     ),
@@ -142,22 +133,22 @@ class ReferralCodePage extends StatelessWidget {
                         });
                       },
                       borderRadius: BorderRadius.circular(20),
-                      child: const Padding(
-                        padding: EdgeInsets.all(4.0),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4.0),
                         child: Row(
                           children: [
                             Icon(
                               Icons.content_copy,
-                              color: Color(0xFFF50057),
+                              color: colorScheme.secondary,
                               size: 22,
                             ),
-                            SizedBox(width: 8),
+                            const SizedBox(width: 8),
                             Text(
                               'Copy Code',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFFF50057),
+                                color: colorScheme.secondary,
                               ),
                             ),
                           ],
@@ -179,20 +170,18 @@ class ReferralCodePage extends StatelessWidget {
                   // TODO: Add share logic
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(
-                    0xFF4F00F3,
-                  ), // Vibrant purple from image
+                  backgroundColor: colorScheme.primary,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30), // Fully rounded
+                    borderRadius: BorderRadius.circular(30),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'Refer friend',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: colorScheme.onPrimary,
                   ),
                 ),
               ),

@@ -1,8 +1,6 @@
 import 'package:bullxchange/features/stock_market/screens/StockDetailPage.dart';
 import 'package:bullxchange/features/stock_market/screens/view_all_page.dart';
-import 'package:bullxchange/features/stock_market/widgets/mini_chart.dart';
-import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
-import 'package:bullxchange/models/instrument_model.dart';
+import 'package:bullxchange/features/stock_market/widgets/stock_card.dart';
 import 'package:bullxchange/models/user_profile_data_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:bullxchange/services/firebase/user_service.dart';
@@ -44,21 +42,35 @@ class _WatchListPageState extends State<WatchListPage> {
   void _deleteSelectedStocks() async {
     if (uid == null || _selectedTokens.isEmpty) return;
 
+    // --- MERGED: Theme-aware dialog from the new branch ---
+    final colorScheme = Theme.of(context).colorScheme;
+
     final bool? didConfirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Remove Stocks?'),
+        backgroundColor: colorScheme.surface,
+        title: Text(
+          'Remove Stocks?',
+          style: TextStyle(color: colorScheme.onSurface),
+        ),
         content: Text(
           'Are you sure you want to remove ${_selectedTokens.length} stock(s) from your watchlist?',
+          style: TextStyle(color: colorScheme.onSurface),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: colorScheme.onSurface),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Remove', style: TextStyle(color: Colors.red)),
+            child: Text(
+              'Remove',
+              style: TextStyle(color: colorScheme.error),
+            ), // Red
           ),
         ],
       ),
@@ -83,15 +95,27 @@ class _WatchListPageState extends State<WatchListPage> {
 
   @override
   Widget build(BuildContext context) {
+    // --- MERGED: Theme-aware logic from the new branch ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     if (uid == null) {
-      return const Center(child: Text("Please log in to see your watchlist."));
+      return Center(
+        child: Text(
+          "Please log in to see your watchlist.",
+          style: TextStyle(color: colorScheme.onSurface),
+        ),
+      );
     }
 
+    // --- MERGED: StreamBuilder for user data (rebuilds on watchlist change) ---
     return StreamBuilder<UserProfileDataModel?>(
       stream: _userService.streamUserProfile(uid!),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return Center(
+            child: CircularProgressIndicator(color: colorScheme.primary),
+          );
         }
 
         if (snapshot.hasError) {
@@ -108,115 +132,139 @@ class _WatchListPageState extends State<WatchListPage> {
         }
 
         if (!snapshot.hasData || snapshot.data == null) {
-          return const Center(child: Text("Could not load user profile."));
+          return Center(
+            child: Text(
+              "Could not load user profile.",
+              style: TextStyle(color: colorScheme.onSurface),
+            ),
+          );
         }
 
         final userProfile = snapshot.data!;
         final userWatchlistTokens = userProfile.watchlist;
 
-        return Consumer<InstrumentProvider>(
-          builder: (context, provider, child) {
-            final watchlistStocks = provider.allNSEStocks
-                .where((stock) => userWatchlistTokens.contains(stock.token))
-                .toList();
+        // --- MERGED: Performance optimization (listen: false) ---
+        final provider = Provider.of<InstrumentProvider>(
+          context,
+          listen: false,
+        );
 
-            if (watchlistStocks.isEmpty && !_isEditMode) {
-              return const Center(child: _EmptyState());
-            }
+        final watchlistStocks = provider.allNSEStocks
+            .where((stock) => userWatchlistTokens.contains(stock.token))
+            .toList();
 
-            // Since this whole widget is inside a scrollable (as shown by your error logs),
-            // this Column MUST be set to mainAxisSize.min and MUST NOT use Expanded.
-            return Column(
-              // FIX 1: Tell the Column to be only as tall as its children.
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize
-                        .min, // Header content should take minimum space
-                    children: [
-                      _buildWatchlistHeader(
-                        watchlistStocks.length,
-                        context,
-                        _isEditMode,
-                        _toggleEditMode,
-                        _deleteSelectedStocks,
-                        _selectedTokens.isNotEmpty,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildSortHeader(),
-                    ],
+        if (watchlistStocks.isEmpty && !_isEditMode) {
+          return const Center(child: _EmptyState());
+        }
+
+        // --- MERGED: Kept the layout fix (mainAxisSize: MainAxisSize.min)
+        //          AND the new theme-aware/optimized content.
+        return Column(
+          // --- THIS IS THE LAYOUT FIX FROM 'HEAD' ---
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min, // Also shrink header
+                children: [
+                  _buildWatchlistHeader(
+                    watchlistStocks.length,
+                    context,
+                    _isEditMode,
+                    _toggleEditMode,
+                    _deleteSelectedStocks,
+                    _selectedTokens.isNotEmpty,
                   ),
-                ),
-                const Divider(height: 1, thickness: 1),
+                  const SizedBox(height: 16),
+                  _buildSortHeader(context), // Pass context
+                ],
+              ),
+            ),
+            Divider(
+              height: 1,
+              thickness: 1,
+              color: theme.dividerColor.withOpacity(0.1),
+            ),
 
-                // FIX 2: REMOVE THE EXPANDED WIDGET
-                // This ListView will now build all its children, calculate its
-                // total height (shrinkWrap: true), and disable its own scrolling
-                // (physics) to let the parent scrollable handle it.
-                ListView.builder(
-                  // FIX 3: Add shrinkWrap: true
-                  shrinkWrap: true,
-                  // FIX 4: Add physics to disable nested scrolling
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: watchlistStocks.length,
-                  itemBuilder: (context, index) {
-                    final instrument = watchlistStocks[index];
-                    final isSelected = _selectedTokens.contains(
-                      instrument.token,
-                    );
+            // --- MERGED: Kept the layout fix (shrinkWrap/physics)
+            //          AND the new optimized widget (_WatchlistStockItem)
+            ListView.builder(
+              shrinkWrap: true, // <-- LAYOUT FIX
+              physics: const NeverScrollableScrollPhysics(), // <-- LAYAYOUT FIX
+              itemCount: watchlistStocks.length,
+              itemBuilder: (context, index) {
+                final instrumentToken =
+                    watchlistStocks[index].token; // ⭐️ Sirf token pass kiya
+                final isSelected = _selectedTokens.contains(instrumentToken);
 
-                    return InkWell(
-                      onTap: () {
-                        if (_isEditMode) {
-                          _toggleSelection(instrument.token);
-                        } else {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  StockDetailPage(instrument: instrument),
-                            ),
-                          );
-                        }
-                      },
-                      child: _buildStockItem(
-                        instrument: instrument,
-                        isEditMode: _isEditMode,
-                        isSelected: isSelected,
-                      ),
-                    );
+                return InkWell(
+                  onTap: () {
+                    if (_isEditMode) {
+                      _toggleSelection(instrumentToken);
+                    } else {
+                      final instrument = provider.getInstrumentByToken(
+                        instrumentToken,
+                      );
+                      if (instrument != null) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                StockDetailPage(instrument: instrument),
+                          ),
+                        );
+                      }
+                    }
                   },
-                ),
-              ],
-            );
-          },
+                  // --- MERGED: Use new optimized item widget ---
+                  child: _WatchlistStockItem(
+                    token: instrumentToken,
+                    isEditMode: _isEditMode,
+                    isSelected: isSelected,
+                  ),
+                );
+              },
+            ),
+          ],
         );
       },
     );
   }
 }
 
+// --- MERGED: Theme-aware _EmptyState ---
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
+    return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        SizedBox(height: 20),
-        Icon(Icons.bookmark_border, size: 48, color: Colors.grey),
-        SizedBox(height: 16),
+        const SizedBox(height: 20),
+        Icon(
+          Icons.bookmark_border,
+          size: 48,
+          color: textTheme.bodySmall?.color,
+        ),
+        const SizedBox(height: 16),
         Text(
           "Your Watchlist is Empty",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: colorScheme.onSurface,
+          ),
         ),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         Text(
           "Add stocks to your watchlist to track them easily.",
-          style: TextStyle(color: Colors.grey),
+          style: TextStyle(color: textTheme.bodySmall?.color),
           textAlign: TextAlign.center,
         ),
       ],
@@ -224,6 +272,7 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
+// --- MERGED: Theme-aware _buildWatchlistHeader ---
 Widget _buildWatchlistHeader(
   int stockCount,
   BuildContext context,
@@ -232,25 +281,34 @@ Widget _buildWatchlistHeader(
   VoidCallback onDeleteSelected,
   bool hasSelection,
 ) {
+  final colorScheme = Theme.of(context).colorScheme;
+
   return Row(
     children: [
       Text(
         isEditMode ? "Select Stocks" : "$stockCount stocks",
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: colorScheme.onSurface,
+        ),
       ),
       const Spacer(),
       if (isEditMode) ...[
         IconButton(
           icon: Icon(
             Icons.delete_outline,
-            color: hasSelection ? Colors.red : Colors.grey,
+            color: hasSelection ? colorScheme.error : Colors.grey,
           ),
           onPressed: hasSelection ? onDeleteSelected : null,
         ),
-        IconButton(icon: const Icon(Icons.close), onPressed: onToggleEdit),
+        IconButton(
+          icon: Icon(Icons.close, color: colorScheme.onSurface),
+          onPressed: onToggleEdit,
+        ),
       ] else ...[
         IconButton(
-          icon: const Icon(Icons.add_box_outlined),
+          icon: Icon(Icons.add_box_outlined, color: colorScheme.onSurface),
           onPressed: () {
             Navigator.pushReplacement(
               context,
@@ -259,7 +317,7 @@ Widget _buildWatchlistHeader(
           },
         ),
         IconButton(
-          icon: const Icon(Icons.edit_outlined),
+          icon: Icon(Icons.edit_outlined, color: colorScheme.onSurface),
           onPressed: onToggleEdit,
         ),
       ],
@@ -267,19 +325,29 @@ Widget _buildWatchlistHeader(
   );
 }
 
-Widget _buildSortHeader() {
+// --- MERGED: Theme-aware _buildSortHeader ---
+Widget _buildSortHeader(BuildContext context) {
+  final textTheme = Theme.of(context).textTheme;
+
   return Row(
     children: [
       TextButton.icon(
-        icon: const Icon(Icons.sort, color: Colors.black54, size: 18),
-        label: const Text("Sort", style: TextStyle(color: Colors.black54)),
+        icon: Icon(
+          Icons.sort,
+          color: textTheme.bodySmall?.color,
+          size: 18,
+        ),
+        label: Text(
+          "Sort",
+          style: TextStyle(color: textTheme.bodySmall?.color),
+        ),
         onPressed: () {},
       ),
       const Spacer(),
       Text(
         "Mkt price / 1D <>",
         style: TextStyle(
-          color: Colors.grey[700],
+          color: textTheme.bodySmall?.color,
           fontWeight: FontWeight.w500,
           fontSize: 12,
         ),
@@ -288,89 +356,73 @@ Widget _buildSortHeader() {
   );
 }
 
-Widget _buildStockItem({
-  required Instrument instrument,
-  bool isEditMode = false,
-  bool isSelected = false,
-}) {
-  final ltp = (instrument.liveData['ltp'] as num?)?.toDouble() ?? 0.0;
-  final netChange =
-      (instrument.liveData['netChange'] as num?)?.toDouble() ?? 0.0;
-  final percentChange =
-      (instrument.liveData['percentChange'] as num?)?.toDouble() ?? 0.0;
-  final changeColor = netChange >= 0 ? const Color(0xFF1EAB58) : Colors.red;
+// --- MERGED: New optimized _WatchlistStockItem widget ---
+class _WatchlistStockItem extends StatelessWidget {
+  final String token;
+  final bool isEditMode;
+  final bool isSelected;
 
-  return Container(
-    color: isSelected ? Colors.blue.withOpacity(0.1) : Colors.transparent,
-    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-    child: Row(
-      children: [
-        if (isEditMode)
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: IgnorePointer(
-              child: Checkbox(
-                value: isSelected,
-                onChanged: (val) {},
-                activeColor: Colors.blue,
+  const _WatchlistStockItem({
+    required this.token,
+    required this.isEditMode,
+    required this.isSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // This Consumer *will* rebuild when prices change
+    return Consumer<InstrumentProvider>(
+      builder: (context, provider, child) {
+        final instrument = provider.getInstrumentByToken(token);
+        if (instrument == null) {
+          return Container(
+            height: 60,
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Text(
+              "Loading $token...",
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodySmall?.color,
               ),
             ),
-          ),
-        SmartLogo(instrument: instrument, radius: 0),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          );
+        }
+
+        final colorScheme = Theme.of(context).colorScheme;
+        final theme = Theme.of(context);
+
+        return Container(
+          color: isSelected
+              ? colorScheme.primary.withOpacity(0.1)
+              : theme.scaffoldBackgroundColor,
+          child: Row(
             children: [
-              Text(
-                instrument.symbol.replaceAll('-EQ', ''),
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
+              if (isEditMode)
+                Padding(
+                  padding: const EdgeInsets.only(
+                    left: 16.0,
+                    right: 8.0,
+                  ),
+                  child: IgnorePointer(
+                    child: Checkbox(
+                      value: isSelected,
+                      onChanged: (val) {},
+                      activeColor: colorScheme.primary,
+                      side: BorderSide(color: theme.dividerColor),
+                    ),
+                  ),
+                ),
+              Expanded(
+                child: StockCard(
+                  instrument: instrument,
+                  onTap: null, // Handled by parent InkWell
                   fontSize: 12,
                 ),
               ),
-              Text(
-                instrument.name,
-                style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                overflow: TextOverflow.ellipsis,
-              ),
             ],
           ),
-        ),
-        SizedBox(
-          width: 80,
-          height: 40,
-          child: MiniChart.fromInstrument(
-            instrument: instrument,
-            color: changeColor,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              "₹${ltp.toStringAsFixed(2)}",
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-            ),
-            Row(
-              children: [
-                Icon(
-                  percentChange >= 0
-                      ? Icons.arrow_drop_up
-                      : Icons.arrow_drop_down,
-                  color: changeColor,
-                  size: 20,
-                ),
-                Text(
-                  "${percentChange.abs().toStringAsFixed(2)}%",
-                  style: TextStyle(color: changeColor, fontSize: 12),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
+        );
+      },
+    );
+  }
 }

@@ -1,11 +1,13 @@
-// --- lib/features/stock_market/screens/stock_detail_page.dart ---
+// --- ⭐️ ADDED IMPORTS ---
+import 'package:bullxchange/provider/theme_provider.dart';
+// -------------------------
 
 import 'package:bullxchange/features/stock_market/screens/buy_stock_page.dart';
 import 'package:bullxchange/features/stock_market/screens/sell_stock_page.dart';
 import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/models/stock_holding_model.dart';
-import 'package:bullxchange/models/user_profile_data_model.dart'; // <-- IMPORT USER MODEL
+import 'package:bullxchange/models/user_profile_data_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -14,9 +16,6 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
-// --- REMOVED THE PLACEHOLDER IconBookmarkButton WIDGET ---
-
-// --- 1. CONVERTED TO STATEFULWIDGET ---
 class StockDetailPage extends StatefulWidget {
   final Instrument instrument;
   const StockDetailPage({super.key, required this.instrument});
@@ -26,13 +25,10 @@ class StockDetailPage extends StatefulWidget {
 }
 
 class _StockDetailPageState extends State<StockDetailPage> {
-  // --- 2. ADDED SERVICE AND UID ---
   final UserService _userService = UserService();
   final String? uid = FirebaseAuth.instance.currentUser?.uid;
-  final UserService _bottomButtonUserService =
-      UserService(); // For bottom buttons
+  final UserService _bottomButtonUserService = UserService();
 
-  // --- 3. ADDED THE TOGGLE FUNCTION ---
   void _toggleWatchlist() async {
     if (uid == null) {
       ScaffoldMessenger.of(
@@ -42,10 +38,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
     }
 
     try {
-      // Call the function from your UserService
       await _userService.toggleWatchlistStock(uid!, widget.instrument.token);
-
-      // Feedback is handled by the StreamBuilder rebuilding the icon
     } catch (e) {
       ScaffoldMessenger.of(
         context,
@@ -55,10 +48,16 @@ class _StockDetailPageState extends State<StockDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    const Color primaryPink = Color(0xFFF61C7A);
-    const Color primaryBlue = Color(0xFF3500D4);
-    const Color darkTextColor = Color(0xFF03314B);
-    const Color lightGreyBg = Color(0xFFF5F5F5);
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
+    // --- ⭐️ REMOVED HARDCODED COLORS ---
+    // const Color primaryPink = ...
+    // const Color primaryBlue = ...
+    // const Color darkTextColor = ...
+    // const Color lightGreyBg = ...
 
     final ltp = (widget.instrument.liveData['ltp'] as num?)?.toDouble() ?? 0.0;
     final netChange =
@@ -66,36 +65,42 @@ class _StockDetailPageState extends State<StockDetailPage> {
     final percentChange =
         (widget.instrument.liveData['percentChange'] as num?)?.toDouble() ??
         0.0;
-    final changeColor = netChange >= 0 ? const Color(0xFF1EAB58) : primaryPink;
+
+    // --- ⭐️ MODIFIED: Use theme's pink (secondary) color ---
+    final changeColor = netChange >= 0
+        ? const Color(0xFF1EAB58)
+        : colorScheme.secondary;
     final priceParts = ltp.toStringAsFixed(2).split('.');
 
-    // --- 4. WRAPPED SCAFFOLD IN STREAMBUILDER ---
     return StreamBuilder<UserProfileDataModel?>(
       stream: (uid != null) ? _userService.streamUserProfile(uid!) : null,
       builder: (context, snapshot) {
-        bool isInWatchlist = false; // Default to false
+        bool isInWatchlist = false;
         if (snapshot.hasData && snapshot.data != null) {
-          // Check if this instrument's token is in the user's watchlist
           isInWatchlist = snapshot.data!.watchlist.contains(
             widget.instrument.token,
           );
         }
 
         return Scaffold(
-          backgroundColor: Colors.white,
+          // --- ⭐️ MODIFIED: Theme background color ---
+          backgroundColor: theme.scaffoldBackgroundColor,
           appBar: AppBar(
-            backgroundColor: Colors.white,
-            elevation: 0,
+            // --- ⭐️ MODIFIED: Theme App Bar color ---
+            backgroundColor: theme.appBarTheme.backgroundColor,
+            elevation: theme.appBarTheme.elevation,
             leading: Padding(
               padding: const EdgeInsets.only(left: 8.0),
               child: Container(
                 margin: const EdgeInsets.symmetric(vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  // --- ⭐️ MODIFIED: Theme surface color ---
+                  color: colorScheme.surface,
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
+                      // --- ⭐️ MODIFIED: Theme shadow color ---
+                      color: theme.shadowColor.withOpacity(0.1),
                       spreadRadius: 1,
                       blurRadius: 5,
                       offset: const Offset(0, 1),
@@ -103,9 +108,10 @@ class _StockDetailPageState extends State<StockDetailPage> {
                   ],
                 ),
                 child: IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.arrow_back_ios_new,
-                    color: Colors.black,
+                    // --- ⭐️ MODIFIED: Theme icon color ---
+                    color: colorScheme.onSurface,
                     size: 20,
                   ),
                   onPressed: () => Navigator.pop(context),
@@ -113,28 +119,23 @@ class _StockDetailPageState extends State<StockDetailPage> {
               ),
             ),
             title: Text(
-              widget.instrument.symbol.replaceAll(
-                '-EQ',
-                '',
-              ), // restored: show symbol
-              style: const TextStyle(
-                color: darkTextColor,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
+              widget.instrument.symbol.replaceAll('-EQ', ''),
+              // --- ⭐️ MODIFIED: Style ab AppTheme se aa raha hai ---
+              style: theme.appBarTheme.titleTextStyle?.copyWith(fontSize: 16),
               overflow: TextOverflow.ellipsis,
             ),
             centerTitle: true,
             actions: [
-              // --- 5. REPLACED WITH DYNAMIC ICONBUTTON ---
               Container(
                 margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  // --- ⭐️ MODIFIED: Theme surface color ---
+                  color: colorScheme.surface,
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
+                      // --- ⭐️ MODIFIED: Theme shadow color ---
+                      color: theme.shadowColor.withOpacity(0.1),
                       spreadRadius: 1,
                       blurRadius: 5,
                       offset: const Offset(0, 1),
@@ -146,7 +147,10 @@ class _StockDetailPageState extends State<StockDetailPage> {
                     isInWatchlist
                         ? Icons.bookmark
                         : Icons.bookmark_border_outlined,
-                    color: isInWatchlist ? primaryBlue : darkTextColor,
+                    // --- ⭐️ MODIFIED: Theme icon colors ---
+                    color: isInWatchlist
+                        ? colorScheme.primary
+                        : colorScheme.onSurface,
                     size: 24,
                   ),
                   onPressed: _toggleWatchlist,
@@ -161,31 +165,33 @@ class _StockDetailPageState extends State<StockDetailPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildCompanyHeader(
+                    context, // ⭐️ Pass context
                     widget.instrument,
                     percentChange,
                     changeColor,
-                    darkTextColor,
                   ),
                   const SizedBox(height: 10),
                   _buildPriceDetails(
+                    context, // ⭐️ Pass context
                     priceParts,
                     netChange,
                     changeColor,
-                    darkTextColor,
                   ),
                   const SizedBox(height: 20),
                   SizedBox(
-                    height: 420, // Height for the chart
-                    // --- ✨ CHART FIX 1: Pass the whole instrument ---
-                    child: TradingViewChart(instrument: widget.instrument),
+                    height: 420,
+                    child: TradingViewChart(
+                      instrument: widget.instrument,
+                    ), // ⭐️ Yeh ab theme-aware hai
                   ),
                   const SizedBox(height: 20),
-                  const Text(
+                  Text(
                     "Statistics",
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: darkTextColor,
+                      // --- ⭐️ MODIFIED: Theme text color ---
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -228,6 +234,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
                       final double marketCap = ltp * outstandingShares;
 
                       return _buildStatisticsCard(
+                        context: context, // ⭐️ Pass context
                         open: apiOpen,
                         high: apiHigh,
                         low: apiLow,
@@ -240,8 +247,6 @@ class _StockDetailPageState extends State<StockDetailPage> {
                         marketCap: marketCap,
                         avgVolume: avgVolume.toDouble(),
                         outstandingShares: outstandingShares,
-                        lightGreyBg: lightGreyBg,
-                        darkTextColor: darkTextColor,
                       );
                     },
                   ),
@@ -254,11 +259,9 @@ class _StockDetailPageState extends State<StockDetailPage> {
             child: SizedBox(
               height: 72.0,
               child: _buildBottomButtons(
-                context,
-                primaryPink,
-                primaryBlue,
+                context, // ⭐️ Pass context
                 ltp,
-                widget.instrument, // Pass instrument to bottom buttons
+                widget.instrument,
               ),
             ),
           ),
@@ -267,14 +270,18 @@ class _StockDetailPageState extends State<StockDetailPage> {
     );
   }
 
-  // --- Widget Builders (All are identical to your provided code) ---
+  // --- Widget Builders (Refactored for Theme) ---
 
   Widget _buildCompanyHeader(
+    BuildContext context, // ⭐️ Added context
     Instrument instrument,
     double percentChange,
     Color changeColor,
-    Color darkTextColor,
   ) {
+    // --- ⭐️ Theme se colors lo ---
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Row(
       children: [
         SmartLogo(instrument: instrument, radius: 0),
@@ -288,15 +295,17 @@ class _StockDetailPageState extends State<StockDetailPage> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: darkTextColor,
+                  // --- ⭐️ MODIFIED: Theme text color ---
+                  color: colorScheme.onSurface,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
               Text(
                 instrument.name,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey,
+                  // --- ⭐️ MODIFIED: Theme grey color ---
+                  color: textTheme.bodySmall?.color,
                   fontWeight: FontWeight.w500,
                 ),
                 overflow: TextOverflow.ellipsis,
@@ -336,11 +345,14 @@ class _StockDetailPageState extends State<StockDetailPage> {
   }
 
   Widget _buildPriceDetails(
+    BuildContext context, // ⭐️ Added context
     List<String> priceParts,
     double netChange,
     Color changeColor,
-    Color darkTextColor,
   ) {
+    // --- ⭐️ Theme se colors lo ---
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.only(left: 4.0),
       child: Column(
@@ -354,7 +366,8 @@ class _StockDetailPageState extends State<StockDetailPage> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: darkTextColor,
+                  // --- ⭐️ MODIFIED: Theme text color ---
+                  color: colorScheme.onSurface,
                 ),
               ),
               Text(
@@ -362,7 +375,8 @@ class _StockDetailPageState extends State<StockDetailPage> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: darkTextColor,
+                  // --- ⭐️ MODIFIED: Theme text color ---
+                  color: colorScheme.onSurface,
                 ),
               ),
               Padding(
@@ -384,6 +398,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
   }
 
   Widget _buildStatisticsCard({
+    required BuildContext context, // ⭐️ Added context
     required double open,
     required double high,
     required double low,
@@ -396,9 +411,11 @@ class _StockDetailPageState extends State<StockDetailPage> {
     required double marketCap,
     required double avgVolume,
     required double outstandingShares,
-    required Color lightGreyBg,
-    required Color darkTextColor,
   }) {
+    // --- ⭐️ Theme se colors lo ---
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     final volumeFormatter = NumberFormat.decimalPattern('en_US');
 
     final List<Map<String, String>> stats = [
@@ -422,7 +439,8 @@ class _StockDetailPageState extends State<StockDetailPage> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
-        color: lightGreyBg,
+        // --- ⭐️ MODIFIED: Theme surface color ---
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(15),
       ),
       child: GridView.builder(
@@ -433,8 +451,6 @@ class _StockDetailPageState extends State<StockDetailPage> {
           crossAxisCount: 3,
           crossAxisSpacing: 12,
           mainAxisSpacing: 8,
-          // --- ✨ OVERFLOW FIX ---
-          // Increased from 62.0 to 65.0 to give space for wrapped labels
           mainAxisExtent: 65.0,
         ),
         itemBuilder: (context, index) {
@@ -444,8 +460,9 @@ class _StockDetailPageState extends State<StockDetailPage> {
             children: [
               Text(
                 stat['label']!,
-                style: const TextStyle(
-                  color: Colors.grey,
+                style: TextStyle(
+                  // --- ⭐️ MODIFIED: Theme grey color ---
+                  color: textTheme.bodySmall?.color,
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
@@ -458,7 +475,8 @@ class _StockDetailPageState extends State<StockDetailPage> {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
-                    color: darkTextColor,
+                    // --- ⭐️ MODIFIED: Theme text color ---
+                    color: colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -471,19 +489,23 @@ class _StockDetailPageState extends State<StockDetailPage> {
 
   Widget _buildBottomButtons(
     BuildContext context,
-    Color buyColor,
-    Color sellColor,
     double ltp,
-    Instrument instrument, // <-- Passed instrument
+    Instrument instrument,
   ) {
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
-      color: Colors.white,
+      // --- ⭐️ MODIFIED: Theme nav bar color ---
+      color: theme.bottomNavigationBarTheme.backgroundColor,
       padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
       child: Row(
         children: [
           Expanded(
             child: ElevatedButton(
               onPressed: () async {
+                // ... (Sell logic unchanged) ...
                 final uid = FirebaseAuth.instance.currentUser?.uid;
                 if (uid == null) {
                   if (context.mounted) {
@@ -495,11 +517,8 @@ class _StockDetailPageState extends State<StockDetailPage> {
                   }
                   return;
                 }
-
-                // Use the service instance from the State
                 final userProfile = await _bottomButtonUserService
                     .readUserProfile(uid);
-
                 if (userProfile == null || userProfile.stocks.isEmpty) {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -510,7 +529,6 @@ class _StockDetailPageState extends State<StockDetailPage> {
                   }
                   return;
                 }
-
                 StockHoldingModel? holdingToSell;
                 try {
                   final symbolToFind = instrument.symbol.replaceAll('-EQ', '');
@@ -520,7 +538,6 @@ class _StockDetailPageState extends State<StockDetailPage> {
                 } catch (e) {
                   holdingToSell = null;
                 }
-
                 if (context.mounted) {
                   if (holdingToSell != null) {
                     Navigator.push(
@@ -542,7 +559,8 @@ class _StockDetailPageState extends State<StockDetailPage> {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: sellColor,
+                // --- ⭐️ MODIFIED: Theme SELL color (Blue) ---
+                backgroundColor: colorScheme.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
@@ -566,7 +584,8 @@ class _StockDetailPageState extends State<StockDetailPage> {
                 ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: buyColor,
+                // --- ⭐️ MODIFIED: Theme BUY color (Pink) ---
+                backgroundColor: colorScheme.secondary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
@@ -586,11 +605,9 @@ class _StockDetailPageState extends State<StockDetailPage> {
   }
 }
 
-// --- ✨ CHART WIDGET FIXED ---
+// --- ✨ CHART WIDGET (Theme-Aware & Error Fixed) ---
 class TradingViewChart extends StatefulWidget {
-  // --- Changed 'symbol' to 'instrument' ---
   final Instrument instrument;
-
   const TradingViewChart({super.key, required this.instrument});
 
   @override
@@ -598,26 +615,62 @@ class TradingViewChart extends StatefulWidget {
 }
 
 class _TradingViewChartState extends State<TradingViewChart> {
+  // --- ⭐️ MODIFIED: Added flag ---
   late final WebViewController _controller;
+  bool _isControllerInitialized = false;
 
   @override
   void initState() {
     super.initState();
-
-    _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0x00000000))
-      ..loadHtmlString(_buildTradingViewHtml());
+    // ⭐️ InitState ko khaali rakha
   }
 
-  String _buildTradingViewHtml() {
-    // --- Use instrument properties to build the correct symbol ---
+  // --- ⭐️⭐️ FIX: Logic ko initState se didChangeDependencies mein move kiya ⭐️⭐️ ---
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Controller ko sirf ek baar initialize karein
+    if (!_isControllerInitialized) {
+      final themeMode = Provider.of<ThemeNotifier>(
+        context,
+        listen: false,
+      ).themeMode;
+      // Fallback ke saath Brightness use kiya
+      final brightness =
+          MediaQuery.maybeOf(context)?.platformBrightness ?? Brightness.light;
+
+      String chartTheme;
+      String toolbarBg;
+
+      if (themeMode == ThemeMode.dark) {
+        chartTheme = "dark";
+        toolbarBg = "#1E1E1E"; // (Dark Grey)
+      } else if (themeMode == ThemeMode.light) {
+        chartTheme = "light";
+        toolbarBg = "#f1f3f6"; // (Light Grey)
+      } else {
+        // System
+        chartTheme = (brightness == Brightness.dark) ? "dark" : "light";
+        toolbarBg = (brightness == Brightness.dark) ? "#1E1E1E" : "#f1f3f6";
+      }
+
+      _controller = WebViewController()
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..setBackgroundColor(const Color(0x00000000))
+        ..loadHtmlString(_buildTradingViewHtml(chartTheme, toolbarBg));
+
+      // Flag set kiya taaki build method chale
+      setState(() {
+        _isControllerInitialized = true;
+      });
+    }
+  }
+
+  String _buildTradingViewHtml(String chartTheme, String toolbarBg) {
+    // ... (Yeh function unchanged hai) ...
     final sanitizedSymbol = widget.instrument.symbol.replaceAll('-EQ', '');
-
-    // Use the exchange from the instrument, default to BSE if not NSE
     final exchange = widget.instrument.exchSeg == 'NSE' ? 'NSE' : 'BSE';
-
-    // --- Correctly use the exchange ---
     final tradingViewSymbol = '$exchange:$sanitizedSymbol';
 
     return '''
@@ -638,10 +691,10 @@ class _TradingViewChartState extends State<TradingViewChart> {
               "interval": "D",
               "intervals": ["1", "5", "15", "30", "60", "D", "W", "M"],
               "timezone": "Asia/Kolata",
-              "theme": "light",
+              "theme": "$chartTheme", 
               "style": "1",
               "locale": "in",
-              "toolbar_bg": "#f1f3f6",
+              "toolbar_bg": "$toolbarBg",
               "enable_publishing": false,
               "withdateranges": true,
               "hide_side_toolbar": false,
@@ -659,6 +712,14 @@ class _TradingViewChartState extends State<TradingViewChart> {
 
   @override
   Widget build(BuildContext context) {
+    // --- ⭐️ MODIFIED: Jab tak controller ready na ho, loader dikhayein ---
+    if (!_isControllerInitialized) {
+      return Center(
+        child: CircularProgressIndicator(
+          color: Theme.of(context).colorScheme.primary,
+        ),
+      );
+    }
     return WebViewWidget(controller: _controller);
   }
 }

@@ -1,4 +1,5 @@
 import 'package:bullxchange/features/stock_market/screens/order_details_page.dart';
+
 import 'package:bullxchange/models/transaction_model.dart';
 import 'package:flutter/material.dart';
 // import 'package:intl/intl.dart';
@@ -13,28 +14,29 @@ class TransactionSuccessPage extends StatelessWidget {
     required this.transactionId,
   });
 
-  // Using the purple color from the screenshot
-  static const Color primaryPurple = Color(0xFF4F46E5);
-  static const Color darkTextColor = Color(0xFF03314B);
+  // --- ⭐️ REMOVED HARDCODED COLORS ---
+  // static const Color primaryPurple = ...
+  // static const Color darkTextColor = ...
 
   @override
   Widget build(BuildContext context) {
-    // final priceFormatter = NumberFormat.currency(
-    //   locale: 'en_IN',
-    //   symbol: '₹',
-    //   decimalDigits: 2,
-    // );
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
 
+    // (Logic unchanged)
     final bool isBuy = transaction.transactionType == 'BUY';
     final String actionText = isBuy ? "purchased" : "sold";
     final String stockQuantity = transaction.quantity.toString();
-    // final String amountText = priceFormatter.format(transaction.totalAmount);
     final String companyName = transaction.companyName;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      // --- ⭐️ MODIFIED: Theme background color ---
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        // --- ⭐️ MODIFIED: Theme app bar color ---
+        backgroundColor: theme.appBarTheme.backgroundColor,
         elevation: 0,
         automaticallyImplyLeading: false, // Removes back arrow
       ),
@@ -46,27 +48,34 @@ class TransactionSuccessPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Spacer(flex: 2),
-              // Illustration - Using a placeholder icon
+              // Illustration
               Center(
                 child: Image.asset(
-                  'assets/images/transaction_success.png', // Placeholder for your illustration
+                  'assets/images/transaction_success.png',
                   height: 200,
-                  // If you don't have an image, use an icon:
-                  // child: Icon(
-                  //   Icons.check_circle_outline,
-                  //   color: Colors.green,
-                  //   size: 150,
-                  // ),
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      height: 200,
+                      alignment: Alignment.center,
+                      // --- ⭐️ MODIFIED: Fallback icon ---
+                      child: Icon(
+                        Icons.check_circle_outline,
+                        color: Colors.green,
+                        size: 150,
+                      ),
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: 32),
               Text(
                 "Transaction Complete",
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
-                  color: darkTextColor,
+                  // --- ⭐️ MODIFIED: Theme text color ---
+                  color: colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 12),
@@ -75,34 +84,39 @@ class TransactionSuccessPage extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.grey[600],
+                  // --- ⭐️ MODIFIED: Theme grey color ---
+                  color: textTheme.bodySmall?.color,
                   height: 1.5,
                 ),
               ),
               const Spacer(flex: 3),
               ElevatedButton(
                 onPressed: () {
-                  // Pops all routes until the first one (usually your home screen)
                   Navigator.of(context).popUntil((route) => route.isFirst);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryPurple,
-                  foregroundColor: Colors.white,
+                  // --- ⭐️ MODIFIED: Theme button color (Blue) ---
+                  backgroundColor: colorScheme.primary,
+                  foregroundColor: colorScheme.onPrimary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                   elevation: 2,
                 ),
-                child: const Text(
+                child: Text(
                   "Go to Home",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    // --- ⭐️ MODIFIED: Theme text color ---
+                    color: colorScheme.onPrimary,
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
               TextButton(
                 onPressed: () {
-                  // Navigate to the Order Details page
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -113,12 +127,13 @@ class TransactionSuccessPage extends StatelessWidget {
                     ),
                   );
                 },
-                child: const Text(
+                child: Text(
                   "Order Details",
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: primaryPurple,
+                    // --- ⭐️ MODIFIED: Theme accent color (Pink) ---
+                    color: colorScheme.secondary,
                   ),
                 ),
               ),

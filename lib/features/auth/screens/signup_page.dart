@@ -1,9 +1,9 @@
 import 'package:bullxchange/features/auth/screens/onboarding_page_1.2.dart';
+
 import 'package:bullxchange/features/auth/screens/login_page.dart';
 import 'package:bullxchange/features/auth/screens/setup_pin_screen.dart';
 import 'package:bullxchange/features/auth/navigation/route_transitions.dart';
 import 'package:bullxchange/services/firebase/user_service.dart';
-import 'package:bullxchange/features/auth/widgets/app_back_button.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
@@ -20,33 +20,28 @@ class SignupPage extends StatefulWidget {
 class _SignupPageState extends State<SignupPage> {
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
-  // 1. Add Mobile Number Controller
   final _mobileController = TextEditingController();
   final _passwordController = TextEditingController();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  // Use the updated model-based UserService
   final UserService _usersService = UserService();
 
   bool _obscurePassword = true;
   bool _agreedToTerms = false;
   bool _isSubmitting = false;
 
-  final Color primaryBlue = const Color(0xFF4318FF);
-  final Color secondaryText = const Color(0xFF8AA0B2);
-  final Color titleText = const Color(0xFF0F2B46);
+  // --- ⭐️ Hardcoded colors hata diye ---
 
   @override
   void dispose() {
     _fullNameController.dispose();
     _emailController.dispose();
-    // 2. Dispose Mobile Number Controller
     _mobileController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  // ✅ Email validation via Abstract API
+  // (validateEmailWithAPI function unchanged)
   Future<bool> validateEmailWithAPI(String email) async {
     try {
       final dio = Dio();
@@ -68,27 +63,40 @@ class _SignupPageState extends State<SignupPage> {
     }
   }
 
-  // ✅ Popup error dialog (matches LoginPage style)
+  // ✅ Popup error dialog (Theme-Aware)
   Future<void> _showErrorDialog(String message) async {
     if (!mounted) return;
+
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        // --- ⭐️ MODIFIED: Theme colors ---
+        backgroundColor: colorScheme.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Text(
           'Signup Failed',
-          style: TextStyle(color: titleText, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         content: Text(
           message,
-          style: TextStyle(color: secondaryText, fontSize: 16),
+          style: TextStyle(color: colorScheme.onSurface, fontSize: 16),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
             child: Text(
               'Okay',
-              style: TextStyle(color: primaryBlue, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                color: colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -96,11 +104,11 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 
-  // ✅ Signup flow
+  // ✅ Signup flow (Unchanged)
   Future<void> _signUp() async {
     final fullName = _fullNameController.text.trim();
     final email = _emailController.text.trim();
-    final mobileNo = _mobileController.text.trim(); // 3a. Get mobile number
+    final mobileNo = _mobileController.text.trim();
     final password = _passwordController.text.trim();
 
     if (fullName.isEmpty ||
@@ -111,7 +119,6 @@ class _SignupPageState extends State<SignupPage> {
       return;
     }
 
-    // Simple mobile number validation (10 digits)
     if (mobileNo.length != 10 || int.tryParse(mobileNo) == null) {
       _showErrorDialog('Please enter a valid 10-digit mobile number.');
       return;
@@ -145,17 +152,15 @@ class _SignupPageState extends State<SignupPage> {
 
       final user = credential.user;
       if (user != null) {
-        // Call the model-based addUserProfile method
         await _usersService.addUserProfile(
           uid: user.uid,
           name: fullName,
           emailId: email,
-          mobileNo: mobileNo, // 3b. Pass actual mobile number
+          mobileNo: mobileNo,
         );
 
         if (!mounted) return;
 
-        // Go to PIN setup after successful signup
         Navigator.pushReplacement(
           context,
           slideRightToLeft(const SetupPinScreen()),
@@ -186,8 +191,14 @@ class _SignupPageState extends State<SignupPage> {
 
   @override
   Widget build(BuildContext context) {
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      // --- ⭐️ MODIFIED: Theme background color ---
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -196,7 +207,12 @@ class _SignupPageState extends State<SignupPage> {
             children: [
               const SizedBox(height: 20),
 
-              AppBackButton(
+              // --- ⭐️ MODIFIED: Standard BackButton (theme-aware) ---
+              IconButton(
+                icon: Icon(
+                  Icons.arrow_back_ios_new,
+                  color: colorScheme.secondary,
+                ),
                 onPressed: () => Navigator.pushReplacement(
                   context,
                   slideLeftToRight(const OnboardingPage12()),
@@ -210,10 +226,15 @@ class _SignupPageState extends State<SignupPage> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: primaryBlue,
+                      // --- ⭐️ MODIFIED: Theme primary color ---
+                      color: colorScheme.primary,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.trending_up, color: Colors.white),
+                    // --- ⭐️ MODIFIED: Theme "onPrimary" color (White) ---
+                    child: Icon(
+                      Icons.trending_up,
+                      color: colorScheme.onPrimary,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Text(
@@ -222,36 +243,40 @@ class _SignupPageState extends State<SignupPage> {
                       fontFamily: 'EudoxusSans',
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
-                      color: primaryBlue,
+                      // --- ⭐️ MODIFIED: Theme primary color ---
+                      color: colorScheme.primary,
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 30),
 
-              const Text(
+              Text(
                 "Getting Started",
                 style: TextStyle(
                   fontFamily: 'EudoxusSans',
                   fontSize: 28,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF0F2B46),
+                  // --- ⭐️ MODIFIED: Theme text color ---
+                  color: colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 8),
 
-              const Text(
+              Text(
                 "Create an account to continue!",
                 style: TextStyle(
                   fontFamily: 'EudoxusSans',
                   fontSize: 16,
                   fontWeight: FontWeight.w400,
-                  color: Color(0xFF8AA0B2),
+                  // --- ⭐️ MODIFIED: Theme grey color ---
+                  color: textTheme.bodySmall?.color,
                 ),
               ),
               const SizedBox(height: 40),
 
               _buildTextFieldWithLabel(
+                context: context, // ⭐️ Pass context
                 label: 'Full Name',
                 controller: _fullNameController,
                 hintText: 'Full Name',
@@ -260,6 +285,7 @@ class _SignupPageState extends State<SignupPage> {
               const SizedBox(height: 16),
 
               _buildTextFieldWithLabel(
+                context: context, // ⭐️ Pass context
                 label: 'Email Address',
                 controller: _emailController,
                 hintText: 'Email Address',
@@ -267,8 +293,8 @@ class _SignupPageState extends State<SignupPage> {
               ),
               const SizedBox(height: 16),
 
-              // 4. Mobile Number Text Field
               _buildTextFieldWithLabel(
+                context: context, // ⭐️ Pass context
                 label: 'Mobile Number',
                 controller: _mobileController,
                 hintText: '10-digit Mobile Number',
@@ -277,6 +303,7 @@ class _SignupPageState extends State<SignupPage> {
               const SizedBox(height: 16),
 
               _buildTextFieldWithLabel(
+                context: context, // ⭐️ Pass context
                 label: 'Password',
                 controller: _passwordController,
                 hintText: 'Password',
@@ -289,7 +316,8 @@ class _SignupPageState extends State<SignupPage> {
                     _obscurePassword
                         ? Icons.visibility_off_outlined
                         : Icons.visibility_outlined,
-                    color: secondaryText,
+                    // --- ⭐️ MODIFIED: Theme grey color ---
+                    color: textTheme.bodySmall?.color,
                   ),
                 ),
               ),
@@ -301,7 +329,10 @@ class _SignupPageState extends State<SignupPage> {
                     value: _agreedToTerms,
                     onChanged: (val) =>
                         setState(() => _agreedToTerms = val ?? false),
-                    activeColor: primaryBlue,
+                    // --- ⭐️ MODIFIED: Theme primary color ---
+                    activeColor: colorScheme.primary,
+                    // --- ⭐️ MODIFIED: Theme border color ---
+                    side: BorderSide(color: textTheme.bodySmall!.color!),
                   ),
                   Expanded(
                     child: RichText(
@@ -309,14 +340,16 @@ class _SignupPageState extends State<SignupPage> {
                         style: TextStyle(
                           fontFamily: 'EudoxusSans',
                           fontSize: 14,
-                          color: secondaryText,
+                          // --- ⭐️ MODIFIED: Theme grey color ---
+                          color: textTheme.bodySmall?.color,
                         ),
                         children: [
                           const TextSpan(text: 'I agree to the '),
                           TextSpan(
                             text: 'Terms of Service',
                             style: TextStyle(
-                              color: primaryBlue,
+                              // --- ⭐️ MODIFIED: Theme primary color ---
+                              color: colorScheme.primary,
                               fontWeight: FontWeight.bold,
                             ),
                             recognizer: TapGestureRecognizer()..onTap = () {},
@@ -325,7 +358,8 @@ class _SignupPageState extends State<SignupPage> {
                           TextSpan(
                             text: 'Privacy Policy',
                             style: TextStyle(
-                              color: primaryBlue,
+                              // --- ⭐️ MODIFIED: Theme primary color ---
+                              color: colorScheme.primary,
                               fontWeight: FontWeight.bold,
                             ),
                             recognizer: TapGestureRecognizer()..onTap = () {},
@@ -344,8 +378,9 @@ class _SignupPageState extends State<SignupPage> {
                 child: ElevatedButton(
                   onPressed: _agreedToTerms && !_isSubmitting ? _signUp : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryBlue,
-                    foregroundColor: Colors.white,
+                    // --- ⭐️ MODIFIED: Theme button colors ---
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -355,12 +390,14 @@ class _SignupPageState extends State<SignupPage> {
                           strokeWidth: 2.5,
                           valueColor: AlwaysStoppedAnimation(Colors.white),
                         )
-                      : const Text(
+                      : Text(
                           'Start',
                           style: TextStyle(
                             fontFamily: 'EudoxusSans',
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
+                            // --- ⭐️ MODIFIED: Theme text color ---
+                            color: colorScheme.onPrimary,
                           ),
                         ),
                 ),
@@ -374,14 +411,16 @@ class _SignupPageState extends State<SignupPage> {
                       fontFamily: 'EudoxusSans',
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: secondaryText,
+                      // --- ⭐️ MODIFIED: Theme grey color ---
+                      color: textTheme.bodySmall?.color,
                     ),
                     children: [
                       const TextSpan(text: "Already have an account? "),
                       TextSpan(
                         text: 'Sign in',
-                        style: const TextStyle(
-                          color: Colors.black,
+                        style: TextStyle(
+                          // --- ⭐️ MODIFIED: Theme primary color ---
+                          color: colorScheme.primary,
                           fontWeight: FontWeight.w700,
                         ),
                         recognizer: TapGestureRecognizer()
@@ -405,6 +444,7 @@ class _SignupPageState extends State<SignupPage> {
   }
 
   Widget _buildTextFieldWithLabel({
+    required BuildContext context, // ⭐️ Added context
     required String label,
     required TextEditingController controller,
     required String hintText,
@@ -412,21 +452,50 @@ class _SignupPageState extends State<SignupPage> {
     bool obscureText = false,
     Widget? suffixIcon,
   }) {
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+          // --- ⭐️ MODIFIED: Theme text color ---
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: colorScheme.onSurface,
+          ),
         ),
         const SizedBox(height: 4),
         TextField(
           controller: controller,
           keyboardType: keyboardType,
           obscureText: obscureText,
+          // --- ⭐️ MODIFIED: Theme text color ---
+          style: TextStyle(color: colorScheme.onSurface),
           decoration: InputDecoration(
             hintText: hintText,
+            // --- ⭐️ MODIFIED: Theme hint color ---
+            hintStyle: TextStyle(color: textTheme.bodySmall?.color),
+            // --- ⭐️ MODIFIED: Theme surface color ---
+            filled: true,
+            fillColor: colorScheme.surface,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              // --- ⭐️ MODIFIED: Theme divider color ---
+              borderSide: BorderSide(
+                color: theme.dividerColor.withOpacity(0.5),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              // --- ⭐️ MODIFIED: Theme primary color ---
+              borderSide: BorderSide(color: colorScheme.primary),
+            ),
             suffixIcon: suffixIcon,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,

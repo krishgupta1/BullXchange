@@ -9,7 +9,12 @@ class IndexCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Logic pulled directly from your StockPage _buildIndexCard
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
+    // --- Data Logic (Unchanged) ---
     final name =
         title ?? // Use the override title if provided
         instrument?.name.toUpperCase().replaceFirst("NIFTY ", "") ??
@@ -21,7 +26,7 @@ class IndexCard extends StatelessWidget {
         instrument?.liveData["percentChange"]?.toStringAsFixed(2) ?? "0.00";
 
     final double changeValue = num.tryParse(netChange)?.toDouble() ?? 0.0;
-    // Use isNegative check from FutureOptionPage for consistency
+    // Green/Red colors same rehte hain
     final changeColor = changeValue.isNegative ? Colors.red : Colors.green;
 
     final changeText = "$netChange($percentChange%)";
@@ -29,11 +34,13 @@ class IndexCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        // --- ⭐️ MODIFIED: Theme se background color ---
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            // --- ⭐️ MODIFIED: Theme se shadow color ---
+            color: theme.shadowColor.withOpacity(0.1),
             spreadRadius: 2,
             blurRadius: 8,
             offset: const Offset(0, 4),
@@ -46,7 +53,8 @@ class IndexCard extends StatelessWidget {
           Text(
             name,
             style: TextStyle(
-              color: Colors.grey[600],
+              // --- ⭐️ MODIFIED: Theme se grey text color ---
+              color: textTheme.bodySmall?.color,
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
@@ -54,13 +62,18 @@ class IndexCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             value != "0.00" ? "₹$value" : "...",
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              // --- ⭐️ MODIFIED: Theme se main text color ---
+              color: colorScheme.onSurface,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             changeText,
             style: TextStyle(
-              color: changeColor,
+              color: changeColor, // Green/Red
               fontSize: 12,
               fontWeight: FontWeight.w500,
             ),

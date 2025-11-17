@@ -12,45 +12,55 @@ class BottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ✨ FIX: Define the selected color to match the screenshot
-    const Color selectedColor = Color(0xFF3500D4);
+    // --- Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
+    // Selected color (Dark Blue) theme se aa raha hai
+    final Color selectedColor = colorScheme.primary;
 
     return BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
       currentIndex: selectedIndex,
       onTap: onItemTapped,
-      // Use the new selected color for the text
+
       selectedItemColor: selectedColor,
-      unselectedItemColor: Colors.grey[600],
+      unselectedItemColor: textTheme.bodySmall?.color, // Grey
+      // Background color theme_provider.dart se aa raha hai
+      // (Light mein white, Dark mein dark grey)
       selectedFontSize: 12,
       unselectedFontSize: 12,
-      // Remove the default icon size to have more control
       iconSize: 24,
       items: [
-        // ✨ FIX: Use the `activeIcon` property for a custom selected state
         BottomNavigationBarItem(
           icon: const Icon(Icons.ssid_chart),
-          activeIcon: _buildActiveIcon(Icons.ssid_chart, selectedColor),
+          // --- ⭐️ MODIFIED: Sirf icon pass kiya ---
+          activeIcon: Icon(Icons.ssid_chart, color: selectedColor),
           label: 'Stocks',
         ),
         BottomNavigationBarItem(
           icon: const Icon(Icons.widgets_outlined),
-          activeIcon: _buildActiveIcon(Icons.widgets_outlined, selectedColor),
+          // --- ⭐️ MODIFIED: Sirf icon pass kiya ---
+          activeIcon: Icon(Icons.widgets_outlined, color: selectedColor),
           label: 'F&O',
         ),
         BottomNavigationBarItem(
           icon: const Icon(Icons.pie_chart_outline),
-          activeIcon: _buildActiveIcon(Icons.pie_chart, selectedColor),
+          // --- ⭐️ MODIFIED: Sirf icon pass kiya ---
+          activeIcon: Icon(Icons.pie_chart, color: selectedColor),
           label: 'Portfolio',
         ),
         BottomNavigationBarItem(
           icon: const Icon(Icons.auto_awesome_outlined),
-          activeIcon: _buildActiveIcon(Icons.auto_awesome, selectedColor),
+          // --- ⭐️ MODIFIED: Sirf icon pass kiya ---
+          activeIcon: Icon(Icons.auto_awesome, color: selectedColor),
           label: 'AI Stats',
         ),
         BottomNavigationBarItem(
           icon: const Icon(Icons.person_outline),
-          activeIcon: _buildActiveIcon(Icons.person, selectedColor),
+          // --- ⭐️ MODIFIED: Sirf icon pass kiya ---
+          activeIcon: Icon(Icons.person, color: selectedColor),
           label: 'Account',
         ),
       ],
@@ -58,14 +68,4 @@ class BottomNavBar extends StatelessWidget {
   }
 }
 
-/// Helper widget to create the blue container for the active icon
-Widget _buildActiveIcon(IconData icon, Color color) {
-  return Container(
-    padding: const EdgeInsets.all(5.0),
-    decoration: BoxDecoration(
-      color: color,
-      borderRadius: BorderRadius.circular(8.0),
-    ),
-    child: Icon(icon, color: Colors.white),
-  );
-}
+// --- ⭐️ REMOVED: _buildActiveIcon helper function ---

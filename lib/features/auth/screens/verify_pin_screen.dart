@@ -18,7 +18,7 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
   final TextEditingController _pinController = TextEditingController();
   bool _isVerifying = false;
   String? _error;
-  bool _obscurePin = true; // State to control PIN visibility
+  bool _obscurePin = true;
 
   @override
   void dispose() {
@@ -65,205 +65,240 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // --- UPDATE: Themed PinPut fields (copied from setup_pin_screen.dart) ---
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
+    // --- ⭐️ MODIFIED: Pinput theme ---
     final defaultPinTheme = PinTheme(
       width: 56,
       height: 56,
-      textStyle: const TextStyle(
+      textStyle: TextStyle(
         fontSize: 20,
         fontWeight: FontWeight.w600,
-        color: Color(0xFF0F2B46),
+        color: colorScheme.onSurface, // Theme text color
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFFF3F5F7),
+        color: colorScheme.surface, // Theme surface color
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.transparent), // Prevents layout shift
+        border: Border.all(color: theme.dividerColor.withOpacity(0.5)),
       ),
     );
 
     final focusedPinTheme = defaultPinTheme.copyWith(
       decoration: defaultPinTheme.decoration!.copyWith(
-        border: Border.all(color: const Color(0xFF4318FF), width: 2),
+        border: Border.all(
+          color: colorScheme.primary,
+          width: 2,
+        ), // Theme primary color
       ),
     );
 
-    final submittedPinTheme = defaultPinTheme.copyWith(
-      decoration: defaultPinTheme.decoration!.copyWith(
-        border: Border.all(color: const Color(0xFF4318FF), width: 2),
-      ),
-    );
-    // --- END OF UPDATE ---
+    final submittedPinTheme = focusedPinTheme;
+    // --- ⭐️ END OF MODIFICATION ---
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      // --- ⭐️ MODIFIED: Theme background color ---
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 20),
-              if (widget.expectedPin != null)
-                SizedBox(
-                  width: 40,
-                  height: 40,
-                  child: Center(
-                    child: IconButton(
-                      onPressed: () {
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(
-                            builder: (_) => const SetupPinScreen(),
-                          ),
-                        );
-                      },
-                      padding: EdgeInsets.zero,
-                      icon: const Icon(Icons.arrow_back_ios, size: 18),
-                    ),
-                  ),
-                )
-              else
-                const SizedBox(height: 40),
-              const SizedBox(height: 24),
-              Center(
-                child: Container(
-                  width: 150,
-                  height: 150,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Color(0xFFF1EEFF),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(28.0),
-                    child: Image.asset(
-                      'assets/images/lock.png',
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                ),
+        // --- ⭐️⭐️ FIX: Column ko SingleChildScrollView mein wrap kiya ⭐️⭐️ ---
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            // --- ⭐️⭐️ FIX: IntrinsicHeight use kiya taaki page poori height le ⭐️⭐️ ---
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: MediaQuery.of(context).size.height - kToolbarHeight,
               ),
-              const SizedBox(height: 24),
-              Center(
-                child: Text(
-                  widget.expectedPin != null ? 'Confirm PIN' : 'Enter PIN',
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF0F2B46),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Center(
-                child: Text(
-                  widget.expectedPin != null
-                      ? 'Re-enter to confirm'
-                      : 'Unlock to continue',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Color(0xFF8AA0B2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 40),
-              // --- UPDATE: Use a Row for Pinput and the eye icon ---
-              Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
+              child: IntrinsicHeight(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Pinput(
-                      controller: _pinController,
-                      length: 4,
-                      defaultPinTheme: defaultPinTheme,
-                      focusedPinTheme: focusedPinTheme,
-                      submittedPinTheme: submittedPinTheme,
-                      obscureText: _obscurePin,
-                      obscuringCharacter: '•',
-                      keyboardType: TextInputType.number,
-                      onCompleted: (_) => _verify(),
-                    ),
-                    const SizedBox(width: 16),
-                    IconButton(
-                      icon: Icon(
-                        _obscurePin
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
-                        color: Colors.grey,
+                    const SizedBox(height: 20),
+                    if (widget.expectedPin != null)
+                      SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: Center(
+                          child: IconButton(
+                            onPressed: () {
+                              Navigator.of(context).pushReplacement(
+                                MaterialPageRoute(
+                                  builder: (_) => const SetupPinScreen(),
+                                ),
+                              );
+                            },
+                            padding: EdgeInsets.zero,
+                            // --- ⭐️ MODIFIED: Theme icon color ---
+                            icon: Icon(
+                              Icons.arrow_back_ios,
+                              size: 18,
+                              color: colorScheme.secondary,
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      const SizedBox(height: 40),
+                    const SizedBox(height: 24),
+                    Center(
+                      child: Container(
+                        width: 150,
+                        height: 150,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          // --- ⭐️ MODIFIED: Theme color ---
+                          color: colorScheme.primary.withOpacity(0.1),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(28.0),
+                          child: Image.asset(
+                            'assets/images/lock.png',
+                            fit: BoxFit.contain,
+                            // --- ⭐️ MODIFIED: Theme color ---
+                            color: colorScheme.primary,
+                          ),
+                        ),
                       ),
-                      onPressed: () {
-                        setState(() {
-                          _obscurePin = !_obscurePin;
-                        });
-                      },
                     ),
+                    const SizedBox(height: 24),
+                    Center(
+                      child: Text(
+                        widget.expectedPin != null
+                            ? 'Confirm PIN'
+                            : 'Enter PIN',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w700,
+                          // --- ⭐️ MODIFIED: Theme text color ---
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Center(
+                      child: Text(
+                        widget.expectedPin != null
+                            ? 'Re-enter to confirm'
+                            : 'Unlock to continue',
+                        style: TextStyle(
+                          fontSize: 16,
+                          // --- ⭐️ MODIFIED: Theme grey color ---
+                          color: textTheme.bodySmall?.color,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                    Center(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Pinput(
+                            controller: _pinController,
+                            length: 4,
+                            defaultPinTheme: defaultPinTheme,
+                            focusedPinTheme: focusedPinTheme,
+                            submittedPinTheme: submittedPinTheme,
+                            obscureText: _obscurePin,
+                            obscuringCharacter: '•',
+                            keyboardType: TextInputType.number,
+                            onCompleted: (_) => _verify(),
+                          ),
+                          const SizedBox(width: 16),
+                          IconButton(
+                            icon: Icon(
+                              _obscurePin
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                              // --- ⭐️ MODIFIED: Theme grey color ---
+                              color: textTheme.bodySmall?.color,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscurePin = !_obscurePin;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (widget.expectedPin == null)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    const PasswordConfirmationScreen(),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            'Reset PIN?',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              // --- ⭐️ MODIFIED: Theme primary color ---
+                              color: colorScheme.primary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    if (_error != null) ...[
+                      const SizedBox(height: 8),
+                      Center(
+                        child: Text(
+                          _error!,
+                          // --- ⭐️ MODIFIED: Theme error color ---
+                          style: TextStyle(color: colorScheme.error),
+                        ),
+                      ),
+                    ],
+                    // --- ⭐️⭐️ FIX: Spacer() ko SizedBox se replace kiya ⭐️⭐️ ---
+                    const Spacer(),
+                    const SizedBox(height: 32), // Thoda space diya
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: _isVerifying ? null : _verify,
+                        style: ElevatedButton.styleFrom(
+                          // --- ⭐️ MODIFIED: Theme button color ---
+                          backgroundColor: colorScheme.primary,
+                          foregroundColor: colorScheme.onPrimary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: _isVerifying
+                            ? Center(
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      colorScheme.onPrimary, // White
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : Text(
+                                widget.expectedPin != null
+                                    ? 'Confirm'
+                                    : 'Unlock',
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),
-              // --- END OF UPDATE ---
-              if (widget.expectedPin == null)
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const PasswordConfirmationScreen(),
-                        ),
-                      );
-                    },
-                    child: const Text(
-                      'Reset PIN?',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: Color(
-                          0xFF4318FF,
-                        ), // same style as login page reset password
-                      ),
-                    ),
-                  ),
-                ),
-              if (_error != null) ...[
-                const SizedBox(height: 8),
-                Center(
-                  child: Text(
-                    _error!,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                ),
-              ],
-              const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: _isVerifying ? null : _verify,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4318FF),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: _isVerifying
-                      ? Center(
-                          child: const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
-                              ),
-                            ),
-                          ),
-                        )
-                      : Text(widget.expectedPin != null ? 'Confirm' : 'Unlock'),
-                ),
-              ),
-              const SizedBox(height: 24),
-            ],
+            ),
           ),
         ),
       ),

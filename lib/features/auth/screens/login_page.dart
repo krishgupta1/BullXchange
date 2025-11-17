@@ -1,8 +1,8 @@
-import 'package:bullxchange/provider/auth_provider.dart';
 import 'package:bullxchange/features/auth/screens/onboarding_page_1.2.dart';
 import 'package:bullxchange/features/auth/navigation/route_transitions.dart';
 import 'package:bullxchange/features/auth/screens/signup_page.dart';
 import 'package:bullxchange/features/auth/screens/reset_password_page.dart';
+import 'package:bullxchange/provider/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:provider/provider.dart';
@@ -28,10 +28,16 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     final loginProvider = Provider.of<LoginProvider>(context);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      // --- ⭐️ MODIFIED: Theme background color ---
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -49,9 +55,10 @@ class _LoginPageState extends State<LoginPage> {
                       slideLeftToRight(const OnboardingPage12()),
                     ),
                     padding: EdgeInsets.zero,
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.arrow_back_ios,
-                      color: Colors.black,
+                      // --- ⭐️ MODIFIED: Theme accent color (Pink) ---
+                      color: colorScheme.secondary,
                       size: 18,
                     ),
                   ),
@@ -64,54 +71,70 @@ class _LoginPageState extends State<LoginPage> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF4318FF),
+                      // --- ⭐️ MODIFIED: Theme primary color (Blue) ---
+                      color: colorScheme.primary,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.trending_up, color: Colors.white),
+                    // --- ⭐️ MODIFIED: Theme text color (White) ---
+                    child: Icon(
+                      Icons.trending_up,
+                      color: colorScheme.onPrimary,
+                    ),
                   ),
                   const SizedBox(width: 12),
-                  const Text(
+                  Text(
                     'BullXchange',
                     style: TextStyle(
                       fontFamily: 'EudoxusSans',
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF4318FF),
+                      // --- ⭐️ MODIFIED: Theme primary color (Blue) ---
+                      color: colorScheme.primary,
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 40),
-              const Text(
+              Text(
                 "Let's Sign You In",
                 style: TextStyle(
                   fontFamily: 'EudoxusSans',
                   fontSize: 28,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF0F2B46),
+                  // --- ⭐️ MODIFIED: Theme text color ---
+                  color: colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 "Welcome back, you've been missed!",
                 style: TextStyle(
                   fontFamily: 'EudoxusSans',
                   fontSize: 16,
                   fontWeight: FontWeight.w400,
-                  color: Color(0xFF8AA0B2),
+                  // --- ⭐️ MODIFIED: Theme grey color ---
+                  color: textTheme.bodySmall?.color,
                 ),
               ),
               const SizedBox(height: 40),
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
-                decoration: _inputDecoration('Email'),
+                // --- ⭐️ MODIFIED: Theme text color ---
+                style: TextStyle(color: colorScheme.onSurface),
+                decoration: _inputDecoration(
+                  context,
+                  'Email',
+                ), // ⭐️ Pass context
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
-                decoration: _inputDecoration('Password').copyWith(
+                // --- ⭐️ MODIFIED: Theme text color ---
+                style: TextStyle(color: colorScheme.onSurface),
+                decoration: _inputDecoration(context, 'Password').copyWith(
+                  // ⭐️ Pass context
                   suffixIcon: IconButton(
                     onPressed: () =>
                         setState(() => _obscurePassword = !_obscurePassword),
@@ -119,6 +142,8 @@ class _LoginPageState extends State<LoginPage> {
                       _obscurePassword
                           ? Icons.visibility_off
                           : Icons.visibility,
+                      // --- ⭐️ MODIFIED: Theme grey color ---
+                      color: textTheme.bodySmall?.color,
                     ),
                   ),
                 ),
@@ -131,7 +156,11 @@ class _LoginPageState extends State<LoginPage> {
                     context,
                     slideRightToLeft(const ResetPasswordPage()),
                   ),
-                  child: const Text('Reset password?'),
+                  child: Text(
+                    'Reset password?',
+                    // --- ⭐️ MODIFIED: Text color (Blue) ---
+                    style: TextStyle(color: colorScheme.primary),
+                  ),
                 ),
               ),
               const SizedBox(height: 32),
@@ -139,7 +168,6 @@ class _LoginPageState extends State<LoginPage> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  // The button is disabled when loading and calls the provider on press.
                   onPressed: loginProvider.isLoading
                       ? null
                       : () => loginProvider.handleLogin(
@@ -148,13 +176,13 @@ class _LoginPageState extends State<LoginPage> {
                           _passwordController.text,
                         ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4318FF),
-                    foregroundColor: Colors.white,
+                    // --- ⭐️ MODIFIED: Theme button colors ---
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  // The button shows a spinner when loading.
                   child: loginProvider.isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
                       : const Text('Login'),
@@ -165,14 +193,16 @@ class _LoginPageState extends State<LoginPage> {
                 child: RichText(
                   text: TextSpan(
                     children: [
-                      const TextSpan(
+                      TextSpan(
                         text: "Don't have an account? ",
-                        style: TextStyle(color: Color(0xFF8AA0B2)),
+                        // --- ⭐️ MODIFIED: Theme grey color ---
+                        style: TextStyle(color: textTheme.bodySmall?.color),
                       ),
                       TextSpan(
                         text: 'Sign up',
-                        style: const TextStyle(
-                          color: Colors.black,
+                        style: TextStyle(
+                          // --- ⭐️ MODIFIED: Theme primary color (Blue) ---
+                          color: colorScheme.primary,
                           fontWeight: FontWeight.w700,
                         ),
                         recognizer: TapGestureRecognizer()
@@ -193,17 +223,31 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  InputDecoration _inputDecoration(String hint) => InputDecoration(
-    hintText: hint,
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: Color(0xFFE5E5E5)),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: Color(0xFF4318FF)),
-    ),
-    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-  );
+  InputDecoration _inputDecoration(BuildContext context, String hint) {
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
+    return InputDecoration(
+      hintText: hint,
+      // --- ⭐️ MODIFIED: Theme hint color ---
+      hintStyle: TextStyle(color: textTheme.bodySmall?.color),
+      // --- ⭐️ MODIFIED: Theme surface color ---
+      filled: true,
+      fillColor: colorScheme.surface,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        // --- ⭐️ MODIFIED: Theme divider color ---
+        borderSide: BorderSide(color: theme.dividerColor.withOpacity(0.5)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        // --- ⭐️ MODIFIED: Theme primary color ---
+        borderSide: BorderSide(color: colorScheme.primary),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    );
+  }
 }

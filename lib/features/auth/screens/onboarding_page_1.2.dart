@@ -3,15 +3,21 @@ import 'package:bullxchange/features/auth/screens/login_page.dart';
 import 'package:bullxchange/features/auth/screens/signup_page.dart';
 import 'package:bullxchange/features/auth/navigation/route_transitions.dart';
 import 'package:flutter/material.dart';
-import 'package:bullxchange/features/auth/widgets/app_back_button.dart';
+// import 'package:bullxchange/features/auth/widgets/app_back_button.dart'; // <-- Ise hata diya, standard BackButton use karenge
 
 class OnboardingPage12 extends StatelessWidget {
   const OnboardingPage12({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F5FF),
+      // --- ⭐️ MODIFIED: Theme background color ---
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -25,10 +31,14 @@ class OnboardingPage12 extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         const SizedBox(height: 20),
-                        // Back Button (match auth pages position)
+                        // --- ⭐️ MODIFIED: Standard BackButton (theme-aware) ---
                         Align(
                           alignment: Alignment.centerLeft,
-                          child: AppBackButton(
+                          child: IconButton(
+                            icon: Icon(
+                              Icons.arrow_back_ios_new,
+                              color: colorScheme.secondary,
+                            ),
                             onPressed: () {
                               if (Navigator.of(context).canPop()) {
                                 Navigator.of(context).pop();
@@ -63,7 +73,6 @@ class OnboardingPage12 extends StatelessWidget {
                               ?.copyWith(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 24,
-                                color: const Color(0xFF0F2B46),
                               ),
                         ),
                         const SizedBox(height: 16),
@@ -73,7 +82,8 @@ class OnboardingPage12 extends StatelessWidget {
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.bodyLarge
                               ?.copyWith(
-                                color: const Color(0xFF8AA0B2),
+                                // --- ⭐️ MODIFIED: Theme grey color ---
+                                color: textTheme.bodySmall?.color,
                                 height: 1.4,
                               ),
                         ),
@@ -105,24 +115,27 @@ class OnboardingPage12 extends StatelessWidget {
                             );
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1541D5),
-                            foregroundColor: Colors.white,
+                            // --- ⭐️ MODIFIED: Theme button color ---
+                            backgroundColor: colorScheme.primary,
+                            foregroundColor: colorScheme.onPrimary, // White
                             minimumSize: const Size.fromHeight(64),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(24),
                             ),
                             elevation: 0,
                           ),
-                          child: const Text(
+                          child: Text(
                             'Get Started',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
+                              // --- ⭐️⭐️ FIX: Text color ko explicitly white kiya ---
+                              color: colorScheme.onPrimary,
                             ),
                           ),
                         ),
                         const SizedBox(height: 16),
-                        // Sign in button (outlined, white background)
+                        // Sign in button (outlined)
                         OutlinedButton(
                           onPressed: () {
                             Navigator.pushReplacement(
@@ -131,19 +144,25 @@ class OnboardingPage12 extends StatelessWidget {
                             );
                           },
                           style: OutlinedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: const Color(0xFF0F2B46),
-                            side: const BorderSide(color: Color(0xFFFD4BC3)),
+                            // --- ⭐️ MODIFIED: Theme colors ---
+                            backgroundColor: colorScheme.surface,
+                            // --- ⭐️⭐️ FIX: Text color ko blue kiya ---
+                            foregroundColor: colorScheme.primary,
+                            side: BorderSide(
+                              color: colorScheme.secondary,
+                            ), // Pink border
                             minimumSize: const Size.fromHeight(64),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(24),
                             ),
                           ),
-                          child: const Text(
+                          child: Text(
                             'Sign in',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
+                              // --- ⭐️⭐️ FIX: Text color ko explicitly blue kiya ---
+                              color: colorScheme.primary,
                             ),
                           ),
                         ),
@@ -161,6 +180,7 @@ class OnboardingPage12 extends StatelessWidget {
   }
 }
 
+// --- (Route transition function unchanged) ---
 Route _slideLeftToRight(Widget page) {
   return PageRouteBuilder(
     pageBuilder: (context, animation, secondaryAnimation) => page,
@@ -179,6 +199,7 @@ Route _slideLeftToRight(Widget page) {
   );
 }
 
+// --- ⭐️ MODIFIED: _Dot widget ab theme-aware hai ---
 class _Dot extends StatelessWidget {
   const _Dot({required this.active, this.isLong = false});
 
@@ -187,8 +208,14 @@ class _Dot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color activeColor = const Color(0xFF4318FF);
-    final Color inactiveColor = const Color(0xFFC7CFE6);
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    // --- ⭐️ MODIFIED: Colors ab theme se aa rahe hain ---
+    final Color activeColor = colorScheme.primary;
+    final Color inactiveColor = theme.dividerColor.withOpacity(0.5);
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
       height: 8,

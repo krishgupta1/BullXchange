@@ -1,6 +1,10 @@
+import 'package:bullxchange/features/account/screens/privacy_policy_page.dart';
+import 'package:bullxchange/features/account/screens/terms_and_conditions_page.dart';
 import 'package:bullxchange/features/auth/screens/reset_password_page.dart';
 import 'package:bullxchange/features/auth/screens/setup_pin_screen.dart';
+import 'package:bullxchange/provider/theme_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -10,26 +14,30 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  // This state is for the Notification Switch
   bool _notificationsEnabled = true;
 
   @override
   Widget build(BuildContext context) {
+    // --- Theme se colors aur provider lo ---
+    final themeNotifier = Provider.of<ThemeNotifier>(context);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
+    // --- ⭐️ YEH CHECK KAREGA KI DARK MODE ON HAI YA NAHI ---
+    // (System mode ko 'light' maanega)
+    final bool isDarkMode = themeNotifier.themeMode == ThemeMode.dark;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
+          icon: const Icon(Icons.arrow_back_ios_new),
           onPressed: () {
             Navigator.of(context).pop();
           },
         ),
-        title: const Text(
-          'Settings',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-        ),
+        title: const Text('Settings'),
         centerTitle: true,
       ),
       body: Padding(
@@ -41,25 +49,47 @@ class _SettingsPageState extends State<SettingsPage> {
                 children: [
                   const SizedBox(height: 20),
                   // General Section
-                  const Align(
+                  Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
                       'General',
                       style: TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey,
+                        fontWeight: FontWeight.w600,
+                        color: textTheme.bodySmall?.color,
                       ),
                     ),
                   ),
                   const SizedBox(height: 15),
+
                   //
-                  // --- ⭐️ NOTIFICATIONS TILE WITH SWITCH ---
+                  // --- ⭐️⭐️ YAHAN TOGGLE BUTTON LAGA DIYA HAI ⭐️⭐️ ---
                   //
+                  _buildSettingsTile(
+                    'Dark Mode',
+                    onTap: () {
+                      // Row pe click karne se bhi toggle hoga
+                      themeNotifier.setThemeMode(
+                        isDarkMode ? ThemeMode.light : ThemeMode.dark,
+                      );
+                    },
+                    trailing: Switch(
+                      value: isDarkMode,
+                      onChanged: (bool value) {
+                        // Switch se toggle karne par
+                        themeNotifier.setThemeMode(
+                          value ? ThemeMode.dark : ThemeMode.light,
+                        );
+                      },
+                      // activeColor AppTheme se automatically set ho jayega
+                    ),
+                  ),
+                  // --- ⭐️⭐️ END OF SECTION ⭐️⭐️ ---
+
+                  // --- NOTIFICATIONS TILE ---
                   _buildSettingsTile(
                     'Notifications',
                     onTap: () {
-                      // Tapping the row can also toggle the switch
                       setState(() {
                         _notificationsEnabled = !_notificationsEnabled;
                       });
@@ -70,33 +100,30 @@ class _SettingsPageState extends State<SettingsPage> {
                         setState(() {
                           _notificationsEnabled = value;
                         });
-                        // Implement logic to update notification settings
                       },
-                      activeThumbColor:
-                          Colors.pink, // Matches image's switch color
+                      // --- MERGE CONFLICT RESOLVED ---
+                      // Removed the hardcoded 'activeThumbColor: Colors.pink'
+                      // to allow the theme to control the switch color.
                     ),
                   ),
-                  //
-                  // --- END OF SECTION ---
-                  //
+
                   _buildSettingsTile(
                     'Contact Us',
                     onTap: () {
                       // Handle contact us tap
                     },
-                    // No trailing widget, so it defaults to the arrow
                   ),
                   const SizedBox(height: 30),
 
                   // Security Section
-                  const Align(
+                  Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
                       'Security',
                       style: TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey,
+                        fontWeight: FontWeight.w600,
+                        color: textTheme.bodySmall?.color,
                       ),
                     ),
                   ),
@@ -126,14 +153,14 @@ class _SettingsPageState extends State<SettingsPage> {
                   const SizedBox(height: 30),
 
                   // Privacy & Legal Section
-                  const Align(
+                  Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
                       'Privacy & Legal',
                       style: TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey,
+                        fontWeight: FontWeight.w600,
+                        color: textTheme.bodySmall?.color,
                       ),
                     ),
                   ),
@@ -141,14 +168,24 @@ class _SettingsPageState extends State<SettingsPage> {
                   _buildSettingsTile(
                     'Privacy Policy',
                     onTap: () {
-                      // Handle privacy policy tap
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const PrivacyPolicyPage(),
+                        ),
+                      );
                     },
                     subtitle: 'Choose what data you share with us',
                   ),
                   _buildSettingsTile(
                     'Legal',
                     onTap: () {
-                      // Handle legal tap
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const TermsAndConditionsPage(),
+                        ),
+                      );
                     },
                   ),
                 ],
@@ -160,7 +197,6 @@ class _SettingsPageState extends State<SettingsPage> {
               height: 55,
               child: ElevatedButton(
                 onPressed: () {
-                  // Handle save logic (e.g., save _notificationsEnabled)
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Settings saved!'),
@@ -169,26 +205,30 @@ class _SettingsPageState extends State<SettingsPage> {
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFC7B8F5), // Light purple
+                  backgroundColor: colorScheme.secondaryContainer,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'Save',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: colorScheme.onSecondaryContainer,
                   ),
                 ),
               ),
             ),
             const SizedBox(height: 20),
-            // Updated footer text
-            const Text(
+            // Footer text
+            Text(
               '© 2025 BullXchange • Ver 1.0',
-              style: TextStyle(color: Colors.grey, fontSize: 13),
+              style: TextStyle(
+                color: textTheme.bodySmall?.color,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             const SizedBox(height: 20),
           ],
@@ -197,30 +237,48 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // Helper widget defaults to an arrow if 'trailing' is not specified
+  // Helper widget (Ab theme se color lega)
+  // Helper widget (Ab theme se color lega)
   Widget _buildSettingsTile(
     String title, {
     String? subtitle,
     VoidCallback? onTap,
     Widget? trailing,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Column(
       children: [
         ListTile(
           contentPadding: EdgeInsets.zero,
           title: Text(
             title,
-            style: const TextStyle(fontSize: 16, color: Colors.black87),
+            style: TextStyle(
+              fontFamily: 'EudoxusSans',
+              fontSize: 18,
+              // --- ⭐️⭐️ FIX: 'onSurface' (Black/White) ko 'primary' (Blue) kar diya ---
+              color: colorScheme.primary,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           subtitle: subtitle != null
               ? Text(
                   subtitle,
-                  style: const TextStyle(fontSize: 13, color: Colors.grey),
+                  style: TextStyle(
+                    fontFamily: 'EudoxusSans',
+                    fontSize: 13,
+                    color: textTheme.bodySmall?.color, // Yeh grey hi rahega
+                  ),
                 )
               : null,
           trailing:
               trailing ??
-              const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 18),
+              Icon(
+                Icons.arrow_forward_ios,
+                color: textTheme.bodySmall?.color, // Yeh bhi grey rahega
+                size: 18,
+              ),
           onTap: onTap,
         ),
       ],

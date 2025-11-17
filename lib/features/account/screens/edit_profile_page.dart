@@ -40,7 +40,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     super.dispose();
   }
 
-  // --- NEW: Helper function to get initials from a name ---
+  // --- (Helper functions _getInitials, _loadUserData, _saveProfile unchanged) ---
   String _getInitials(String name) {
     if (name.isEmpty) return '?';
     final parts = name.trim().split(' ');
@@ -52,7 +52,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
     return initials.toUpperCase();
   }
-  // --------------------------------------------------------
 
   Future<void> _loadUserData() async {
     setState(() {
@@ -95,8 +94,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
     });
 
     try {
-      // Note: We pass the original phone number back,
-      // as it's not editable.
       await _userService.updateUserProfile(
         uid: widget.userId,
         name: _nameController.text.trim(),
@@ -133,28 +130,37 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      // --- ⭐️ MODIFIED: Theme background color ---
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
+        // --- ⭐️ MODIFIED: Theme app bar color ---
+        backgroundColor: theme.appBarTheme.backgroundColor,
+        elevation: theme.appBarTheme.elevation,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
+          // --- ⭐️ MODIFIED: Theme icon color (pink) ---
+          icon: Icon(Icons.arrow_back_ios_new, color: colorScheme.secondary),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
+        title: Text(
           'Edit Profile',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          // --- ⭐️ MODIFIED: Theme app bar title style ---
+          style: theme.appBarTheme.titleTextStyle,
         ),
         centerTitle: true,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator(color: colorScheme.primary))
           : _errorMessage.isNotEmpty
           ? Center(
               child: Text(
                 _errorMessage,
-                style: const TextStyle(color: Colors.red),
+                // --- ⭐️ MODIFIED: Theme error color ---
+                style: TextStyle(color: colorScheme.error),
               ),
             )
           : SingleChildScrollView(
@@ -207,17 +213,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       child: ElevatedButton(
                         onPressed: _saveProfile,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF4B00D1),
+                          // --- ⭐️ MODIFIED: Theme button color ---
+                          backgroundColor: colorScheme.primary,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
                           ),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Save',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            // --- ⭐️ MODIFIED: Theme text color ---
+                            color: colorScheme.onPrimary,
                           ),
                         ),
                       ),
@@ -231,25 +239,27 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Widget _buildProfileAvatar() {
-    // --- UPDATED: Get initials from the name controller ---
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     final initials = _getInitials(_nameController.text);
 
     return Stack(
       children: [
         CircleAvatar(
           radius: 60,
-          backgroundColor: const Color(0xFFE0E0E0),
-          // --- UPDATED: Show initials instead of icon ---
+          // --- ⭐️ MODIFIED: Theme color ---
+          backgroundColor: colorScheme.primary.withOpacity(0.1),
           child: Text(
             initials,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 48,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF9C27B0), // Purple text
+              // --- ⭐️ MODIFIED: Theme color ---
+              color: colorScheme.primary,
             ),
           ),
-          // If you have an image URL, you would use:
-          // backgroundImage: NetworkImage(userProfile.imageUrl),
         ),
         Positioned(
           bottom: 0,
@@ -263,12 +273,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
               height: 44,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFFD100F7),
-                border: Border.all(color: Colors.white, width: 3),
+                // --- ⭐️ MODIFIED: Theme color ---
+                color: colorScheme.secondary,
+                // --- ⭐️ MODIFIED: Theme border color ---
+                border: Border.all(
+                  color: theme.scaffoldBackgroundColor,
+                  width: 3,
+                ),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.camera_alt,
-                color: Colors.white,
+                // --- ⭐️ MODIFIED: Theme text color ---
+                color: colorScheme.onSecondary,
                 size: 24,
               ),
             ),
@@ -278,7 +294,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
-  // This helper widget is perfect, no changes needed
   Widget _buildStyledTextField({
     required TextEditingController controller,
     required String label,
@@ -286,6 +301,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
     bool enabled = true,
     String? Function(String?)? validator,
   }) {
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -294,7 +314,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
           child: Text(
             label,
             style: TextStyle(
-              color: enabled ? const Color(0xFFF50057) : Colors.grey[600],
+              // --- ⭐️ MODIFIED: Theme text/grey color ---
+              color: enabled
+                  ? colorScheme.secondary
+                  : textTheme.bodySmall?.color,
               fontSize: 14,
               fontWeight: FontWeight.w600,
             ),
@@ -304,7 +327,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
           controller: controller,
           keyboardType: keyboardType,
           enabled: enabled,
-          style: TextStyle(color: enabled ? Colors.black : Colors.grey[500]),
+          // --- ⭐️ MODIFIED: Theme text/grey color ---
+          style: TextStyle(
+            color: enabled ? colorScheme.onSurface : textTheme.bodySmall?.color,
+          ),
           validator: validator,
           decoration: InputDecoration(
             contentPadding: const EdgeInsets.symmetric(
@@ -312,31 +338,40 @@ class _EditProfilePageState extends State<EditProfilePage> {
               horizontal: 25,
             ),
             filled: !enabled,
-            fillColor: Colors.grey[100],
+            // --- ⭐️ MODIFIED: Theme fill color ---
+            fillColor: theme.dividerColor.withOpacity(0.1),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(30),
               borderSide: BorderSide(
-                color: enabled ? const Color(0xFFB39DDB) : Colors.grey[300]!,
+                // --- ⭐️ MODIFIED: Theme border color ---
+                color: enabled
+                    ? colorScheme.primary.withOpacity(0.4)
+                    : theme.dividerColor,
                 width: 1.5,
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(30),
               borderSide: BorderSide(
-                color: enabled ? const Color(0xFFB39DDB) : Colors.grey[300]!,
+                // --- ⭐️ MODIFIED: Theme border color ---
+                color: enabled
+                    ? colorScheme.primary.withOpacity(0.4)
+                    : theme.dividerColor,
                 width: 1.5,
               ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(30),
               borderSide: BorderSide(
-                color: enabled ? const Color(0xFF4B00D1) : Colors.grey[300]!,
+                // --- ⭐️ MODIFIED: Theme border color ---
+                color: enabled ? colorScheme.primary : theme.dividerColor,
                 width: 2,
               ),
             ),
             disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(30),
-              borderSide: BorderSide(color: Colors.grey[300]!, width: 1.5),
+              // --- ⭐️ MODIFIED: Theme border color ---
+              borderSide: BorderSide(color: theme.dividerColor, width: 1.5),
             ),
           ),
         ),

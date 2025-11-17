@@ -21,13 +21,7 @@ class BuyStockPage extends StatefulWidget {
 }
 
 class _BuyStockPageState extends State<BuyStockPage> {
-  // --- UI Constants ---
-  static const Color primaryPink = Color(0xFFF61C7A);
-  static const Color darkTextColor = Color(0xFF03314B);
-  static const Color lightGreyBg = Color(0xFFF5F5F5);
-  static const Color lightBorderColor = Color(0xFFE0E0E0);
-  static const Color secondaryTextColor = Color(0xFF6A7584);
-  // ---
+  // --- ⭐️ REMOVED HARDCODED COLORS ---
 
   final _quantityController = TextEditingController();
   final _limitPriceController = TextEditingController();
@@ -44,10 +38,8 @@ class _BuyStockPageState extends State<BuyStockPage> {
   late double _ltp;
   double _price = 0.0;
 
-  // --- ADDED FOR AVAILABLE FUNDS ---
   double _availableFunds = 0.0;
   bool _isLoadingFunds = true;
-  // ---
 
   final UserService _userService = UserService();
   final ChargeCalculatorService _chargeCalculator = ChargeCalculatorService();
@@ -69,12 +61,23 @@ class _BuyStockPageState extends State<BuyStockPage> {
     _quantityController.addListener(_calculateTotal);
     _limitPriceController.addListener(_onPriceChanged);
 
-    // --- FETCH FUNDS ---
     _fetchAvailableFunds();
-    _calculateTotal(); // Initial calculation
+    _calculateTotal();
   }
 
-  // --- NEW METHOD ---
+  // --- (initState, dispose, _fetchAvailableFunds, _onPriceChanged,
+  //      _calculateTotal, _handleBuy, _executeMarketOrder,
+  //      _placeLimitOrder functions are unchanged in logic) ---
+
+  @override
+  void dispose() {
+    _quantityController.removeListener(_calculateTotal);
+    _limitPriceController.removeListener(_onPriceChanged);
+    _quantityController.dispose();
+    _limitPriceController.dispose();
+    super.dispose();
+  }
+
   Future<void> _fetchAvailableFunds() async {
     setState(() => _isLoadingFunds = true);
     try {
@@ -90,7 +93,6 @@ class _BuyStockPageState extends State<BuyStockPage> {
         }
       }
     } catch (e) {
-      // Handle error, maybe show a snackbar
       print("Error fetching funds: $e");
     } finally {
       if (mounted) {
@@ -124,22 +126,13 @@ class _BuyStockPageState extends State<BuyStockPage> {
   void _calculateTotal() {
     setState(() {
       _quantity = int.tryParse(_quantityController.text) ?? 0;
-      final double tradeValue = _quantity * _price; // Use _price not _ltp
+      final double tradeValue = _quantity * _price;
 
       _chargesBreakdown = _chargeCalculator.calculateBuyCharges(tradeValue);
       _totalCharges = _chargesBreakdown['total'] ?? 0.0;
 
       _totalAmount = (_quantity > 0) ? (tradeValue + _totalCharges) : 0.0;
     });
-  }
-
-  @override
-  void dispose() {
-    _quantityController.removeListener(_calculateTotal);
-    _limitPriceController.removeListener(_onPriceChanged);
-    _quantityController.dispose();
-    _limitPriceController.dispose();
-    super.dispose();
   }
 
   Future<void> _handleBuy() async {
@@ -158,10 +151,9 @@ class _BuyStockPageState extends State<BuyStockPage> {
       return;
     }
 
-    // Check funds one more time before placing order
     if (_totalAmount > _availableFunds) {
       if (mounted) {
-        _showInsufficientFundsDialog(_availableFunds, _totalAmount);
+        _showInsufficientFundsDialog(context, _availableFunds, _totalAmount);
       }
       setState(() => _isPlacingOrder = false);
       return;
@@ -294,52 +286,64 @@ class _BuyStockPageState extends State<BuyStockPage> {
 
   @override
   Widget build(BuildContext context) {
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     // --- AUTH CHECK ---
     final auth = FirebaseAuth.instance;
     if (auth.currentUser?.uid == null) {
       return Scaffold(
+        // --- ⭐️ MODIFIED: Theme colors ---
+        backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: theme.appBarTheme.backgroundColor,
           elevation: 0,
-          title: const Text(
+          title: Text(
             'Buy Stock',
-            style: TextStyle(
-              color: darkTextColor,
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
+            style: theme.appBarTheme.titleTextStyle?.copyWith(fontSize: 18),
           ),
           centerTitle: true,
         ),
-        body: const Center(child: Text("Please log in to buy stocks.")),
+        body: Center(
+          child: Text(
+            "Please log in to buy stocks.",
+            style: TextStyle(color: colorScheme.onSurface),
+          ),
+        ),
       );
     }
     // --- END OF CHECK ---
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      // --- ⭐️ MODIFIED: Theme background color ---
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        // --- ⭐️ MODIFIED: Theme app bar colors ---
+        backgroundColor: theme.appBarTheme.backgroundColor,
         elevation: 0,
         leading: Padding(
           padding: const EdgeInsets.only(left: 8.0),
           child: Container(
             margin: const EdgeInsets.symmetric(vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white,
+              // --- ⭐️ MODIFIED: Theme surface color ---
+              color: colorScheme.surface,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
+                  // --- ⭐️ MODIFIED: Theme shadow color ---
+                  color: theme.shadowColor.withOpacity(0.1),
                   spreadRadius: 1,
                   blurRadius: 5,
                 ),
               ],
             ),
             child: IconButton(
-              icon: const Icon(
+              icon: Icon(
                 Icons.arrow_back_ios_new,
-                color: Colors.black,
+                // --- ⭐️ MODIFIED: Theme icon color ---
+                color: colorScheme.onSurface,
                 size: 20,
               ),
               onPressed: () => Navigator.pop(context),
@@ -348,16 +352,11 @@ class _BuyStockPageState extends State<BuyStockPage> {
         ),
         title: Text(
           'Buy ${widget.instrument.symbol.replaceAll('-EQ', '')}',
-          style: const TextStyle(
-            color: darkTextColor,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
+          // --- ⭐️ MODIFIED: Theme text color ---
+          style: theme.appBarTheme.titleTextStyle?.copyWith(fontSize: 18),
         ),
         centerTitle: true,
       ),
-
-      // --- ⭐️ BODY WITH REDUCED PADDING ---
       body: Column(
         children: [
           Expanded(
@@ -367,13 +366,18 @@ class _BuyStockPageState extends State<BuyStockPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildStockHeader(_priceFormatter),
-                    const SizedBox(height: 16), // --- MODIFIED ---
-                    _buildInputSection(),
-                    const SizedBox(height: 16), // --- MODIFIED ---
-                    _buildOrderSummary(_priceFormatter),
-                    // Add padding at the bottom for scroll comfort
-                    const SizedBox(height: 10), // --- MODIFIED ---
+                    _buildStockHeader(
+                      context,
+                      _priceFormatter,
+                    ), // ⭐️ Pass context
+                    const SizedBox(height: 16),
+                    _buildInputSection(context), // ⭐️ Pass context
+                    const SizedBox(height: 16),
+                    _buildOrderSummary(
+                      context,
+                      _priceFormatter,
+                    ), // ⭐️ Pass context
+                    const SizedBox(height: 10),
                   ],
                 ),
               ),
@@ -381,17 +385,20 @@ class _BuyStockPageState extends State<BuyStockPage> {
           ),
         ],
       ),
-
-      // --- END OF SOLUTION ---
-      bottomNavigationBar: _buildBottomBuyButton(),
+      bottomNavigationBar: _buildBottomBuyButton(context), // ⭐️ Pass context
     );
   }
 
-  Widget _buildStockHeader(NumberFormat formatter) {
+  Widget _buildStockHeader(BuildContext context, NumberFormat formatter) {
+    // --- ⭐️ Theme se colors lo ---
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: lightGreyBg,
+        // --- ⭐️ MODIFIED: Theme surface color ---
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -407,17 +414,19 @@ class _BuyStockPageState extends State<BuyStockPage> {
                     children: [
                       Text(
                         widget.instrument.symbol.replaceAll('-EQ', ''),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: darkTextColor,
+                          // --- ⭐️ MODIFIED: Theme text color ---
+                          color: colorScheme.onSurface,
                         ),
                       ),
                       Text(
                         widget.instrument.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
-                          color: secondaryTextColor,
+                          // --- ⭐️ MODIFIED: Theme grey color ---
+                          color: textTheme.bodySmall?.color,
                           fontWeight: FontWeight.w500,
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -430,10 +439,11 @@ class _BuyStockPageState extends State<BuyStockPage> {
           ),
           Text(
             formatter.format(_ltp),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: darkTextColor,
+              // --- ⭐️ MODIFIED: Theme text color ---
+              color: colorScheme.onSurface,
             ),
           ),
         ],
@@ -441,47 +451,56 @@ class _BuyStockPageState extends State<BuyStockPage> {
     );
   }
 
-  Widget _buildInputSection() {
+  Widget _buildInputSection(BuildContext context) {
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     bool isLimit = _selectedOrderType == 'Limit';
 
     return Column(
       children: [
         _buildSegmentedControl(
+          context: context, // ⭐️ Pass context
           title: 'Type',
           options: ['Market', 'Limit'],
           selectedValue: _selectedOrderType,
           onChanged: _onOrderTypeChanged,
-          activeColor: primaryPink, // Pass the theme color
         ),
-        const SizedBox(height: 16), // --- MODIFIED ---
+        const SizedBox(height: 16),
         Row(
           children: [
             Expanded(
               child: TextField(
                 controller: _quantityController,
                 keyboardType: TextInputType.number,
-                style: const TextStyle(
+                // --- ⭐️ MODIFIED: Theme text color ---
+                style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: darkTextColor,
+                  color: colorScheme.onSurface,
                 ),
                 decoration: InputDecoration(
                   labelText: 'Quantity',
-                  labelStyle: const TextStyle(
-                    color: secondaryTextColor,
+                  labelStyle: TextStyle(
+                    // --- ⭐️ MODIFIED: Theme grey color ---
+                    color: textTheme.bodySmall?.color,
                     fontSize: 16,
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                      color: lightBorderColor,
+                    borderSide: BorderSide(
+                      // --- ⭐️ MODIFIED: Theme border color ---
+                      color: theme.dividerColor.withOpacity(0.5),
                       width: 1.5,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                      color: primaryPink,
+                    borderSide: BorderSide(
+                      // --- ⭐️ MODIFIED: Theme accent color (Pink) ---
+                      color: colorScheme.secondary,
                       width: 2.0,
                     ),
                   ),
@@ -499,32 +518,39 @@ class _BuyStockPageState extends State<BuyStockPage> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: isLimit ? darkTextColor : Colors.grey,
+                  // --- ⭐️ MODIFIED: Theme text/grey color ---
+                  color: isLimit
+                      ? colorScheme.onSurface
+                      : textTheme.bodySmall?.color,
                 ),
                 decoration: InputDecoration(
                   labelText: 'Price',
-                  labelStyle: const TextStyle(
-                    color: secondaryTextColor,
+                  labelStyle: TextStyle(
+                    // --- ⭐️ MODIFIED: Theme grey color ---
+                    color: textTheme.bodySmall?.color,
                     fontSize: 16,
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                      color: lightBorderColor,
+                    borderSide: BorderSide(
+                      // --- ⭐️ MODIFIED: Theme border color ---
+                      color: theme.dividerColor.withOpacity(0.5),
                       width: 1.5,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                      color: primaryPink,
+                    borderSide: BorderSide(
+                      // --- ⭐️ MODIFIED: Theme accent color (Pink) ---
+                      color: colorScheme.secondary,
                       width: 2.0,
                     ),
                   ),
                   disabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
-                      color: Colors.grey[200]!,
+                      // --- ⭐️ MODIFIED: Theme border color ---
+                      color: theme.dividerColor.withOpacity(0.2),
                       width: 1.5,
                     ),
                   ),
@@ -533,18 +559,15 @@ class _BuyStockPageState extends State<BuyStockPage> {
             ),
           ],
         ),
-        // --- NEW: AVAILABLE FUNDS ---
         Padding(
-          padding: const EdgeInsets.only(
-            top: 10.0,
-            left: 12.0,
-          ), // --- MODIFIED ---
+          padding: const EdgeInsets.only(top: 10.0, left: 12.0),
           child: Row(
             children: [
               Text(
                 'Available Funds: ',
-                style: const TextStyle(
-                  color: secondaryTextColor,
+                style: TextStyle(
+                  // --- ⭐️ MODIFIED: Theme grey color ---
+                  color: textTheme.bodySmall?.color,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -554,60 +577,65 @@ class _BuyStockPageState extends State<BuyStockPage> {
                   width: 12,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: secondaryTextColor,
+                    // --- ⭐️ MODIFIED: Theme grey color ---
+                    color: textTheme.bodySmall?.color,
                   ),
                 )
               else
                 Text(
                   _priceFormatter.format(_availableFunds),
-                  style: const TextStyle(
-                    color: darkTextColor,
+                  style: TextStyle(
+                    // --- ⭐️ MODIFIED: Theme text color ---
+                    color: colorScheme.onSurface,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
             ],
           ),
         ),
-        // --- END NEW ---
-        const SizedBox(height: 16), // --- MODIFIED ---
+        const SizedBox(height: 16),
         _buildSegmentedControl(
+          context: context, // ⭐️ Pass context
           title: 'Product',
           options: ['Delivery', 'Intraday'],
           selectedValue: _selectedProductType,
           onChanged: (value) => setState(() => _selectedProductType = value),
-          activeColor: primaryPink,
         ),
-        const SizedBox(height: 16), // --- MODIFIED ---
+        const SizedBox(height: 16),
         _buildSegmentedControl(
+          context: context, // ⭐️ Pass context
           title: 'Exchange',
           options: ['NSE', 'BSE'],
           selectedValue: _selectedExchange,
           onChanged: (value) => setState(() => _selectedExchange = value),
-          activeColor: primaryPink,
         ),
       ],
     );
   }
 
-  // --- UPDATED: Replaced with the more complex version from SellStockPage ---
   Widget _buildSegmentedControl({
+    required BuildContext context, // ⭐️ Added context
     required String title,
     required List<String> options,
     required String selectedValue,
     required ValueChanged<String> onChanged,
     bool isEnabled = true,
-    Color? activeColor, // Optional active color
   }) {
-    final color = activeColor ?? primaryPink; // Use pink as default
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Opacity(
       opacity: isEnabled ? 1.0 : 0.5,
       child: Row(
         children: [
           Text(
             '$title:',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
-              color: secondaryTextColor,
+              // --- ⭐️ MODIFIED: Theme grey color ---
+              color: textTheme.bodySmall?.color,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -615,8 +643,11 @@ class _BuyStockPageState extends State<BuyStockPage> {
           Container(
             height: 40,
             decoration: BoxDecoration(
-              color: lightGreyBg,
+              // --- ⭐️ MODIFIED: Theme surface color ---
+              color: colorScheme.surface,
               borderRadius: BorderRadius.circular(10),
+              // --- ⭐️ MODIFIED: Theme border ---
+              border: Border.all(color: theme.dividerColor.withOpacity(0.5)),
             ),
             child: Row(
               children: options.map((option) {
@@ -628,15 +659,21 @@ class _BuyStockPageState extends State<BuyStockPage> {
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
+                      // --- ⭐️ MODIFIED: Theme accent color (Pink) ---
                       color: isSelected
-                          ? (isEnabled ? color : Colors.grey)
+                          ? (isEnabled
+                                ? colorScheme.secondary
+                                : theme.disabledColor)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
                       option,
                       style: TextStyle(
-                        color: isSelected ? Colors.white : darkTextColor,
+                        // --- ⭐️ MODIFIED: Theme text colors ---
+                        color: isSelected
+                            ? colorScheme.onSecondary
+                            : colorScheme.onSurface,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -650,62 +687,46 @@ class _BuyStockPageState extends State<BuyStockPage> {
     );
   }
 
-  Widget _buildOrderSummary(NumberFormat formatter) {
+  Widget _buildOrderSummary(BuildContext context, NumberFormat formatter) {
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: lightBorderColor, width: 1.5),
+        // --- ⭐️ MODIFIED: Theme border color ---
+        border: Border.all(
+          color: theme.dividerColor.withOpacity(0.5),
+          width: 1.5,
+        ),
       ),
       child: Column(
         children: [
-          _buildSummaryRow('Quantity', _quantity.toString()),
           _buildSummaryRow(
+            context,
+            'Quantity',
+            _quantity.toString(),
+          ), // ⭐️ Pass context
+          _buildSummaryRow(
+            // ⭐️ Pass context
+            context,
             'Price',
             _selectedOrderType == 'Market'
                 ? 'Market'
                 : formatter.format(_price),
           ),
           const Divider(height: 24),
-          _buildSummaryRow('Subtotal', formatter.format(_quantity * _price)),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    const Text(
-                      'Charges',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: secondaryTextColor,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.info_outline,
-                        color: secondaryTextColor,
-                        size: 18,
-                      ),
-                      onPressed: () => _showChargeDetailsBottomSheet(context),
-                    ),
-                  ],
-                ),
-                Text(
-                  formatter.format(_totalCharges),
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: darkTextColor,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          _buildSummaryRow(
+            context,
+            'Subtotal',
+            formatter.format(_quantity * _price),
+          ), // ⭐️ Pass context
+          _buildChargesRow(context, formatter), // ⭐️ Pass context
           const Divider(height: 24),
           _buildSummaryRow(
+            // ⭐️ Pass context
+            context,
             'Total Amount',
             formatter.format(_totalAmount),
             isTotal: true,
@@ -715,7 +736,59 @@ class _BuyStockPageState extends State<BuyStockPage> {
     );
   }
 
-  Widget _buildSummaryRow(String label, String value, {bool isTotal = false}) {
+  Widget _buildChargesRow(BuildContext context, NumberFormat formatter) {
+    // --- ⭐️ Theme se colors lo ---
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Text(
+                'Charges',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: textTheme.bodySmall?.color,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              IconButton(
+                icon: Icon(
+                  Icons.info_outline,
+                  color: textTheme.bodySmall?.color,
+                  size: 18,
+                ),
+                onPressed: () => _showChargeDetailsBottomSheet(context),
+              ),
+            ],
+          ),
+          Text(
+            formatter.format(_totalCharges),
+            style: TextStyle(
+              fontSize: 16,
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow(
+    BuildContext context,
+    String label,
+    String value, {
+    bool isTotal = false,
+  }) {
+    // --- ⭐️ Theme se colors lo ---
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
@@ -725,7 +798,10 @@ class _BuyStockPageState extends State<BuyStockPage> {
             label,
             style: TextStyle(
               fontSize: 16,
-              color: isTotal ? darkTextColor : secondaryTextColor,
+              // --- ⭐️ MODIFIED: Theme text/grey color ---
+              color: isTotal
+                  ? colorScheme.onSurface
+                  : textTheme.bodySmall?.color,
               fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
             ),
           ),
@@ -733,7 +809,8 @@ class _BuyStockPageState extends State<BuyStockPage> {
             value,
             style: TextStyle(
               fontSize: 16,
-              color: darkTextColor,
+              // --- ⭐️ MODIFIED: Theme text color ---
+              color: colorScheme.onSurface,
               fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
             ),
           ),
@@ -742,30 +819,38 @@ class _BuyStockPageState extends State<BuyStockPage> {
     );
   }
 
-  Widget _buildBottomBuyButton() {
+  Widget _buildBottomBuyButton(BuildContext context) {
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16), // --- MODIFIED ---
+      // --- ⭐️ MODIFIED: Theme nav bar color ---
+      color: theme.bottomNavigationBarTheme.backgroundColor,
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: ElevatedButton(
         onPressed: (_quantity > 0 && _price > 0 && !_isPlacingOrder)
             ? _handleBuy
             : null,
         style: ElevatedButton.styleFrom(
-          backgroundColor: primaryPink,
-          foregroundColor: Colors.white,
+          // --- ⭐️ MODIFIED: Theme accent color (Pink) ---
+          backgroundColor: colorScheme.secondary,
+          foregroundColor: colorScheme.onSecondary,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
           elevation: 2,
-          disabledBackgroundColor: Colors.pink.shade100,
+          // --- ⭐️ MODIFIED: Theme disabled color ---
+          disabledBackgroundColor: colorScheme.secondary.withOpacity(0.3),
         ),
         child: _isPlacingOrder
-            ? const SizedBox(
+            ? SizedBox(
                 height: 24,
                 width: 24,
                 child: CircularProgressIndicator(
-                  color: Colors.white,
+                  // --- ⭐️ MODIFIED: Theme text color ---
+                  color: colorScheme.onSecondary,
                   strokeWidth: 3,
                 ),
               )
@@ -778,8 +863,13 @@ class _BuyStockPageState extends State<BuyStockPage> {
   }
 
   void _showChargeDetailsBottomSheet(BuildContext context) {
+    // --- ⭐️ Theme se colors lo ---
+    final colorScheme = Theme.of(context).colorScheme;
+
     showModalBottomSheet(
       context: context,
+      // --- ⭐️ MODIFIED: Theme background color ---
+      backgroundColor: colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -790,26 +880,41 @@ class _BuyStockPageState extends State<BuyStockPage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Buy Charges Breakdown',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: darkTextColor,
+                  // --- ⭐️ MODIFIED: Theme text color ---
+                  color: colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 16),
-              _buildChargeRow('Brokerage', _chargesBreakdown['brokerage']),
-              _buildChargeRow('STT (Buy)', _chargesBreakdown['stt']),
               _buildChargeRow(
+                context,
+                'Brokerage',
+                _chargesBreakdown['brokerage'],
+              ),
+              _buildChargeRow(context, 'STT (Buy)', _chargesBreakdown['stt']),
+              _buildChargeRow(
+                context,
                 'Exchange Charges',
                 _chargesBreakdown['exchangeCharges'],
               ),
-              _buildChargeRow('SEBI Charges', _chargesBreakdown['sebiCharges']),
-              _buildChargeRow('Stamp Duty', _chargesBreakdown['stampDuty']),
-              _buildChargeRow('GST', _chargesBreakdown['gst']),
+              _buildChargeRow(
+                context,
+                'SEBI Charges',
+                _chargesBreakdown['sebiCharges'],
+              ),
+              _buildChargeRow(
+                context,
+                'Stamp Duty',
+                _chargesBreakdown['stampDuty'],
+              ),
+              _buildChargeRow(context, 'GST', _chargesBreakdown['gst']),
               const Divider(height: 24),
               _buildChargeRow(
+                context,
                 'Total Charges',
                 _chargesBreakdown['total'],
                 isTotal: true,
@@ -821,7 +926,16 @@ class _BuyStockPageState extends State<BuyStockPage> {
     );
   }
 
-  Widget _buildChargeRow(String label, double? value, {bool isTotal = false}) {
+  Widget _buildChargeRow(
+    BuildContext context,
+    String label,
+    double? value, {
+    bool isTotal = false,
+  }) {
+    // --- ⭐️ Theme se colors lo ---
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
@@ -831,7 +945,10 @@ class _BuyStockPageState extends State<BuyStockPage> {
             label,
             style: TextStyle(
               fontSize: 16,
-              color: isTotal ? darkTextColor : Colors.grey[700],
+              // --- ⭐️ MODIFIED: Theme text/grey color ---
+              color: isTotal
+                  ? colorScheme.onSurface
+                  : textTheme.bodySmall?.color,
               fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
             ),
           ),
@@ -839,7 +956,8 @@ class _BuyStockPageState extends State<BuyStockPage> {
             _priceFormatter.format(value ?? 0.0),
             style: TextStyle(
               fontSize: 16,
-              color: darkTextColor,
+              // --- ⭐️ MODIFIED: Theme text color ---
+              color: colorScheme.onSurface,
               fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
             ),
           ),
@@ -848,9 +966,17 @@ class _BuyStockPageState extends State<BuyStockPage> {
     );
   }
 
-  void _showInsufficientFundsDialog(double available, double required) {
-    final double shortAmount = required - available;
+  void _showInsufficientFundsDialog(
+    BuildContext context,
+    double available,
+    double required,
+  ) {
+    // --- ⭐️ Theme se colors lo ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
 
+    final double shortAmount = required - available;
     final String shortAmountStr = _priceFormatter.format(shortAmount);
     final String availableStr = _priceFormatter.format(available);
     final String requiredStr = _priceFormatter.format(required);
@@ -859,16 +985,23 @@ class _BuyStockPageState extends State<BuyStockPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          // --- ⭐️ MODIFIED: Theme surface color ---
+          backgroundColor: colorScheme.surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          title: const Row(
+          title: Row(
             children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
-              SizedBox(width: 12),
+              const Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.orange,
+                size: 28,
+              ),
+              const SizedBox(width: 12),
               Text(
                 'Insufficient Funds',
-                style: TextStyle(color: darkTextColor),
+                // --- ⭐️ MODIFIED: Theme text color ---
+                style: TextStyle(color: colorScheme.onSurface),
               ),
             ],
           ),
@@ -879,15 +1012,17 @@ class _BuyStockPageState extends State<BuyStockPage> {
               Text(
                 'You do not have enough funds to place this order.',
                 style: TextStyle(
-                  color: darkTextColor.withOpacity(0.8),
+                  // --- ⭐️ MODIFIED: Theme text color ---
+                  color: colorScheme.onSurface.withOpacity(0.8),
                   fontSize: 15,
                 ),
               ),
               const SizedBox(height: 20),
-              _buildFundDetailRow('Required Amount:', requiredStr),
-              _buildFundDetailRow('Available Funds:', availableStr),
+              _buildFundDetailRow(context, 'Required Amount:', requiredStr),
+              _buildFundDetailRow(context, 'Available Funds:', availableStr),
               const Divider(height: 24, thickness: 1),
               _buildFundDetailRow(
+                context,
                 'You are short by:',
                 shortAmountStr,
                 isShortfall: true,
@@ -897,9 +1032,13 @@ class _BuyStockPageState extends State<BuyStockPage> {
           actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           actions: [
             TextButton(
-              child: const Text(
+              child: Text(
                 'Cancel',
-                style: TextStyle(color: Colors.grey, fontSize: 16),
+                // --- ⭐️ MODIFIED: Theme grey color ---
+                style: TextStyle(
+                  color: textTheme.bodySmall?.color,
+                  fontSize: 16,
+                ),
               ),
               onPressed: () {
                 Navigator.of(context).pop();
@@ -908,8 +1047,9 @@ class _BuyStockPageState extends State<BuyStockPage> {
             const SizedBox(width: 8),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: primaryPink, // Use your theme color
-                foregroundColor: Colors.white,
+                // --- ⭐️ MODIFIED: Theme accent color (Pink) ---
+                backgroundColor: colorScheme.secondary,
+                foregroundColor: colorScheme.onSecondary,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -921,14 +1061,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
               child: const Text('Add Funds', style: TextStyle(fontSize: 16)),
               onPressed: () {
                 Navigator.of(context).pop(); // Close the dialog
-
                 // TODO: Navigate to your Add Funds Page
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    backgroundColor: Colors.blue,
-                    content: Text('Navigate to Add Funds Page (TODO)'),
-                  ),
-                );
               },
             ),
           ],
@@ -938,10 +1071,15 @@ class _BuyStockPageState extends State<BuyStockPage> {
   }
 
   Widget _buildFundDetailRow(
+    BuildContext context,
     String label,
     String value, {
     bool isShortfall = false,
   }) {
+    // --- ⭐️ Theme se colors lo ---
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
@@ -950,7 +1088,8 @@ class _BuyStockPageState extends State<BuyStockPage> {
           Text(
             label,
             style: TextStyle(
-              color: Colors.grey[700],
+              // --- ⭐️ MODIFIED: Theme grey color ---
+              color: textTheme.bodySmall?.color,
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
@@ -958,7 +1097,8 @@ class _BuyStockPageState extends State<BuyStockPage> {
           Text(
             value,
             style: TextStyle(
-              color: isShortfall ? Colors.red : darkTextColor,
+              // --- ⭐️ MODIFIED: Theme text/error color ---
+              color: isShortfall ? colorScheme.error : colorScheme.onSurface,
               fontWeight: FontWeight.bold,
               fontSize: 15,
             ),
