@@ -332,11 +332,7 @@ Widget _buildSortHeader(BuildContext context) {
   return Row(
     children: [
       TextButton.icon(
-        icon: Icon(
-          Icons.sort,
-          color: textTheme.bodySmall?.color,
-          size: 18,
-        ),
+        icon: Icon(Icons.sort, color: textTheme.bodySmall?.color, size: 18),
         label: Text(
           "Sort",
           style: TextStyle(color: textTheme.bodySmall?.color),
@@ -399,10 +395,7 @@ class _WatchlistStockItem extends StatelessWidget {
             children: [
               if (isEditMode)
                 Padding(
-                  padding: const EdgeInsets.only(
-                    left: 16.0,
-                    right: 8.0,
-                  ),
+                  padding: const EdgeInsets.only(left: 16.0, right: 8.0),
                   child: IgnorePointer(
                     child: Checkbox(
                       value: isSelected,
