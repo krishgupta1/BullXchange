@@ -1,3 +1,4 @@
+import 'package:bullxchange/features/account/screens/add_fund.dart';
 import 'package:bullxchange/features/account/screens/edit_profile_page.dart';
 import 'package:bullxchange/features/account/screens/faq_page.dart';
 import 'package:bullxchange/features/account/screens/referralcodepage.dart';
@@ -284,7 +285,12 @@ class AccountScreen extends StatelessWidget {
           ),
           const Spacer(),
           ElevatedButton(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AddFundPage()),
+              );
+            },
             style: ElevatedButton.styleFrom(
               // --- ⭐️ MODIFIED: Theme color ---
               backgroundColor: colorScheme.primary,

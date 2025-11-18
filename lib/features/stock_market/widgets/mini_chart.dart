@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -30,19 +32,38 @@ class MiniChart extends StatelessWidget {
     double strokeWidth = 2.0,
     bool enableTooltip = false,
   }) {
-    // Use actual chart data from API if available
-    if (instrument.chartData.isNotEmpty) {
-      return MiniChart(
-        data: instrument.chartData,
-        color: color,
-        strokeWidth: strokeWidth,
-        enableTooltip: enableTooltip,
-      );
+    final ltp =
+        num.tryParse(
+          instrument.liveData['ltp']?.toString() ?? '',
+        )?.toDouble() ??
+        0.0;
+    final netChange =
+        num.tryParse(
+          instrument.liveData['netChange']?.toString() ?? '',
+        )?.toDouble() ??
+        0.0;
+
+    List<double> points;
+    if (ltp == 0.0) {
+      points = List<double>.generate(15, (_) => 1.0);
+    } else {
+      final startPrice = ltp - netChange;
+      points = <double>[];
+      final random = Random(instrument.symbol.hashCode);
+      for (int i = 0; i < 15; i++) {
+        if (i == 14) {
+          points.add(ltp);
+        } else {
+          double progress = i / 14.0;
+          double priceAtProgress = startPrice + (netChange * progress);
+          double variance = ltp * 0.01 * (random.nextDouble() - 0.5);
+          points.add(priceAtProgress + variance);
+        }
+      }
     }
 
-    // Fallback to a flat line if no chart data available
     return MiniChart(
-      data: List.filled(15, instrument.liveData['ltp']?.toDouble() ?? 0.0),
+      data: points,
       color: color,
       strokeWidth: strokeWidth,
       enableTooltip: enableTooltip,

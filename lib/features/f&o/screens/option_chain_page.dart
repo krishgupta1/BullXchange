@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 // --- This is the main page widget with the TabBar ---
-// (No changes here)
 class OptionChainPage extends StatefulWidget {
   final String symbol; // e.g., "NIFTY"
 
@@ -68,7 +67,6 @@ class _OptionChainPageState extends State<OptionChainPage>
 }
 
 // --- This widget sets up the Provider for the Option Chain ---
-// (No changes here)
 class _OptionChainTab extends StatelessWidget {
   final String symbol;
 
@@ -104,8 +102,30 @@ class _OptionChainBody extends StatelessWidget {
     }
 
     if (provider.error != null && provider.rows.isEmpty) {
-      return Center(child: Text(provider.error!));
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(provider.error!, textAlign: TextAlign.center),
+        ),
+      );
     }
+
+    // --- ADDED THIS CHECK ---
+    // This handles the case where the API call succeeded (no error)
+    // but returned no data (empty list).
+    if (provider.rows.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(
+            "No option chain data found for ${provider.symbol}.",
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 16),
+          ),
+        ),
+      );
+    }
+    // --- END OF ADDED CHECK ---
 
     final rows = provider.rows;
     // ⭐️ 1. Get the ATM index and LTP from the provider

@@ -104,13 +104,6 @@ class _FutureOptionWatchlistPageState extends State<FutureOptionWatchlistPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Set to 'false' to see the empty state
-    bool hasWatchlist = true;
-
-    if (!hasWatchlist && !_isEditMode) {
-      return const Center(child: _EmptyState());
-    }
-
     // --- ⭐️ Structure copied from your WatchListPage ---
     return Column(
       children: [

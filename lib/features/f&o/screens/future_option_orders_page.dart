@@ -47,14 +47,7 @@ class FutureOptionOrdersPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // --- ⭐️ 1. Hardcoded data ---
-    // Set to 'false' to see the empty state
-    const bool hasOrders = true;
-
-    if (!hasOrders) {
-      return const Center(child: _EmptyState());
-    }
-
+    
     // --- ⭐️ 2. Re-create the Column structure from OrderPage ---
     return Column(
       children: [

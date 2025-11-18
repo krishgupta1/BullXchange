@@ -1,7 +1,4 @@
-// --- ⭐️ ADDED IMPORTS ---
 import 'package:bullxchange/provider/theme_provider.dart';
-// -------------------------
-
 import 'package:bullxchange/features/stock_market/screens/buy_stock_page.dart';
 import 'package:bullxchange/features/stock_market/screens/sell_stock_page.dart';
 import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
@@ -668,9 +665,8 @@ class _TradingViewChartState extends State<TradingViewChart> {
   }
 
   String _buildTradingViewHtml(String chartTheme, String toolbarBg) {
-    // ... (Yeh function unchanged hai) ...
     final sanitizedSymbol = widget.instrument.symbol.replaceAll('-EQ', '');
-    final exchange = widget.instrument.exchSeg == 'NSE' ? 'NSE' : 'BSE';
+    final exchange = 'BSE';
     final tradingViewSymbol = '$exchange:$sanitizedSymbol';
 
     return '''
