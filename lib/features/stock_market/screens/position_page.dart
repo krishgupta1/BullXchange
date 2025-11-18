@@ -14,7 +14,7 @@ import 'package:provider/provider.dart';
 import 'package:bullxchange/features/stock_market/screens/buy_stock_page.dart';
 import 'package:bullxchange/features/stock_market/screens/sell_stock_page.dart';
 
-// --- ⭐️ 1. CONVERTED TO STATEFUL WIDGET ---
+// --- 1. MAIN PAGE ---
 class PositionPage extends StatefulWidget {
   const PositionPage({super.key});
 
@@ -23,20 +23,17 @@ class PositionPage extends StatefulWidget {
 }
 
 class _PositionPageState extends State<PositionPage> {
-  // --- ⭐️ 2. ADDED SERVICE INSTANCES ---
   final UserService _userService = UserService();
   final ChargeCalculatorService _chargeCalculator = ChargeCalculatorService();
 
-  // --- ⭐️ 3. "EXIT ALL" FUNCTION ---
   Future<void> _handleExitAllPositions(
-    BuildContext context, // Need context for dialogs
+    BuildContext context,
     List<StockHoldingModel> positions,
     InstrumentProvider provider,
   ) async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
 
-    // --- Step 1: Show Confirmation Dialog ---
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -57,10 +54,8 @@ class _PositionPageState extends State<PositionPage> {
       ),
     );
 
-    // If user did not confirm, do nothing
     if (confirm != true) return;
 
-    // --- Step 2: Show Loading Dialog ---
     if (mounted) {
       showDialog(
         context: context,
@@ -69,7 +64,6 @@ class _PositionPageState extends State<PositionPage> {
       );
     }
 
-    // --- Step 3: Loop and Execute Trades ---
     int successCount = 0;
     int errorCount = 0;
     try {
@@ -77,12 +71,12 @@ class _PositionPageState extends State<PositionPage> {
         final instrument = provider.getInstrumentBySymbol(position.stockSymbol);
         if (instrument == null) {
           errorCount++;
-          continue; // Skip if no live data
+          continue;
         }
 
         final ltp = (instrument.liveData['ltp'] as num?)?.toDouble() ?? 0.0;
         if (ltp == 0.0) {
-          errorCount++; // Can't sell at price 0
+          errorCount++;
           continue;
         }
 
@@ -91,7 +85,6 @@ class _PositionPageState extends State<PositionPage> {
         final charges = _chargeCalculator.calculateSellCharges(tradeValue);
         final totalAmount = tradeValue - (charges['total'] ?? 0.0);
 
-        // Create the Sell Transaction
         final newTransaction = TransactionModel(
           userId: uid,
           symbol: position.stockSymbol,
@@ -104,23 +97,21 @@ class _PositionPageState extends State<PositionPage> {
           executedAt: DateTime.now(),
           exchange: position.exchange,
           productType: 'Intraday',
-          orderType: '', // Force Intraday
+          orderType: '',
         );
 
-        // Create the holding update (negative quantity)
         final holdingUpdate = StockHoldingModel(
           stockName: position.stockName,
           stockSymbol: position.stockSymbol,
-          quantity: -quantity, // Negative quantity to remove from list
+          quantity: -quantity,
           transactionPrice: ltp,
           buyingTime: DateTime.now(),
           charges: charges['total'] ?? 0.0,
           totalAmount: totalAmount,
           exchange: position.exchange,
-          transactionType: 'INTRADAY', // Must match 'INTRADAY'
+          transactionType: 'INTRADAY',
         );
 
-        // Call your existing executeTrade function
         await _userService.executeTrade(
           uid: uid,
           transaction: newTransaction,
@@ -130,11 +121,9 @@ class _PositionPageState extends State<PositionPage> {
       }
     } catch (e) {
       errorCount++;
-      // Handle error (e.g., log it)
     } finally {
-      // --- Step 4: Close Loading Dialog and Show Result ---
       if (mounted) {
-        Navigator.pop(context); // Close loading dialog
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: errorCount > 0 ? Colors.red : Colors.green,
@@ -149,7 +138,6 @@ class _PositionPageState extends State<PositionPage> {
 
   @override
   Widget build(BuildContext context) {
-    // --- ⭐️ ADDED AUTH CHECK ---
     final auth = FirebaseAuth.instance;
     if (auth.currentUser?.uid == null) {
       return const Center(child: Text("Please log in to see your positions."));
@@ -158,12 +146,11 @@ class _PositionPageState extends State<PositionPage> {
     return Consumer2<UserProfileDataModel?, InstrumentProvider>(
       builder: (context, userProfile, instrumentProvider, child) {
         if (userProfile == null || userProfile.positions.isEmpty) {
-          return Center(child: const _EmptyState());
+          return const Center(child: _EmptyState());
         }
 
         final userPositions = userProfile.positions;
 
-        // --- P&L Calculation (Unchanged) ---
         double totalOverallPnl = 0;
         double totalInvestment = 0;
         for (var position in userPositions) {
@@ -186,7 +173,6 @@ class _PositionPageState extends State<PositionPage> {
             children: [
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                // --- ⭐️ 4. PASS THE FUNCTION TO THE CARD ---
                 child: _buildPositionSummaryCard(
                   totalOverallPnl,
                   totalInvestment,
@@ -205,21 +191,109 @@ class _PositionPageState extends State<PositionPage> {
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
               ),
+              const SizedBox(height: 10),
               ...userPositions.map((position) {
                 return PositionStockItem(
                   key: ValueKey(position.stockSymbol),
                   position: position,
                 );
               }),
+              const SizedBox(height: 80),
             ],
           ),
         );
       },
     );
   }
+
+  Widget _buildPositionSummaryCard(
+    double totalPnl,
+    double totalInvestment, {
+    required VoidCallback onExitAll,
+  }) {
+    final sign = totalPnl >= 0 ? "+" : "-";
+    final color = totalPnl >= 0 ? Colors.greenAccent : Colors.redAccent;
+
+    double totalPnlPercent = 0.0;
+    if (totalInvestment > 0) {
+      totalPnlPercent = (totalPnl / totalInvestment) * 100;
+    }
+
+    return Container(
+      height: 170,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF6F4CFF), Color(0xFFDB1B57)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Total Profit & Loss",
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.8),
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Text(
+                "$sign₹${totalPnl.abs().toStringAsFixed(2)}",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  "$sign${totalPnlPercent.abs().toStringAsFixed(2)}%",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const Spacer(),
+          Row(
+            children: [
+              Expanded(
+                child: TextButton.icon(
+                  icon: const Icon(Icons.exit_to_app),
+                  label: const Text("Exit all"),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.white.withOpacity(0.15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  onPressed: onExitAll,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-// --- _EmptyState (UNCHANGED) ---
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
   @override
@@ -245,98 +319,7 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-// --- ⭐️ 5. MODIFIED _buildPositionSummaryCard ---
-Widget _buildPositionSummaryCard(
-  double totalPnl,
-  double totalInvestment, {
-  required VoidCallback onExitAll, // <-- Added callback
-}) {
-  // ⭐️ CHANGED: Use + for positive and - for negative
-  final sign = totalPnl >= 0 ? "+" : "-";
-  final color = totalPnl >= 0 ? Colors.greenAccent : Colors.redAccent;
-
-  double totalPnlPercent = 0.0;
-  if (totalInvestment > 0) {
-    totalPnlPercent = (totalPnl / totalInvestment) * 100;
-  }
-
-  return Container(
-    height: 170,
-    padding: const EdgeInsets.all(20),
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(20),
-      gradient: const LinearGradient(
-        colors: [Color(0xFF6F4CFF), Color(0xFFDB1B57)],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "Total Profit & Loss",
-          style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14),
-        ),
-        const SizedBox(height: 6),
-        Row(
-          children: [
-            Text(
-              // ⭐️ CHANGED: Use .abs() to avoid double signs (e.g., "-₹-50")
-              "$sign₹${totalPnl.abs().toStringAsFixed(2)}",
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.9),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                // ⭐️ CHANGED: Use .abs() here too for consistency
-                "$sign${totalPnlPercent.abs().toStringAsFixed(2)}%",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const Spacer(),
-        Row(
-          children: [
-            Expanded(
-              child: TextButton.icon(
-                icon: const Icon(Icons.exit_to_app),
-                label: const Text("Exit all"),
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: Colors.white.withOpacity(0.15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                onPressed: onExitAll, // <-- Use the passed callback
-              ),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
-}
-
-// -----------------------------------------------------------------
-// ⬇️ PositionStockItem and PositionStockItemDetailsSheet
-// (UNCHANGED from your provided code, as they are correct)
-// -----------------------------------------------------------------
+// --- 2. LIST ITEM (BACKGROUND FIXED) ---
 class PositionStockItem extends StatefulWidget {
   final StockHoldingModel position;
   const PositionStockItem({super.key, required this.position});
@@ -418,15 +401,15 @@ class _PositionStockItemState extends State<PositionStockItem> {
     final letter = name.isNotEmpty ? name[0].toUpperCase() : "?";
     final color = Colors.primaries[name.hashCode % Colors.primaries.length];
     return Container(
-      width: 40,
-      height: 40,
+      width: 36, // Reduced size
+      height: 36,
       decoration: BoxDecoration(color: color, shape: BoxShape.circle),
       child: Center(
         child: Text(
           letter,
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 24,
+            fontSize: 20, // Reduced font
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -447,79 +430,100 @@ class _PositionStockItemState extends State<PositionStockItem> {
       p.stockSymbol,
     );
 
-    return GestureDetector(
-      onTap: () => _showDetailsSheet(context),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-        child: Row(
-          children: [
-            if (instrument != null)
-              SmartLogo(instrument: instrument, radius: 0)
-            else
-              _buildLogoContainer(p.stockName),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    // Theme data for Text Colors
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    // ⭐️ FIXED: Background is now Transparent (pehle jaisa)
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _showDetailsSheet(context),
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: theme.dividerColor.withOpacity(0.1),
+                width: 1,
+              ),
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+          child: Row(
+            children: [
+              if (instrument != null)
+                SmartLogo(instrument: instrument, radius: 0)
+              else
+                _buildLogoContainer(p.stockName),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      p.stockSymbol,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14, // Reduced Font
+                        color: colorScheme.onSurface, // Adaptive Color
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      "${p.quantity} shares",
+                      style: TextStyle(
+                        color: theme.textTheme.bodySmall?.color, // Grey
+                        fontSize: 12, // Reduced Font
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(
-                    p.stockSymbol,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
+                  ValueListenableBuilder<double>(
+                    valueListenable: _ltpNotifier,
+                    builder: (_, val, __) => Text(
+                      priceFormatter.format(val * p.quantity),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14, // Reduced Font
+                        color: colorScheme.onSurface, // Adaptive Color
+                      ),
                     ),
                   ),
-                  Text(
-                    "${p.quantity} shares",
-                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  const SizedBox(height: 2),
+                  ValueListenableBuilder<double>(
+                    valueListenable: _plNotifier,
+                    builder: (_, plVal, __) => ValueListenableBuilder<double>(
+                      valueListenable: _percentNotifier,
+                      builder: (_, pctVal, __) {
+                        final sign = plVal >= 0 ? "+" : "-";
+                        final color = plVal >= 0 ? Colors.green : Colors.red;
+                        return Text(
+                          "$sign₹${plVal.abs().toStringAsFixed(2)} ($sign${pctVal.abs().toStringAsFixed(2)}%)",
+                          style: TextStyle(
+                            color: color,
+                            fontSize: 12, // Reduced Font
+                            fontWeight: FontWeight.w500,
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                ValueListenableBuilder<double>(
-                  valueListenable: _ltpNotifier,
-                  builder: (_, val, __) => Text(
-                    priceFormatter.format(val * p.quantity),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                ValueListenableBuilder<double>(
-                  valueListenable: _plNotifier,
-                  builder: (_, plVal, __) => ValueListenableBuilder<double>(
-                    valueListenable: _percentNotifier,
-                    builder: (_, pctVal, __) {
-                      // ⭐️ CHANGED: Use + for positive and - for negative
-                      final sign = plVal >= 0 ? "+" : "-";
-                      final color = plVal >= 0 ? Colors.green : Colors.red;
-                      return Text(
-                        // ⭐️ CHANGED: Apply .abs() to both values and use the sign
-                        "$sign₹${plVal.abs().toStringAsFixed(2)} ($sign${pctVal.abs().toStringAsFixed(2)}%)",
-                        style: TextStyle(
-                          color: color,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
+// --- 3. BOTTOM SHEET ---
 class PositionStockItemDetailsSheet extends StatelessWidget {
   final StockHoldingModel position;
   final ValueNotifier<double> ltpNotifier;
@@ -537,13 +541,25 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
   static const Color primaryPink = Color(0xFFF61C7A);
   static const Color primaryBlue = Color(0xFF3500D4);
 
-  Widget _buildDetailRow(String title, Widget valueWidget) {
+  Widget _buildDetailRow(
+    BuildContext context,
+    String title,
+    Widget valueWidget,
+  ) {
+    final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: TextStyle(color: Colors.grey[600], fontSize: 16)),
+          Text(
+            title,
+            style: TextStyle(
+              color: theme.textTheme.bodySmall?.color,
+              fontSize: 13,
+              fontFamily: "Inter",
+            ),
+          ),
           valueWidget,
         ],
       ),
@@ -612,10 +628,8 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => SellStockPage(
-            instrument: instrument,
-            userHolding: position, // Pass the Intraday position
-          ),
+          builder: (context) =>
+              SellStockPage(instrument: instrument, userHolding: position),
         ),
       );
     }
@@ -652,12 +666,14 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
       decimalDigits: 2,
     );
 
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final Instrument? instrument = _getInstrument(context);
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
         child: Padding(
@@ -680,18 +696,20 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
                       children: [
                         Text(
                           position.stockName,
-                          style: const TextStyle(
-                            fontSize: 20,
+                          style: TextStyle(
+                            fontSize: 18, // Reduced Font
                             fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurface,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
+                        const SizedBox(height: 2),
                         Text(
                           position.stockSymbol,
                           style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 16,
+                            color: theme.textTheme.bodySmall?.color,
+                            fontSize: 13, // Reduced Font
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -700,50 +718,61 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
                   ),
                   IconButton(
                     icon: const Icon(Icons.close),
+                    color: colorScheme.onSurface,
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
               ),
               const Divider(height: 30),
+
               _buildDetailRow(
+                context,
                 "Quantity",
                 Text(
                   "${position.quantity} Shares",
-                  style: const TextStyle(
-                    fontSize: 16,
+                  style: TextStyle(
+                    fontSize: 14, // Reduced Font
                     fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
                   ),
                 ),
               ),
+
               _buildDetailRow(
+                context,
                 "Invested Amount",
                 Text(
                   priceFormatter.format(investedAmount),
-                  style: const TextStyle(
-                    fontSize: 16,
+                  style: TextStyle(
+                    fontSize: 14, // Reduced Font
                     fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
                   ),
                 ),
               ),
+
               _buildDetailRow(
+                context,
                 "Current Stock Price",
                 ValueListenableBuilder<double>(
                   valueListenable: ltpNotifier,
                   builder: (_, ltpVal, __) => Text(
                     priceFormatter.format(ltpVal),
-                    style: const TextStyle(
-                      fontSize: 16,
+                    style: TextStyle(
+                      fontSize: 14, // Reduced Font
                       fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                 ),
               ),
+
               _buildDetailRow(
+                context,
                 "Current Profit (Value)",
                 ValueListenableBuilder<double>(
                   valueListenable: plNotifier,
                   builder: (_, plVal, __) {
-                    // ⭐️ CHANGED: Use + for positive and - for negative
                     final sign = plVal >= 0 ? "+" : "-";
                     final color = plVal >= 0 ? Colors.green : Colors.red;
                     final currentValue = ltpNotifier.value * position.quantity;
@@ -755,18 +784,18 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
                         children: [
                           Text(
                             priceFormatter.format(currentValue),
-                            style: const TextStyle(
-                              fontSize: 16,
+                            style: TextStyle(
+                              fontSize: 14, // Reduced Font
                               fontWeight: FontWeight.bold,
+                              color: colorScheme.onSurface,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 2),
                           Text(
-                            // ⭐️ CHANGED: Apply .abs() to both values and use the sign
                             "$sign₹${plVal.abs().toStringAsFixed(2)} ($sign${pctVal.abs().toStringAsFixed(2)}%)",
                             style: TextStyle(
                               color: color,
-                              fontSize: 14,
+                              fontSize: 12, // Reduced Font
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -776,7 +805,9 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
                   },
                 ),
               ),
+
               const Divider(height: 30),
+
               Row(
                 children: [
                   Expanded(
@@ -784,14 +815,18 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
                       onPressed: () => _handleBuy(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryPink,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
                       child: const Text(
                         "BUY",
-                        style: TextStyle(fontSize: 16, color: Colors.white),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -801,14 +836,18 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
                       onPressed: () async => await _handleSell(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryBlue,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
                       child: const Text(
                         "SELL",
-                        style: TextStyle(fontSize: 16, color: Colors.white),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),

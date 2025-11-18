@@ -12,60 +12,62 @@ class BottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // --- Theme se colors lo ---
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
 
-    // Selected color (Dark Blue) theme se aa raha hai
-    final Color selectedColor = colorScheme.primary;
+    final isDarkMode = theme.brightness == Brightness.dark;
 
     return BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
       currentIndex: selectedIndex,
       onTap: onItemTapped,
 
-      selectedItemColor: selectedColor,
-      unselectedItemColor: textTheme.bodySmall?.color, // Grey
-      // Background color theme_provider.dart se aa raha hai
-      // (Light mein white, Dark mein dark grey)
-      selectedFontSize: 12,
-      unselectedFontSize: 12,
-      iconSize: 24,
+      // Background & Visibility
+      backgroundColor: isDarkMode ? Colors.black : Colors.white,
+      elevation: 8,
+
+      // Colors
+      selectedItemColor: colorScheme.primary,
+      unselectedItemColor: isDarkMode
+          ? Colors.grey.shade400
+          : Colors.grey.shade600,
+
+      // Sizing
+      selectedFontSize: 14,
+      unselectedFontSize: 14,
+      iconSize: 28,
+
+      // --- ⭐️ ADDED: Font Weight 500 ---
+      selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
+      unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+
       items: [
         BottomNavigationBarItem(
           icon: const Icon(Icons.ssid_chart),
-          // --- ⭐️ MODIFIED: Sirf icon pass kiya ---
-          activeIcon: Icon(Icons.ssid_chart, color: selectedColor),
+          activeIcon: Icon(Icons.ssid_chart, color: colorScheme.primary),
           label: 'Stocks',
         ),
         BottomNavigationBarItem(
           icon: const Icon(Icons.widgets_outlined),
-          // --- ⭐️ MODIFIED: Sirf icon pass kiya ---
-          activeIcon: Icon(Icons.widgets_outlined, color: selectedColor),
+          activeIcon: Icon(Icons.widgets_outlined, color: colorScheme.primary),
           label: 'F&O',
         ),
         BottomNavigationBarItem(
           icon: const Icon(Icons.pie_chart_outline),
-          // --- ⭐️ MODIFIED: Sirf icon pass kiya ---
-          activeIcon: Icon(Icons.pie_chart, color: selectedColor),
+          activeIcon: Icon(Icons.pie_chart, color: colorScheme.primary),
           label: 'Portfolio',
         ),
         BottomNavigationBarItem(
           icon: const Icon(Icons.auto_awesome_outlined),
-          // --- ⭐️ MODIFIED: Sirf icon pass kiya ---
-          activeIcon: Icon(Icons.auto_awesome, color: selectedColor),
+          activeIcon: Icon(Icons.auto_awesome, color: colorScheme.primary),
           label: 'AI Stats',
         ),
         BottomNavigationBarItem(
           icon: const Icon(Icons.person_outline),
-          // --- ⭐️ MODIFIED: Sirf icon pass kiya ---
-          activeIcon: Icon(Icons.person, color: selectedColor),
+          activeIcon: Icon(Icons.person, color: colorScheme.primary),
           label: 'Account',
         ),
       ],
     );
   }
 }
-
-// --- ⭐️ REMOVED: _buildActiveIcon helper function ---

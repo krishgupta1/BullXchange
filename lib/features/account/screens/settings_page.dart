@@ -3,6 +3,7 @@ import 'package:bullxchange/features/account/screens/terms_and_conditions_page.d
 import 'package:bullxchange/features/auth/screens/reset_password_page.dart';
 import 'package:bullxchange/features/auth/screens/setup_pin_screen.dart';
 import 'package:bullxchange/provider/theme_provider.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -18,210 +19,180 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    // --- Theme se colors aur provider lo ---
     final themeNotifier = Provider.of<ThemeNotifier>(context);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
-
-    // --- ⭐️ YEH CHECK KAREGA KI DARK MODE ON HAI YA NAHI ---
-    // (System mode ko 'light' maanega)
     final bool isDarkMode = themeNotifier.themeMode == ThemeMode.dark;
+
+    // Background color for the grouped sections
+    final tileColor = isDarkMode
+        ? const Color(0xFF1E1E1E)
+        : Colors.grey.shade50;
+
+    // Common background color for icons
+    final iconBgColor = colorScheme.primary.withOpacity(0.1);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
+          icon: Icon(Icons.arrow_back_ios_new, color: colorScheme.onSurface),
+          onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text('Settings'),
+        title: Text(
+          'Settings',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          ),
+        ),
         centerTitle: true,
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
+        scrolledUnderElevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
         child: Column(
           children: [
-            Expanded(
-              child: ListView(
-                children: [
-                  const SizedBox(height: 20),
-                  // General Section
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'General',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: textTheme.bodySmall?.color,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-
-                  //
-                  // --- ⭐️⭐️ YAHAN TOGGLE BUTTON LAGA DIYA HAI ⭐️⭐️ ---
-                  //
-                  _buildSettingsTile(
-                    'Dark Mode',
-                    onTap: () {
-                      // Row pe click karne se bhi toggle hoga
+            // --- GENERAL SECTION ---
+            _buildSectionHeader('General', textTheme),
+            _buildGroupContainer(
+              color: tileColor,
+              children: [
+                _buildSettingsTile(
+                  title: 'Dark Mode',
+                  icon: Icons.dark_mode_outlined,
+                  iconColor: Colors.purple,
+                  iconBgColor: iconBgColor,
+                  onTap: () {
+                    themeNotifier.setThemeMode(
+                      isDarkMode ? ThemeMode.light : ThemeMode.dark,
+                    );
+                  },
+                  trailing: CupertinoSwitch(
+                    value: isDarkMode,
+                    activeColor: colorScheme.primary,
+                    onChanged: (bool value) {
                       themeNotifier.setThemeMode(
-                        isDarkMode ? ThemeMode.light : ThemeMode.dark,
+                        value ? ThemeMode.dark : ThemeMode.light,
                       );
                     },
-                    trailing: Switch(
-                      value: isDarkMode,
-                      onChanged: (bool value) {
-                        // Switch se toggle karne par
-                        themeNotifier.setThemeMode(
-                          value ? ThemeMode.dark : ThemeMode.light,
-                        );
-                      },
-                      // activeColor AppTheme se automatically set ho jayega
-                    ),
                   ),
-                  // --- ⭐️⭐️ END OF SECTION ⭐️⭐️ ---
-
-                  // --- NOTIFICATIONS TILE ---
-                  _buildSettingsTile(
-                    'Notifications',
-                    onTap: () {
+                ),
+                _buildDivider(theme),
+                _buildSettingsTile(
+                  title: 'Notifications',
+                  icon: Icons.notifications_outlined,
+                  iconColor: Colors.orange,
+                  iconBgColor: iconBgColor,
+                  onTap: () {
+                    setState(() {
+                      _notificationsEnabled = !_notificationsEnabled;
+                    });
+                  },
+                  trailing: CupertinoSwitch(
+                    value: _notificationsEnabled,
+                    activeColor: colorScheme.primary,
+                    onChanged: (bool value) {
                       setState(() {
-                        _notificationsEnabled = !_notificationsEnabled;
+                        _notificationsEnabled = value;
                       });
                     },
-                    trailing: Switch(
-                      value: _notificationsEnabled,
-                      onChanged: (bool value) {
-                        setState(() {
-                          _notificationsEnabled = value;
-                        });
-                      },
-                      // --- MERGE CONFLICT RESOLVED ---
-                      // Removed the hardcoded 'activeThumbColor: Colors.pink'
-                      // to allow the theme to control the switch color.
-                    ),
-                  ),
-
-                  _buildSettingsTile(
-                    'Contact Us',
-                    onTap: () {
-                      // Handle contact us tap
-                    },
-                  ),
-                  const SizedBox(height: 30),
-
-                  // Security Section
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Security',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: textTheme.bodySmall?.color,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-                  _buildSettingsTile(
-                    'Change Login PIN',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const SetupPinScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildSettingsTile(
-                    'Change Password',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ResetPasswordPage(),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 30),
-
-                  // Privacy & Legal Section
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Privacy & Legal',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: textTheme.bodySmall?.color,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-                  _buildSettingsTile(
-                    'Privacy Policy',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const PrivacyPolicyPage(),
-                        ),
-                      );
-                    },
-                    subtitle: 'Choose what data you share with us',
-                  ),
-                  _buildSettingsTile(
-                    'Legal',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const TermsAndConditionsPage(),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-            // Save Button
-            SizedBox(
-              width: double.infinity,
-              height: 55,
-              child: ElevatedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Settings saved!'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colorScheme.secondaryContainer,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
                   ),
                 ),
-                child: Text(
-                  'Save',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onSecondaryContainer,
-                  ),
+                _buildDivider(theme),
+                _buildSettingsTile(
+                  title: 'Contact Us',
+                  icon: Icons.mail_outline,
+                  iconColor: Colors.blue,
+                  iconBgColor: iconBgColor,
+                  onTap: () {
+                    // Handle contact us logic here
+                  },
                 ),
-              ),
+              ],
             ),
-            const SizedBox(height: 20),
-            // Footer text
+            const SizedBox(height: 24),
+
+            // --- SECURITY SECTION ---
+            _buildSectionHeader('Security', textTheme),
+            _buildGroupContainer(
+              color: tileColor,
+              children: [
+                _buildSettingsTile(
+                  title: 'Change Login PIN',
+                  icon: Icons.lock_outline,
+                  iconColor: Colors.teal,
+                  iconBgColor: iconBgColor,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SetupPinScreen()),
+                    );
+                  },
+                ),
+                _buildDivider(theme),
+                _buildSettingsTile(
+                  title: 'Change Password',
+                  icon: Icons.key_outlined,
+                  iconColor: Colors.redAccent,
+                  iconBgColor: iconBgColor,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ResetPasswordPage(),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // --- PRIVACY SECTION ---
+            _buildSectionHeader('Privacy & Legal', textTheme),
+            _buildGroupContainer(
+              color: tileColor,
+              children: [
+                _buildSettingsTile(
+                  title: 'Privacy Policy',
+                  icon: Icons.privacy_tip_outlined,
+                  iconColor: Colors.green,
+                  iconBgColor: iconBgColor,
+                  subtitle: 'Choose what data you share with us',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const PrivacyPolicyPage(),
+                      ),
+                    );
+                  },
+                ),
+                _buildDivider(theme),
+                _buildSettingsTile(
+                  title: 'Legal',
+                  icon: Icons.gavel_outlined,
+                  iconColor: Colors.indigo,
+                  iconBgColor: iconBgColor,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const TermsAndConditionsPage(),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 40),
+
+            // --- FOOTER ---
             Text(
               '© 2025 BullXchange • Ver 1.0',
               style: TextStyle(
@@ -237,10 +208,53 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // Helper widget (Ab theme se color lega)
-  // Helper widget (Ab theme se color lega)
-  Widget _buildSettingsTile(
-    String title, {
+  // --- Helper Widgets ---
+
+  Widget _buildSectionHeader(String title, TextTheme textTheme) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12, left: 4),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          title,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: textTheme.bodySmall?.color,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGroupContainer({
+    required Color color,
+    required List<Widget> children,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _buildDivider(ThemeData theme) {
+    return Divider(
+      height: 1,
+      thickness: 1,
+      indent: 60, // Indent to allow space for the icon
+      color: theme.dividerColor.withOpacity(0.1),
+    );
+  }
+
+  Widget _buildSettingsTile({
+    required String title,
+    required IconData icon,
+    required Color iconColor,
+    required Color iconBgColor,
     String? subtitle,
     VoidCallback? onTap,
     Widget? trailing,
@@ -248,40 +262,51 @@ class _SettingsPageState extends State<SettingsPage> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return Column(
-      children: [
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          title: Text(
-            title,
-            style: TextStyle(
-              fontFamily: 'EudoxusSans',
-              fontSize: 18,
-              // --- ⭐️⭐️ FIX: 'onSurface' (Black/White) ko 'primary' (Blue) kar diya ---
-              color: colorScheme.primary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          subtitle: subtitle != null
-              ? Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontFamily: 'EudoxusSans',
-                    fontSize: 13,
-                    color: textTheme.bodySmall?.color, // Yeh grey hi rahega
-                  ),
-                )
-              : null,
-          trailing:
-              trailing ??
-              Icon(
-                Icons.arrow_forward_ios,
-                color: textTheme.bodySmall?.color, // Yeh bhi grey rahega
-                size: 18,
-              ),
-          onTap: onTap,
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      onTap: onTap,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+
+      // Leading Icon Box
+      leading: Container(
+        height: 40,
+        width: 40,
+        decoration: BoxDecoration(
+          color: iconBgColor,
+          borderRadius: BorderRadius.circular(12),
         ),
-      ],
+        child: Icon(icon, color: iconColor, size: 22),
+      ),
+
+      title: Text(
+        title,
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: colorScheme.onSurface,
+        ),
+      ),
+
+      subtitle: subtitle != null
+          ? Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: textTheme.bodySmall?.color,
+                ),
+              ),
+            )
+          : null,
+
+      trailing:
+          trailing ??
+          Icon(
+            Icons.arrow_forward_ios_rounded,
+            color: textTheme.bodySmall?.color?.withOpacity(0.5),
+            size: 18,
+          ),
     );
   }
 }
