@@ -7,7 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:bullxchange/provider/theme_provider.dart'; // ⭐️ Theme Provider import kiya
+import 'package:bullxchange/provider/theme_provider.dart';
 
 class SideMenu extends StatefulWidget {
   const SideMenu({super.key});
@@ -17,9 +17,8 @@ class SideMenu extends StatefulWidget {
 }
 
 class _SideMenuState extends State<SideMenu> {
-  String _selectedMenuTitle = "Home"; // Default selected
+  String _selectedMenuTitle = "Home";
 
-  // --- (Navigation aur Logout Logic same rahega) ---
   void onMenuPress(BuildContext context, String title) {
     Navigator.pop(context);
     if (title == "Home") {
@@ -93,22 +92,12 @@ class _SideMenuState extends State<SideMenu> {
 
   @override
   Widget build(BuildContext context) {
-    // --- ⭐️ Theme se colors lo (Listen nahi karega) ---
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
-    // --- ⭐️ User data fetch karo (Yeh listen karega) ---
     final userProfile = Provider.of<UserProfileDataModel?>(context);
 
-    // --- ⭐️ ThemeNotifier ko yahaan se hata diya taaki poora widget rebuild na ho ---
-    // final themeNotifier = Provider.of<ThemeNotifier>(context);
-    // final bool isDarkMode = themeNotifier.themeMode == ThemeMode.dark;
-
     return Container(
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top,
-        bottom: MediaQuery.of(context).padding.bottom,
-      ),
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
       constraints: const BoxConstraints(maxWidth: 288),
       decoration: BoxDecoration(
         color: colorScheme.surface,
@@ -121,15 +110,17 @@ class _SideMenuState extends State<SideMenu> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- User Profile Header (Yeh userProfile ke change par rebuild hoga) ---
+            // --- Header ---
             Padding(
               padding: const EdgeInsets.all(24),
               child: Row(
                 children: [
                   CircleAvatar(
+                    radius: 24,
                     backgroundColor: colorScheme.primary.withOpacity(0.1),
                     child: Icon(
-                      Icons.person_outline,
+                      Icons.person,
+                      size: 28,
                       color: colorScheme.primary,
                     ),
                   ),
@@ -143,8 +134,9 @@ class _SideMenuState extends State<SideMenu> {
                           userProfile?.name ?? "Guest User",
                           style: TextStyle(
                             color: colorScheme.onSurface,
-                            fontSize: 17,
+                            fontSize: 16,
                             fontFamily: "Inter",
+                            fontWeight: FontWeight.bold,
                           ),
                           overflow: TextOverflow.ellipsis,
                           maxLines: 1,
@@ -154,7 +146,7 @@ class _SideMenuState extends State<SideMenu> {
                           userProfile?.emailId ?? "",
                           style: TextStyle(
                             color: theme.textTheme.bodySmall?.color,
-                            fontSize: 15,
+                            fontSize: 13,
                             fontFamily: "Inter",
                           ),
                           overflow: TextOverflow.ellipsis,
@@ -167,7 +159,7 @@ class _SideMenuState extends State<SideMenu> {
               ),
             ),
 
-            // --- Menu Sections (Yeh rebuild nahi honge) ---
+            // --- Menu Sections ---
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
@@ -209,8 +201,7 @@ class _SideMenuState extends State<SideMenu> {
               ),
             ),
 
-            // --- ⭐️⭐️ FIX: Theme Toggle ko Consumer mein wrap kiya ⭐️⭐️ ---
-            // Yeh sirf tab rebuild hoga jab themeNotifier change hoga
+            // --- Theme Toggle ---
             Consumer<ThemeNotifier>(
               builder: (context, themeNotifier, child) {
                 final bool isDarkMode =
@@ -223,7 +214,7 @@ class _SideMenuState extends State<SideMenu> {
                       Icon(
                         Icons.brightness_6_outlined,
                         color: colorScheme.onSurface.withOpacity(0.7),
-                        size: 28,
+                        size: 24,
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -231,7 +222,7 @@ class _SideMenuState extends State<SideMenu> {
                           "Theme",
                           style: TextStyle(
                             color: colorScheme.onSurface,
-                            fontSize: 17,
+                            fontSize: 15,
                             fontFamily: "Inter",
                             fontWeight: FontWeight.w600,
                           ),
@@ -241,7 +232,6 @@ class _SideMenuState extends State<SideMenu> {
                         value: isDarkMode,
                         activeTrackColor: colorScheme.primary,
                         onChanged: (value) {
-                          // Change notify karega, lekin yeh widget listen nahi kar raha
                           themeNotifier.setThemeMode(
                             value ? ThemeMode.dark : ThemeMode.light,
                           );
@@ -252,7 +242,6 @@ class _SideMenuState extends State<SideMenu> {
                 );
               },
             ),
-            // --- ⭐️⭐️ END OF FIX ⭐️⭐️ ---
           ],
         ),
       ),
@@ -260,7 +249,6 @@ class _SideMenuState extends State<SideMenu> {
   }
 }
 
-// --- (MenuButtonSection unchanged) ---
 class MenuButtonSection extends StatelessWidget {
   const MenuButtonSection({
     super.key,
@@ -287,21 +275,21 @@ class MenuButtonSection extends StatelessWidget {
           padding: const EdgeInsets.only(
             left: 24,
             right: 24,
-            top: 32,
+            top: 24,
             bottom: 8,
           ),
           child: Text(
             title,
             style: TextStyle(
               color: textTheme.bodySmall?.color,
-              fontSize: 15,
+              fontSize: 12,
               fontFamily: "Inter",
               fontWeight: FontWeight.w600,
             ),
           ),
         ),
         Container(
-          margin: const EdgeInsets.all(8),
+          margin: const EdgeInsets.symmetric(horizontal: 8),
           decoration: BoxDecoration(
             color: theme.scaffoldBackgroundColor,
             borderRadius: BorderRadius.circular(20),
@@ -315,14 +303,7 @@ class MenuButtonSection extends StatelessWidget {
                   isSelected: selectedTitle == item['title'],
                   onMenuPress: () => onMenuPress!(item['title']!),
                 ),
-                if (item != menuItems.last)
-                  Divider(
-                    color: theme.dividerColor.withOpacity(0.1),
-                    thickness: 1,
-                    height: 1,
-                    indent: 16,
-                    endIndent: 16,
-                  ),
+                // --- ⭐️ NO DIVIDER HERE ---
               ],
             ],
           ),
@@ -332,7 +313,6 @@ class MenuButtonSection extends StatelessWidget {
   }
 }
 
-// --- (MenuRow unchanged, overflow fix is included) ---
 class MenuRow extends StatelessWidget {
   const MenuRow({
     super.key,
@@ -353,12 +333,11 @@ class MenuRow extends StatelessWidget {
 
     return Stack(
       children: [
-        // --- Animated selection indicator ---
         AnimatedPositioned(
           duration: const Duration(milliseconds: 200),
           curve: Curves.fastOutSlowIn,
-          height: 56,
-          width: isSelected ? 272 : 0, // Overflow fix (288 - 16 margin)
+          height: 48,
+          width: isSelected ? 272 : 0,
           left: 0,
           child: Container(
             decoration: BoxDecoration(
@@ -367,7 +346,6 @@ class MenuRow extends StatelessWidget {
             ),
           ),
         ),
-        // --- Icon and Text ---
         InkWell(
           onTap: onMenuPress,
           borderRadius: BorderRadius.circular(10),
@@ -376,10 +354,11 @@ class MenuRow extends StatelessWidget {
             child: Row(
               children: [
                 SizedBox(
-                  width: 32,
-                  height: 32,
+                  width: 24,
+                  height: 24,
                   child: Icon(
                     icon,
+                    size: 22,
                     color: isSelected
                         ? Colors.white
                         : colorScheme.onSurface.withOpacity(0.7),
@@ -390,7 +369,7 @@ class MenuRow extends StatelessWidget {
                   title,
                   style: TextStyle(
                     color: isSelected ? Colors.white : colorScheme.onSurface,
-                    fontSize: 17,
+                    fontSize: 15,
                     fontFamily: "Inter",
                     fontWeight: FontWeight.w600,
                   ),

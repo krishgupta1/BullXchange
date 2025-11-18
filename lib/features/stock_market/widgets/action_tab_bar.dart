@@ -14,6 +14,11 @@ class ActionTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // --- ⭐️ Theme Data Access ---
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
@@ -21,20 +26,30 @@ class ActionTabBar extends StatelessWidget {
           bool isSelected = selectedIndex == index;
           return GestureDetector(
             onTap: () => onTabSelected(index),
-            child: Container(
+            child: AnimatedContainer(
+              duration: const Duration(
+                milliseconds: 200,
+              ), // Added smooth transition
               margin: const EdgeInsets.only(right: 12),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
               decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFFDB1B57) : Colors.white,
+                // Selected: Pink. Unselected: Theme Surface (White/DarkGrey)
+                color: isSelected ? const Color(0xFFDB1B57) : theme.cardColor,
                 borderRadius: BorderRadius.circular(20),
                 border: isSelected
                     ? null
-                    : Border.all(color: Colors.grey[300]!),
+                    : Border.all(
+                        // Adaptive border color
+                        color: isDarkMode
+                            ? Colors.grey.shade800
+                            : Colors.grey.shade300,
+                      ),
               ),
               child: Text(
                 labels[index],
                 style: TextStyle(
-                  color: isSelected ? Colors.white : Colors.black,
+                  // Selected: White. Unselected: Theme Text Color (Black/White)
+                  color: isSelected ? Colors.white : colorScheme.onSurface,
                   fontWeight: FontWeight.w500,
                 ),
               ),

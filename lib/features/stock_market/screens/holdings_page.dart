@@ -6,13 +6,14 @@ import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
+import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart'; // Ensure this is imported
 
-// ⭐️ ADDED IMPORTS FOR NAVIGATION TARGETS
 import 'package:bullxchange/features/stock_market/screens/buy_stock_page.dart';
 import 'package:bullxchange/features/stock_market/screens/sell_stock_page.dart';
-// ---------------------------------------------------------------------------
 
-/// Holdings page with shimmer and live price updates.
+// ---------------------------------------------------------------------------
+// 1. MAIN HOLDINGS PAGE
+// ---------------------------------------------------------------------------
 class HoldingsPage extends StatefulWidget {
   const HoldingsPage({super.key});
 
@@ -38,13 +39,11 @@ class _HoldingsPageState extends State<HoldingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    // --- ⭐️ Theme se colors lo ---
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     if (_auth.currentUser?.uid == null) {
       return Center(
-        // --- ⭐️ MODIFIED: Theme text color ---
         child: Text(
           "Please log in to see your holdings.",
           style: TextStyle(color: colorScheme.onSurface),
@@ -59,7 +58,6 @@ class _HoldingsPageState extends State<HoldingsPage> {
           builder: (context, snapshot) {
             if (snapshot.hasError) {
               return Center(
-                // --- ⭐️ MODIFIED: Theme error color ---
                 child: Text(
                   "Error fetching portfolio: ${snapshot.error}",
                   style: TextStyle(color: colorScheme.error),
@@ -79,28 +77,27 @@ class _HoldingsPageState extends State<HoldingsPage> {
               child: Column(
                 children: [
                   PortfolioSummaryCard(
-                    // Yeh card ab hamesha gradient dikhega
                     holdings: userHoldings,
                     isLoading: isLoading,
                   ),
                   const SizedBox(height: 16),
                   if (isLoading)
-                    const HoldingsListSkeleton() // Yeh theme-aware hai
+                    const HoldingsListSkeleton()
                   else if (userHoldings == null || userHoldings.isEmpty)
                     const Center(
                       child: Padding(
                         padding: EdgeInsets.only(top: 48.0),
-                        child: HoldingsEmptyState(), // Yeh theme-aware hai
+                        child: HoldingsEmptyState(),
                       ),
                     )
                   else
                     ...userHoldings.map(
                       (holding) => PortfolioStockItem(
-                        // Yeh theme-aware hai
                         key: ValueKey(holding.stockSymbol),
                         holding: holding,
                       ),
                     ),
+                  const SizedBox(height: 80), // Bottom padding
                 ],
               ),
             );
@@ -112,54 +109,8 @@ class _HoldingsPageState extends State<HoldingsPage> {
 }
 
 // ---------------------------------------------------------------------------
-// 🪙 Empty State (Theme-Aware)
+// 2. PORTFOLIO STOCK ITEM (Tap Anywhere + Transparent BG + Border)
 // ---------------------------------------------------------------------------
-
-class HoldingsEmptyState extends StatelessWidget {
-  const HoldingsEmptyState({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    // --- ⭐️ Theme se colors lo ---
-    final theme = Theme.of(context);
-    final textTheme = theme.textTheme;
-    final colorScheme = theme.colorScheme;
-
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const SizedBox(height: 20),
-        Icon(
-          Icons.account_balance_wallet_outlined,
-          size: 48,
-          // --- ⭐️ MODIFIED: Theme grey color ---
-          color: textTheme.bodySmall?.color,
-        ),
-        const SizedBox(height: 16),
-        Text(
-          "Your Portfolio is Empty",
-          // --- ⭐️ MODIFIED: Theme text color ---
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: colorScheme.onSurface,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          "Buy your first stock to see your long-term holdings here.",
-          // --- ⭐️ MODIFIED: Theme grey color ---
-          style: TextStyle(color: textTheme.bodySmall?.color),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
-}
-
-// -----------------------------------------------------------------
-// ⬇️ MODIFIED WIDGET: PortfolioStockItem (Theme-Aware)
-// -----------------------------------------------------------------
 class PortfolioStockItem extends StatefulWidget {
   final StockHoldingModel holding;
   const PortfolioStockItem({super.key, required this.holding});
@@ -221,15 +172,12 @@ class _PortfolioStockItemState extends State<PortfolioStockItem> {
     super.dispose();
   }
 
-  // New method to show the bottom sheet
   void _showDetailsSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors
-          .transparent, // Transparent banaya taaki sheet ka color theme se aaye
+      backgroundColor: Colors.transparent,
       builder: (context) {
-        // Pass the ValueNotifiers to keep the details live-updating
         return PortfolioStockItemDetailsSheet(
           holding: widget.holding,
           ltpNotifier: _ltpNotifier,
@@ -240,107 +188,125 @@ class _PortfolioStockItemState extends State<PortfolioStockItem> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    // --- ⭐️ Theme se colors lo ---
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
-
-    final h = widget.holding;
-
-    return GestureDetector(
-      onTap: () => _showDetailsSheet(context),
-      child: Container(
-        // --- ⭐️ MODIFIED: Background color theme se ---
-        // Isse tap effect poore row mein aayega
-        color: theme.scaffoldBackgroundColor,
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-        child: Row(
-          children: [
-            _buildLogoContainer(h.stockName),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    h.stockSymbol,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                      // --- ⭐️ MODIFIED: Theme text color ---
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                  Text(
-                    "${h.quantity} shares",
-                    // --- ⭐️ MODIFIED: Theme grey color ---
-                    style: TextStyle(
-                      color: textTheme.bodySmall?.color,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                ValueListenableBuilder<double>(
-                  valueListenable: _ltpNotifier,
-                  builder: (_, val, __) => Text(
-                    "₹${(val * h.quantity).toStringAsFixed(2)}",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                      // --- ⭐️ MODIFIED: Theme text color ---
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                ValueListenableBuilder<double>(
-                  valueListenable: _plNotifier,
-                  builder: (_, plVal, __) => ValueListenableBuilder<double>(
-                    valueListenable: _percentNotifier,
-                    builder: (_, pctVal, __) {
-                      final sign = plVal >= 0 ? "+" : "";
-                      final color = plVal >= 0 ? Colors.green : Colors.red;
-                      return Text(
-                        "$sign₹${plVal.toStringAsFixed(2)} (${pctVal.toStringAsFixed(2)}%)",
-                        style: TextStyle(
-                          color: color,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildLogoContainer(String name) {
     final letter = name.isNotEmpty ? name[0].toUpperCase() : "?";
     final color = Colors.primaries[name.hashCode % Colors.primaries.length];
     return Container(
-      width: 40,
-      height: 40,
+      width: 36, // Reduced size
+      height: 36,
       decoration: BoxDecoration(color: color, shape: BoxShape.circle),
       child: Center(
         child: Text(
           letter,
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 24,
+            fontSize: 20, // Reduced font
             fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+    final h = widget.holding;
+
+    final Instrument? instrument = _provider.getInstrumentBySymbol(
+      h.stockSymbol,
+    );
+
+    // ⭐️ Material + Transparent Color + InkWell (Same as Position Tab)
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _showDetailsSheet(context),
+        child: Container(
+          // ⭐️ Bottom Border Separator
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: theme.dividerColor.withOpacity(0.1),
+                width: 1,
+              ),
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+          child: Row(
+            children: [
+              if (instrument != null)
+                SmartLogo(instrument: instrument, radius: 0)
+              else
+                _buildLogoContainer(h.stockName),
+              const SizedBox(width: 12),
+
+              // Symbol & Shares
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      h.stockSymbol,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14, // Reduced Font
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      "${h.quantity} shares",
+                      style: TextStyle(
+                        color: textTheme.bodySmall?.color,
+                        fontSize: 12, // Reduced Font
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              // Value & P&L
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  ValueListenableBuilder<double>(
+                    valueListenable: _ltpNotifier,
+                    builder: (_, val, __) => Text(
+                      "₹${(val * h.quantity).toStringAsFixed(2)}",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14, // Reduced Font
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  ValueListenableBuilder<double>(
+                    valueListenable: _plNotifier,
+                    builder: (_, plVal, __) => ValueListenableBuilder<double>(
+                      valueListenable: _percentNotifier,
+                      builder: (_, pctVal, __) {
+                        final sign = plVal >= 0 ? "+" : "";
+                        final color = plVal >= 0 ? Colors.green : Colors.red;
+                        return Text(
+                          "$sign₹${plVal.toStringAsFixed(2)} (${pctVal.toStringAsFixed(2)}%)",
+                          style: TextStyle(
+                            color: color,
+                            fontSize: 12, // Reduced Font
+                            fontWeight: FontWeight.w500,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
@@ -348,14 +314,9 @@ class _PortfolioStockItemState extends State<PortfolioStockItem> {
   }
 }
 
-// -----------------------------------------------------------------
-// 🌟 UPDATED WIDGET: PortfolioStockItemDetailsSheet (Theme-Aware)
-// -----------------------------------------------------------------
-// ... (file ka baaki code upar) ...
-
-// -----------------------------------------------------------------
-// 🌟 UPDATED WIDGET: PortfolioStockItemDetailsSheet (Fixed Button Colors)
-// -----------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// 3. BOTTOM SHEET (Optimized UI + Fixed Buttons)
+// ---------------------------------------------------------------------------
 class PortfolioStockItemDetailsSheet extends StatelessWidget {
   final StockHoldingModel holding;
   final ValueNotifier<double> ltpNotifier;
@@ -370,21 +331,27 @@ class PortfolioStockItemDetailsSheet extends StatelessWidget {
     required this.percentNotifier,
   });
 
+  static const Color primaryPink = Color(0xFFF61C7A);
+  static const Color primaryBlue = Color(0xFF3500D4);
+
   Widget _buildDetailRow(
     BuildContext context,
     String title,
     Widget valueWidget,
   ) {
     final textTheme = Theme.of(context).textTheme;
-
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             title,
-            style: TextStyle(color: textTheme.bodySmall?.color, fontSize: 16),
+            style: TextStyle(
+              color: textTheme.bodySmall?.color,
+              fontSize: 13,
+              fontFamily: "Inter",
+            ),
           ),
           valueWidget,
         ],
@@ -392,19 +359,19 @@ class PortfolioStockItemDetailsSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildLogoContainer(String name) {
+  Widget _buildLogoContainer(String name, {double radius = 25}) {
     final letter = name.isNotEmpty ? name[0].toUpperCase() : "?";
     final color = Colors.primaries[name.hashCode % Colors.primaries.length];
     return Container(
-      width: 50,
-      height: 50,
+      width: radius * 2,
+      height: radius * 2,
       decoration: BoxDecoration(color: color, shape: BoxShape.circle),
       child: Center(
         child: Text(
           letter,
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.white,
-            fontSize: 28,
+            fontSize: radius,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -488,12 +455,13 @@ class PortfolioStockItemDetailsSheet extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
+    final Instrument? instrument = _getInstrument(context);
 
     final investedAmount = holding.transactionPrice * holding.quantity;
 
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surface,
+        color: colorScheme.surface, // Theme aware
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
@@ -506,7 +474,10 @@ class PortfolioStockItemDetailsSheet extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildLogoContainer(holding.stockName),
+                  if (instrument != null)
+                    SmartLogo(instrument: instrument, radius: 25)
+                  else
+                    _buildLogoContainer(holding.stockName, radius: 25),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
@@ -515,18 +486,19 @@ class PortfolioStockItemDetailsSheet extends StatelessWidget {
                         Text(
                           holding.stockName,
                           style: TextStyle(
-                            fontSize: 20,
+                            fontSize: 18, // Reduced Font
                             fontWeight: FontWeight.bold,
                             color: colorScheme.onSurface,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
+                        const SizedBox(height: 2),
                         Text(
                           holding.stockSymbol,
                           style: TextStyle(
                             color: textTheme.bodySmall?.color,
-                            fontSize: 16,
+                            fontSize: 13, // Reduced Font
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -547,7 +519,7 @@ class PortfolioStockItemDetailsSheet extends StatelessWidget {
                 Text(
                   "${holding.quantity} Shares",
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: colorScheme.onSurface,
                   ),
@@ -559,7 +531,7 @@ class PortfolioStockItemDetailsSheet extends StatelessWidget {
                 Text(
                   "₹${investedAmount.toStringAsFixed(2)}",
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: colorScheme.onSurface,
                   ),
@@ -573,7 +545,7 @@ class PortfolioStockItemDetailsSheet extends StatelessWidget {
                   builder: (_, ltpVal, __) => Text(
                     "₹${ltpVal.toStringAsFixed(2)}",
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 14,
                       fontWeight: FontWeight.bold,
                       color: colorScheme.onSurface,
                     ),
@@ -598,7 +570,7 @@ class PortfolioStockItemDetailsSheet extends StatelessWidget {
                           Text(
                             "₹${currentValue.toStringAsFixed(2)}",
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 14,
                               fontWeight: FontWeight.bold,
                               color: colorScheme.onSurface,
                             ),
@@ -608,7 +580,7 @@ class PortfolioStockItemDetailsSheet extends StatelessWidget {
                             "$sign₹${plVal.toStringAsFixed(2)} (${pctVal.toStringAsFixed(2)}%)",
                             style: TextStyle(
                               color: color,
-                              fontSize: 14,
+                              fontSize: 12,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -627,20 +599,19 @@ class PortfolioStockItemDetailsSheet extends StatelessWidget {
                     child: ElevatedButton(
                       onPressed: () => _handleBuy(context),
                       style: ElevatedButton.styleFrom(
-                        // --- ⭐️ MODIFIED: Hardcoded Pink for BUY button ---
-                        backgroundColor: const Color(0xFFDB1B57),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        backgroundColor: primaryPink,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
                       child: const Text(
-                        // ⭐️ Changed to const for `Text`
                         "BUY",
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 14,
                           color: Colors.white,
-                        ), // Always white text
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -649,22 +620,19 @@ class PortfolioStockItemDetailsSheet extends StatelessWidget {
                     child: ElevatedButton(
                       onPressed: () async => await _handleSell(context),
                       style: ElevatedButton.styleFrom(
-                        // --- ⭐️ MODIFIED: Hardcoded Dark Blue for SELL button ---
-                        backgroundColor: const Color(
-                          0xFF1A237E,
-                        ), // A darker blue
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        backgroundColor: primaryBlue,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
                       child: const Text(
-                        // ⭐️ Changed to const for `Text`
                         "SELL",
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 14,
                           color: Colors.white,
-                        ), // Always white text
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -677,23 +645,56 @@ class PortfolioStockItemDetailsSheet extends StatelessWidget {
     );
   }
 }
-// -----------------------------------------------------------------
-// ⬆️ UPDATED WIDGET: PortfolioStockItemDetailsSheet
-// -----------------------------------------------------------------
 
-// -----------------------------------------------------------------
-// ⬇️ MODIFIED WIDGET: HoldingsListSkeleton (Theme-Aware)
-// -----------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// 4. OTHER WIDGETS (Summary Card, Skeleton, Empty State)
+// ---------------------------------------------------------------------------
+
+class HoldingsEmptyState extends StatelessWidget {
+  const HoldingsEmptyState({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+    final colorScheme = theme.colorScheme;
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const SizedBox(height: 20),
+        Icon(
+          Icons.account_balance_wallet_outlined,
+          size: 48,
+          color: textTheme.bodySmall?.color,
+        ),
+        const SizedBox(height: 16),
+        Text(
+          "Your Portfolio is Empty",
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          "Buy your first stock to see your long-term holdings here.",
+          style: TextStyle(color: textTheme.bodySmall?.color),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+}
+
 class HoldingsListSkeleton extends StatelessWidget {
   const HoldingsListSkeleton({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // --- ⭐️ Theme se colors lo ---
     final theme = Theme.of(context);
-
     return Shimmer.fromColors(
-      // --- ⭐️ MODIFIED: Theme-aware shimmer ---
       baseColor: theme.brightness == Brightness.light
           ? Colors.grey[300]!
           : Colors.grey[800]!,
@@ -707,17 +708,12 @@ class HoldingsListSkeleton extends StatelessWidget {
   }
 }
 
-// -----------------------------------------------------------------
-// ⬇️ MODIFIED WIDGET: SkeletonStockItem (Theme-Aware)
-// -----------------------------------------------------------------
 class SkeletonStockItem extends StatelessWidget {
   const SkeletonStockItem({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // --- ⭐️ Theme se colors lo ---
     final theme = Theme.of(context);
-    // --- ⭐️ MODIFIED: Theme-aware shimmer shape color ---
     final baseColor = theme.brightness == Brightness.light
         ? Colors.white
         : Colors.grey.shade800;
@@ -738,11 +734,7 @@ class SkeletonStockItem extends StatelessWidget {
               ],
             ),
           ),
-          Container(
-            width: 60,
-            height: 30,
-            color: baseColor,
-          ), // Placeholder for chart?
+          Container(width: 60, height: 30, color: baseColor),
           const SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -758,9 +750,6 @@ class SkeletonStockItem extends StatelessWidget {
   }
 }
 
-// -----------------------------------------------------------------
-// ⬇️ MODIFIED WIDGET: PortfolioSummaryCard (Shimmer Theme-Aware, Gradient Hardcoded)
-// -----------------------------------------------------------------
 class PortfolioSummaryCard extends StatelessWidget {
   final List<StockHoldingModel>? holdings;
   final bool isLoading;
@@ -773,12 +762,10 @@ class PortfolioSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // --- ⭐️ Theme se colors lo (Sirf shimmer ke liye) ---
     final theme = Theme.of(context);
 
     if (isLoading || holdings == null) {
       return Shimmer.fromColors(
-        // --- ⭐️ MODIFIED: Theme-aware shimmer ---
         baseColor: theme.brightness == Brightness.light
             ? Colors.grey[300]!
             : Colors.grey[800]!,
@@ -791,7 +778,6 @@ class PortfolioSummaryCard extends StatelessWidget {
             height: 170,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
-              // --- ⭐️ MODIFIED: Theme-aware shimmer shape color ---
               color: theme.brightness == Brightness.light
                   ? Colors.white
                   : Colors.grey.shade800,
@@ -803,7 +789,6 @@ class PortfolioSummaryCard extends StatelessWidget {
 
     return Consumer<InstrumentProvider>(
       builder: (context, provider, child) {
-        // ... (Calculation logic unchanged) ...
         double currentValue = 0,
             investedValue = 0,
             dayReturns = 0,
@@ -861,7 +846,6 @@ class PortfolioSummaryCard extends StatelessWidget {
     );
   }
 
-  // --- ⭐️ MODIFIED: Yeh widget ab hardcoded gradient use karega (jaisa aapne kaha) ---
   Widget _buildSummaryCardUI(
     double cVal,
     double tRet,
@@ -875,7 +859,6 @@ class PortfolioSummaryCard extends StatelessWidget {
       margin: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        // --- ⭐️ UNCHANGED: Hardcoded gradient (jaisa aapne kaha) ---
         gradient: const LinearGradient(
           colors: [Color(0xFF6F4CFF), Color(0xFFDB1B57)],
           begin: Alignment.topLeft,
@@ -945,7 +928,6 @@ class PortfolioSummaryCard extends StatelessWidget {
     );
   }
 
-  // --- ⭐️ UNCHANGED: Hardcoded white text (gradient pe kaam karega) ---
   Widget _buildSummaryColumn(
     String title,
     double value, {
