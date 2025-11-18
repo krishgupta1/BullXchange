@@ -232,53 +232,62 @@ class AccountScreen extends StatelessWidget {
   }
 
   /// Builds the Wallet Balance card
+  /// Builds the Wallet Balance card
   Widget _buildWalletCard(BuildContext context, double balance) {
     // --- ⭐️ Theme se colors lo ---
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     String formattedBalance = '₹${balance.toStringAsFixed(2)}';
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(
+        20,
+      ), // Increased padding slightly for better look
       decoration: BoxDecoration(
         // --- ⭐️ MODIFIED: Theme color ---
         color: colorScheme.primary.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colorScheme.primary.withOpacity(0.2),
+          width: 1,
+        ), // Optional: Adds a subtle border
       ),
       child: Row(
         children: [
           CircleAvatar(
-            radius: 20,
+            radius: 22,
             // --- ⭐️ MODIFIED: Theme color ---
             backgroundColor: colorScheme.primary,
             child: Icon(
               Icons.account_balance_wallet,
               // --- ⭐️ MODIFIED: Theme color ---
               color: colorScheme.onPrimary,
-              size: 20,
+              size: 22,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'Wallet Balance',
                 style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  // --- ⭐️ MODIFIED: Theme text color ---
-                  color: colorScheme.onSurface.withOpacity(0.8),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  // --- ⭐️ MODIFIED: Theme text color (Greyish) ---
+                  color: colorScheme.onSurface.withOpacity(0.7),
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 4),
               Text(
                 formattedBalance,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 18, // ⭐️ INCREASED FONT SIZE (Was 16)
                   fontWeight: FontWeight.bold,
-                  // --- ⭐️ MODIFIED: Theme color ---
-                  color: colorScheme.primary,
+                  // --- ⭐️ FIX: CHANGED FROM 'primary' TO 'onSurface' ---
+                  // This makes it Black in Light Mode and White in Dark Mode
+                  color: colorScheme.onSurface,
                 ),
               ),
             ],
@@ -295,15 +304,17 @@ class AccountScreen extends StatelessWidget {
               // --- ⭐️ MODIFIED: Theme color ---
               backgroundColor: colorScheme.primary,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(
+                  12,
+                ), // Slightly squarer modern button
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               elevation: 0,
             ),
             child: Text(
               'Add Fund',
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: FontWeight.w600,
                 // --- ⭐️ MODIFIED: Theme color ---
                 color: colorScheme.onPrimary,

@@ -2,6 +2,7 @@ import 'package:bullxchange/features/account/screens/account_page.dart';
 import 'package:bullxchange/features/f&o/screens/Future_option_page.dart';
 import 'package:bullxchange/features/home/Navigation/side_menu.dart';
 import 'package:bullxchange/features/home/widgets/bottom_navigation.dart';
+import 'package:bullxchange/features/portfolio/screens/portfolio_page.dart';
 import 'package:bullxchange/features/stock_market/screens/stock_page.dart';
 import 'package:flutter/material.dart';
 
@@ -26,20 +27,7 @@ class _HomePageState extends State<HomePage> {
   final List<Widget> _widgetOptions = <Widget>[
     const StockPage(),
     const FutureOptionPage(),
-    // Builder use kiya taaki context mil sake
-    Builder(
-      builder: (context) {
-        return Center(
-          child: Text(
-            'Portfolio Page',
-            style: TextStyle(
-              fontSize: 24,
-              color: Theme.of(context).colorScheme.onSurface, // Theme text
-            ),
-          ),
-        );
-      },
-    ),
+    const PaperTradingPortfolio(),
     Builder(
       builder: (context) {
         return Center(
