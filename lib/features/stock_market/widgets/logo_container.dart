@@ -9,19 +9,49 @@ class LogoContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final letter = name.isNotEmpty ? name[0].toUpperCase() : "?";
-    final color = Colors.primaries[name.hashCode % Colors.primaries.length];
+    // Using MaterialColor to get shades for gradient
+    final MaterialColor baseColor =
+        Colors.primaries[name.hashCode % Colors.primaries.length];
 
     return Container(
       width: radius * 2,
       height: radius * 2,
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        // Modern Gradient
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            baseColor.shade300, // Light source top-left
+            baseColor.shade800, // Shadow bottom-right
+          ],
+        ),
+        // Soft Drop Shadow matching the color
+        boxShadow: [
+          BoxShadow(
+            color: baseColor.withOpacity(0.4),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        // Subtle inner light border
+        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+      ),
       child: Center(
         child: Text(
           letter,
           style: TextStyle(
             color: Colors.white,
-            fontSize: radius * 0.9,
-            fontWeight: FontWeight.bold,
+            fontSize: radius * 0.85, // Slightly adjusted for visual balance
+            fontWeight: FontWeight.w700,
+            shadows: [
+              Shadow(
+                offset: const Offset(0, 2),
+                blurRadius: 4.0,
+                color: Colors.black.withOpacity(0.2),
+              ),
+            ],
           ),
         ),
       ),

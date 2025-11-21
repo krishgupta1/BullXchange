@@ -9,6 +9,7 @@ import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -45,16 +46,8 @@ class _StockDetailPageState extends State<StockDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    // --- ⭐️ Theme se colors lo ---
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
-
-    // --- ⭐️ REMOVED HARDCODED COLORS ---
-    // const Color primaryPink = ...
-    // const Color primaryBlue = ...
-    // const Color darkTextColor = ...
-    // const Color lightGreyBg = ...
 
     final ltp = (widget.instrument.liveData['ltp'] as num?)?.toDouble() ?? 0.0;
     final netChange =
@@ -63,7 +56,6 @@ class _StockDetailPageState extends State<StockDetailPage> {
         (widget.instrument.liveData['percentChange'] as num?)?.toDouble() ??
         0.0;
 
-    // --- ⭐️ MODIFIED: Use theme's pink (secondary) color ---
     final changeColor = netChange >= 0
         ? const Color(0xFF1EAB58)
         : colorScheme.secondary;
@@ -80,36 +72,30 @@ class _StockDetailPageState extends State<StockDetailPage> {
         }
 
         return Scaffold(
-          // --- ⭐️ MODIFIED: Theme background color ---
           backgroundColor: theme.scaffoldBackgroundColor,
           appBar: AppBar(
-            // --- ⭐️ MODIFIED: Theme App Bar color ---
-            backgroundColor: theme.appBarTheme.backgroundColor,
-            elevation: theme.appBarTheme.elevation,
+            backgroundColor: theme.scaffoldBackgroundColor,
+            elevation: 0,
+            centerTitle: true,
             leading: Padding(
-              padding: const EdgeInsets.only(left: 8.0),
+              padding: const EdgeInsets.all(8.0),
               child: Container(
-                margin: const EdgeInsets.symmetric(vertical: 8),
                 decoration: BoxDecoration(
-                  // --- ⭐️ MODIFIED: Theme surface color ---
-                  color: colorScheme.surface,
+                  color: theme.cardColor,
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      // --- ⭐️ MODIFIED: Theme shadow color ---
                       color: theme.shadowColor.withOpacity(0.1),
-                      spreadRadius: 1,
-                      blurRadius: 5,
-                      offset: const Offset(0, 1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
                 child: IconButton(
                   icon: Icon(
-                    Icons.arrow_back_ios_new,
-                    // --- ⭐️ MODIFIED: Theme icon color ---
+                    Icons.arrow_back_ios_new_rounded,
                     color: colorScheme.onSurface,
-                    size: 20,
+                    size: 18,
                   ),
                   onPressed: () => Navigator.pop(context),
                 ),
@@ -117,148 +103,198 @@ class _StockDetailPageState extends State<StockDetailPage> {
             ),
             title: Text(
               widget.instrument.symbol.replaceAll('-EQ', ''),
-              // --- ⭐️ MODIFIED: Style ab AppTheme se aa raha hai ---
-              style: theme.appBarTheme.titleTextStyle?.copyWith(fontSize: 16),
-              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
-            centerTitle: true,
             actions: [
-              Container(
-                margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-                decoration: BoxDecoration(
-                  // --- ⭐️ MODIFIED: Theme surface color ---
-                  color: colorScheme.surface,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      // --- ⭐️ MODIFIED: Theme shadow color ---
-                      color: theme.shadowColor.withOpacity(0.1),
-                      spreadRadius: 1,
-                      blurRadius: 5,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  icon: Icon(
-                    isInWatchlist
-                        ? Icons.bookmark
-                        : Icons.bookmark_border_outlined,
-                    // --- ⭐️ MODIFIED: Theme icon colors ---
-                    color: isInWatchlist
-                        ? colorScheme.primary
-                        : colorScheme.onSurface,
-                    size: 24,
+              Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 4,
                   ),
-                  onPressed: _toggleWatchlist,
+                  decoration: BoxDecoration(
+                    color: theme.cardColor,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: theme.shadowColor.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: IconButton(
+                    icon: Icon(
+                      isInWatchlist
+                          ? Icons.bookmark_rounded
+                          : Icons.bookmark_border_rounded,
+                      color: isInWatchlist
+                          ? colorScheme.primary
+                          : colorScheme.onSurface,
+                      size: 22,
+                    ),
+                    onPressed: _toggleWatchlist,
+                  ),
                 ),
               ),
             ],
           ),
           body: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildCompanyHeader(
-                    context, // ⭐️ Pass context
-                    widget.instrument,
-                    percentChange,
-                    changeColor,
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // --- Header Section (Card Style) ---
+                Container(
+                  margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: theme.cardColor,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: theme.shadowColor.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 10),
-                  _buildPriceDetails(
-                    context, // ⭐️ Pass context
-                    priceParts,
-                    netChange,
-                    changeColor,
+                  child: Column(
+                    children: [
+                      _buildCompanyHeader(context, widget.instrument),
+                      const SizedBox(height: 20),
+                      const Divider(height: 1, thickness: 0.5),
+                      const SizedBox(height: 20),
+                      _buildPriceDetails(
+                        context,
+                        priceParts,
+                        netChange,
+                        percentChange,
+                        changeColor,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    height: 420,
-                    child: TradingViewChart(
-                      instrument: widget.instrument,
-                    ), // ⭐️ Yeh ab theme-aware hai
+                ),
+
+                // --- Chart Section (Card Style) ---
+                Container(
+                  height: 420,
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
                   ),
-                  const SizedBox(height: 20),
-                  Text(
-                    "Statistics",
-                    style: TextStyle(
-                      fontSize: 18,
+                  decoration: BoxDecoration(
+                    color: theme.cardColor,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: theme.shadowColor.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  // ClipRRect is essential here to keep the WebView inside the rounded corners
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: TradingViewChart(instrument: widget.instrument),
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // --- Statistics Section ---
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: Text(
+                    "Market Statistics",
+                    style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
-                      // --- ⭐️ MODIFIED: Theme text color ---
-                      color: colorScheme.onSurface,
+                      letterSpacing: -0.5,
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  Consumer<InstrumentProvider>(
-                    builder: (context, prov, child) {
-                      final matched =
-                          prov.getInstrumentByToken(widget.instrument.token) ??
-                          widget.instrument;
-                      final apiOpen =
-                          (matched.liveData['open'] as num?)?.toDouble() ?? 0.0;
-                      final apiHigh =
-                          (matched.liveData['high'] as num?)?.toDouble() ?? 0.0;
-                      final apiLow =
-                          (matched.liveData['low'] as num?)?.toDouble() ?? 0.0;
-                      final apiVolume =
-                          (matched.liveData['tradeVolume'] as num?)?.toInt() ??
-                          0;
-                      final apiAvgPrice =
-                          (matched.liveData['avgPrice'] as num?)?.toDouble() ??
-                          0.0;
-                      final apiUpperCircuit =
-                          (matched.liveData['upperCircuit'] as num?)
-                              ?.toDouble() ??
-                          0.0;
-                      final apiLowerCircuit =
-                          (matched.liveData['lowerCircuit'] as num?)
-                              ?.toDouble() ??
-                          0.0;
-                      final api52WkHigh =
-                          (matched.liveData['52WeekHigh'] as num?)
-                              ?.toDouble() ??
-                          0.0;
-                      final api52WkLow =
-                          (matched.liveData['52WeekLow'] as num?)?.toDouble() ??
-                          0.0;
+                ),
+                const SizedBox(height: 16),
 
-                      final double outstandingShares =
-                          matched.outstandingShares;
-                      final int avgVolume = matched.avgVolume;
-                      final double marketCap = ltp * outstandingShares;
+                Consumer<InstrumentProvider>(
+                  builder: (context, prov, child) {
+                    final matched =
+                        prov.getInstrumentByToken(widget.instrument.token) ??
+                        widget.instrument;
+                    final apiOpen =
+                        (matched.liveData['open'] as num?)?.toDouble() ?? 0.0;
+                    final apiHigh =
+                        (matched.liveData['high'] as num?)?.toDouble() ?? 0.0;
+                    final apiLow =
+                        (matched.liveData['low'] as num?)?.toDouble() ?? 0.0;
+                    final apiVolume =
+                        (matched.liveData['tradeVolume'] as num?)?.toInt() ?? 0;
+                    final apiAvgPrice =
+                        (matched.liveData['avgPrice'] as num?)?.toDouble() ??
+                        0.0;
+                    final apiUpperCircuit =
+                        (matched.liveData['upperCircuit'] as num?)
+                            ?.toDouble() ??
+                        0.0;
+                    final apiLowerCircuit =
+                        (matched.liveData['lowerCircuit'] as num?)
+                            ?.toDouble() ??
+                        0.0;
+                    final api52WkHigh =
+                        (matched.liveData['52WeekHigh'] as num?)?.toDouble() ??
+                        0.0;
+                    final api52WkLow =
+                        (matched.liveData['52WeekLow'] as num?)?.toDouble() ??
+                        0.0;
 
-                      return _buildStatisticsCard(
-                        context: context, // ⭐️ Pass context
-                        open: apiOpen,
-                        high: apiHigh,
-                        low: apiLow,
-                        volume: apiVolume,
-                        avgPrice: apiAvgPrice,
-                        upperCircuit: apiUpperCircuit,
-                        lowerCircuit: apiLowerCircuit,
-                        fiftyTwoWeekHigh: api52WkHigh,
-                        fiftyTwoWeekLow: api52WkLow,
-                        marketCap: marketCap,
-                        avgVolume: avgVolume.toDouble(),
-                        outstandingShares: outstandingShares,
-                      );
-                    },
-                  ),
-                ],
-              ),
+                    final double outstandingShares = matched.outstandingShares;
+                    final int avgVolume = matched.avgVolume;
+                    final double marketCap = ltp * outstandingShares;
+
+                    return _buildStatisticsCard(
+                      context: context,
+                      open: apiOpen,
+                      high: apiHigh,
+                      low: apiLow,
+                      volume: apiVolume,
+                      avgPrice: apiAvgPrice,
+                      upperCircuit: apiUpperCircuit,
+                      lowerCircuit: apiLowerCircuit,
+                      fiftyTwoWeekHigh: api52WkHigh,
+                      fiftyTwoWeekLow: api52WkLow,
+                      marketCap: marketCap,
+                      avgVolume: avgVolume.toDouble(),
+                      outstandingShares: outstandingShares,
+                    );
+                  },
+                ),
+                const SizedBox(
+                  height: 100,
+                ), // Bottom padding for floating buttons
+              ],
             ),
           ),
-          bottomNavigationBar: SafeArea(
-            top: false,
-            child: SizedBox(
-              height: 72.0,
-              child: _buildBottomButtons(
-                context, // ⭐️ Pass context
-                ltp,
-                widget.instrument,
+          bottomNavigationBar: Container(
+            decoration: BoxDecoration(
+              color: theme.scaffoldBackgroundColor,
+              boxShadow: [
+                BoxShadow(
+                  color: theme.shadowColor.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, -5),
+                ),
+              ],
+            ),
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: SizedBox(
+                  height: 56.0,
+                  child: _buildBottomButtons(context, ltp, widget.instrument),
+                ),
               ),
             ),
           ),
@@ -267,41 +303,42 @@ class _StockDetailPageState extends State<StockDetailPage> {
     );
   }
 
-  // --- Widget Builders (Refactored for Theme) ---
+  // --- Refactored Widgets ---
 
-  Widget _buildCompanyHeader(
-    BuildContext context, // ⭐️ Added context
-    Instrument instrument,
-    double percentChange,
-    Color changeColor,
-  ) {
-    // --- ⭐️ Theme se colors lo ---
-    final colorScheme = Theme.of(context).colorScheme;
+  Widget _buildCompanyHeader(BuildContext context, Instrument instrument) {
     final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Row(
       children: [
-        SmartLogo(instrument: instrument, radius: 0),
-        const SizedBox(width: 10),
+        Container(
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: colorScheme.outline.withOpacity(0.1),
+              width: 1,
+            ),
+          ),
+          child: SmartLogo(instrument: instrument, radius: 24),
+        ),
+        const SizedBox(width: 16),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 instrument.symbol.replaceAll('-EQ', ''),
-                style: TextStyle(
-                  fontSize: 16,
+                style: textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  // --- ⭐️ MODIFIED: Theme text color ---
-                  color: colorScheme.onSurface,
+                  fontSize: 18,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
+              const SizedBox(height: 4),
               Text(
                 instrument.name,
-                style: TextStyle(
-                  fontSize: 14,
-                  // --- ⭐️ MODIFIED: Theme grey color ---
+                style: textTheme.bodyMedium?.copyWith(
                   color: textTheme.bodySmall?.color,
                   fontWeight: FontWeight.w500,
                 ),
@@ -311,27 +348,75 @@ class _StockDetailPageState extends State<StockDetailPage> {
             ],
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildPriceDetails(
+    BuildContext context,
+    List<String> priceParts,
+    double netChange,
+    double percentChange,
+    Color changeColor,
+  ) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Current Price",
+              style: textTheme.labelMedium?.copyWith(
+                color: textTheme.bodySmall?.color,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  "₹${priceParts[0]}",
+                  style: textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                Text(
+                  ".${priceParts.length > 1 ? priceParts[1] : '00'}",
+                  style: textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: textTheme.bodySmall?.color,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: changeColor.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(6),
+            color: changeColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
             children: [
               Icon(
-                percentChange >= 0
-                    ? Icons.arrow_drop_up
-                    : Icons.arrow_drop_down,
+                percentChange >= 0 ? Icons.trending_up : Icons.trending_down,
                 color: changeColor,
-                size: 24,
+                size: 20,
               ),
+              const SizedBox(width: 6),
               Text(
-                "${percentChange.abs().toStringAsFixed(2)}%",
+                "${netChange >= 0 ? '+' : ''}${netChange.toStringAsFixed(2)} (${percentChange.abs().toStringAsFixed(2)}%)",
                 style: TextStyle(
                   color: changeColor,
                   fontWeight: FontWeight.bold,
-                  fontSize: 12,
+                  fontSize: 14,
                 ),
               ),
             ],
@@ -341,61 +426,8 @@ class _StockDetailPageState extends State<StockDetailPage> {
     );
   }
 
-  Widget _buildPriceDetails(
-    BuildContext context, // ⭐️ Added context
-    List<String> priceParts,
-    double netChange,
-    Color changeColor,
-  ) {
-    // --- ⭐️ Theme se colors lo ---
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.only(left: 4.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                "₹${priceParts[0]}",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  // --- ⭐️ MODIFIED: Theme text color ---
-                  color: colorScheme.onSurface,
-                ),
-              ),
-              Text(
-                ".${priceParts.length > 1 ? priceParts[1] : '00'}",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  // --- ⭐️ MODIFIED: Theme text color ---
-                  color: colorScheme.onSurface,
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(left: 12.0, bottom: 4),
-                child: Text(
-                  "${netChange >= 0 ? '+' : ''}${netChange.toStringAsFixed(2)}",
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: changeColor,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildStatisticsCard({
-    required BuildContext context, // ⭐️ Added context
+    required BuildContext context,
     required double open,
     required double high,
     required double low,
@@ -409,11 +441,9 @@ class _StockDetailPageState extends State<StockDetailPage> {
     required double avgVolume,
     required double outstandingShares,
   }) {
-    // --- ⭐️ Theme se colors lo ---
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-
-    final volumeFormatter = NumberFormat.decimalPattern('en_US');
+    final volumeFormatter = NumberFormat.compact();
 
     final List<Map<String, String>> stats = [
       {"label": "Open", "value": "₹${open.toStringAsFixed(2)}"},
@@ -421,25 +451,14 @@ class _StockDetailPageState extends State<StockDetailPage> {
       {"label": "Low", "value": "₹${low.toStringAsFixed(2)}"},
       {"label": "Volume", "value": volumeFormatter.format(volume)},
       {"label": "Avg. Price", "value": "₹${avgPrice.toStringAsFixed(2)}"},
-      {
-        "label": "Upper Circuit",
-        "value": "₹${upperCircuit.toStringAsFixed(2)}",
-      },
+      {"label": "Upper Cir.", "value": "₹${upperCircuit.toStringAsFixed(2)}"},
+      {"label": "Lower Cir.", "value": "₹${lowerCircuit.toStringAsFixed(2)}"},
       {"label": "52W High", "value": "₹${fiftyTwoWeekHigh.toStringAsFixed(2)}"},
       {"label": "52W Low", "value": "₹${fiftyTwoWeekLow.toStringAsFixed(2)}"},
-      {
-        "label": "Lower Circuit",
-        "value": "₹${lowerCircuit.toStringAsFixed(2)}",
-      },
     ];
 
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      decoration: BoxDecoration(
-        // --- ⭐️ MODIFIED: Theme surface color ---
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(15),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
@@ -447,37 +466,45 @@ class _StockDetailPageState extends State<StockDetailPage> {
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 3,
           crossAxisSpacing: 12,
-          mainAxisSpacing: 8,
-          mainAxisExtent: 65.0,
+          mainAxisSpacing: 12,
+          childAspectRatio: 1.4,
         ),
         itemBuilder: (context, index) {
           final stat = stats[index];
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                stat['label']!,
-                style: TextStyle(
-                  // --- ⭐️ MODIFIED: Theme grey color ---
-                  color: textTheme.bodySmall?.color,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
+          return Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  stat['label']!,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: textTheme.bodySmall?.color?.withOpacity(0.7),
+                    fontSize: 11,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              const SizedBox(height: 4),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  stat['value']!,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    // --- ⭐️ MODIFIED: Theme text color ---
-                    color: colorScheme.onSurface,
+                const SizedBox(height: 6),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    stat['value']!,
+                    style: textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),
@@ -489,120 +516,120 @@ class _StockDetailPageState extends State<StockDetailPage> {
     double ltp,
     Instrument instrument,
   ) {
-    // --- ⭐️ Theme se colors lo ---
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Container(
-      // --- ⭐️ MODIFIED: Theme nav bar color ---
-      color: theme.bottomNavigationBarTheme.backgroundColor,
-      padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
-      child: Row(
-        children: [
-          Expanded(
-            child: ElevatedButton(
-              onPressed: () async {
-                // ... (Sell logic unchanged) ...
-                final uid = FirebaseAuth.instance.currentUser?.uid;
-                if (uid == null) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Please log in to sell stocks."),
-                      ),
-                    );
-                  }
-                  return;
-                }
-                final userProfile = await _bottomButtonUserService
-                    .readUserProfile(uid);
-                if (userProfile == null || userProfile.stocks.isEmpty) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("You do not own this stock."),
-                      ),
-                    );
-                  }
-                  return;
-                }
-                StockHoldingModel? holdingToSell;
-                try {
-                  final symbolToFind = instrument.symbol.replaceAll('-EQ', '');
-                  holdingToSell = userProfile.stocks.firstWhere(
-                    (holding) => holding.stockSymbol == symbolToFind,
-                  );
-                } catch (e) {
-                  holdingToSell = null;
-                }
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () async {
+              HapticFeedback.lightImpact();
+              final uid = FirebaseAuth.instance.currentUser?.uid;
+              if (uid == null) {
                 if (context.mounted) {
-                  if (holdingToSell != null) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => SellStockPage(
-                          instrument: instrument,
-                          userHolding: holdingToSell!,
-                        ),
-                      ),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("You do not own this stock."),
-                      ),
-                    );
-                  }
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Please log in to sell stocks."),
+                    ),
+                  );
                 }
-              },
-              style: ElevatedButton.styleFrom(
-                // --- ⭐️ MODIFIED: Theme SELL color (Blue) ---
-                backgroundColor: colorScheme.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
+                return;
+              }
+              final userProfile = await _bottomButtonUserService
+                  .readUserProfile(uid);
+              if (userProfile == null || userProfile.stocks.isEmpty) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("You do not own this stock.")),
+                  );
+                }
+                return;
+              }
+              StockHoldingModel? holdingToSell;
+              try {
+                final symbolToFind = instrument.symbol.replaceAll('-EQ', '');
+                holdingToSell = userProfile.stocks.firstWhere(
+                  (holding) => holding.stockSymbol == symbolToFind,
+                );
+              } catch (e) {
+                holdingToSell = null;
+              }
+              if (context.mounted) {
+                if (holdingToSell != null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => SellStockPage(
+                        instrument: instrument,
+                        userHolding: holdingToSell!,
+                      ),
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("You do not own this stock.")),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorScheme.primary,
+              foregroundColor: Colors.white,
+              shadowColor: colorScheme.primary.withOpacity(0.4),
+              elevation: 4,
+              padding: const EdgeInsets.symmetric(vertical: 0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
               ),
-              child: const Text(
-                "Sell",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            child: const Text(
+              "Sell",
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
               ),
             ),
           ),
-          const SizedBox(width: 15),
-          Expanded(
-            child: ElevatedButton(
-              onPressed: () => Navigator.push(
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => BuyStockPage(instrument: instrument),
                 ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorScheme.secondary,
+              foregroundColor: Colors.white,
+              shadowColor: colorScheme.secondary.withOpacity(0.4),
+              elevation: 4,
+              padding: const EdgeInsets.symmetric(vertical: 0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
               ),
-              style: ElevatedButton.styleFrom(
-                // --- ⭐️ MODIFIED: Theme BUY color (Pink) ---
-                backgroundColor: colorScheme.secondary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
-              ),
-              child: const Text(
-                "Buy",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            child: const Text(
+              "Buy",
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
 
-// --- ✨ CHART WIDGET (Theme-Aware & Error Fixed) ---
 class TradingViewChart extends StatefulWidget {
   final Instrument instrument;
   const TradingViewChart({super.key, required this.instrument});
@@ -612,28 +639,24 @@ class TradingViewChart extends StatefulWidget {
 }
 
 class _TradingViewChartState extends State<TradingViewChart> {
-  // --- ⭐️ MODIFIED: Added flag ---
   late final WebViewController _controller;
   bool _isControllerInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    // ⭐️ InitState ko khaali rakha
   }
 
-  // --- ⭐️⭐️ FIX: Logic ko initState se didChangeDependencies mein move kiya ⭐️⭐️ ---
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    // Controller ko sirf ek baar initialize karein
     if (!_isControllerInitialized) {
       final themeMode = Provider.of<ThemeNotifier>(
         context,
         listen: false,
       ).themeMode;
-      // Fallback ke saath Brightness use kiya
+
       final brightness =
           MediaQuery.maybeOf(context)?.platformBrightness ?? Brightness.light;
 
@@ -642,12 +665,11 @@ class _TradingViewChartState extends State<TradingViewChart> {
 
       if (themeMode == ThemeMode.dark) {
         chartTheme = "dark";
-        toolbarBg = "#1E1E1E"; // (Dark Grey)
+        toolbarBg = "#1E1E1E";
       } else if (themeMode == ThemeMode.light) {
         chartTheme = "light";
-        toolbarBg = "#f1f3f6"; // (Light Grey)
+        toolbarBg = "#f1f3f6";
       } else {
-        // System
         chartTheme = (brightness == Brightness.dark) ? "dark" : "light";
         toolbarBg = (brightness == Brightness.dark) ? "#1E1E1E" : "#f1f3f6";
       }
@@ -657,7 +679,6 @@ class _TradingViewChartState extends State<TradingViewChart> {
         ..setBackgroundColor(const Color(0x00000000))
         ..loadHtmlString(_buildTradingViewHtml(chartTheme, toolbarBg));
 
-      // Flag set kiya taaki build method chale
       setState(() {
         _isControllerInitialized = true;
       });
@@ -708,11 +729,11 @@ class _TradingViewChartState extends State<TradingViewChart> {
 
   @override
   Widget build(BuildContext context) {
-    // --- ⭐️ MODIFIED: Jab tak controller ready na ho, loader dikhayein ---
     if (!_isControllerInitialized) {
       return Center(
         child: CircularProgressIndicator(
           color: Theme.of(context).colorScheme.primary,
+          strokeWidth: 3,
         ),
       );
     }

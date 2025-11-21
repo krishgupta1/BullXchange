@@ -139,8 +139,20 @@ class _PositionPageState extends State<PositionPage> {
   @override
   Widget build(BuildContext context) {
     final auth = FirebaseAuth.instance;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     if (auth.currentUser?.uid == null) {
-      return const Center(child: Text("Please log in to see your positions."));
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.lock_outline, size: 48, color: colorScheme.secondary),
+            const SizedBox(height: 16),
+            const Text("Please log in to see your positions."),
+          ],
+        ),
+      );
     }
 
     return Consumer2<UserProfileDataModel?, InstrumentProvider>(
@@ -168,37 +180,77 @@ class _PositionPageState extends State<PositionPage> {
         }
 
         return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: 100),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Summary Card
+              _buildPositionSummaryCard(
+                context,
+                totalOverallPnl,
+                totalInvestment,
+                onExitAll: () => _handleExitAllPositions(
+                  context,
+                  userPositions,
+                  instrumentProvider,
+                ),
+              ),
+
+              // Section Header
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: _buildPositionSummaryCard(
-                  totalOverallPnl,
-                  totalInvestment,
-                  onExitAll: () => _handleExitAllPositions(
-                    context,
-                    userPositions,
-                    instrumentProvider,
-                  ),
+                padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Open Positions (${userPositions.length})",
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colorScheme.secondaryContainer,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        "Intraday",
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSecondaryContainer,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 24),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0),
-                child: Text(
-                  "Intraday Positions",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+
+              // Positions List
+              ListView.separated(
+                physics: const NeverScrollableScrollPhysics(),
+                shrinkWrap: true,
+                itemCount: userPositions.length,
+                separatorBuilder: (context, index) => Divider(
+                  height: 1,
+                  thickness: 0.5,
+                  indent: 72,
+                  endIndent: 16,
+                  color: theme.dividerColor.withOpacity(0.15),
                 ),
+                itemBuilder: (context, index) {
+                  return PositionStockItem(
+                    key: ValueKey(userPositions[index].stockSymbol),
+                    position: userPositions[index],
+                  );
+                },
               ),
-              const SizedBox(height: 10),
-              ...userPositions.map((position) {
-                return PositionStockItem(
-                  key: ValueKey(position.stockSymbol),
-                  position: position,
-                );
-              }),
-              const SizedBox(height: 80),
             ],
           ),
         );
@@ -207,12 +259,24 @@ class _PositionPageState extends State<PositionPage> {
   }
 
   Widget _buildPositionSummaryCard(
+    BuildContext context,
     double totalPnl,
     double totalInvestment, {
     required VoidCallback onExitAll,
   }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
     final sign = totalPnl >= 0 ? "+" : "-";
-    final color = totalPnl >= 0 ? Colors.greenAccent : Colors.redAccent;
+    // Adaptive Colors
+    final profitColor = isDark
+        ? const Color(0xFF66BB6A)
+        : const Color(0xFF00C853);
+    final lossColor = isDark
+        ? const Color(0xFFEF5350)
+        : const Color(0xFFFF3D00);
+    final pnlColor = totalPnl >= 0 ? profitColor : lossColor;
 
     double totalPnlPercent = 0.0;
     if (totalInvestment > 0) {
@@ -220,70 +284,142 @@ class _PositionPageState extends State<PositionPage> {
     }
 
     return Container(
-      height: 170,
+      margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF6F4CFF), Color(0xFFDB1B57)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+        boxShadow: isDark
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 15,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+        border: Border.all(
+          color: theme.dividerColor.withOpacity(isDark ? 0.1 : 0.05),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            "Total Profit & Loss",
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.8),
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 6),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                "$sign₹${totalPnl.abs().toStringAsFixed(2)}",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Total P&L",
+                    style: TextStyle(
+                      color: theme.textTheme.bodySmall?.color,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        "$sign₹${totalPnl.abs().toStringAsFixed(2)}",
+                        style: TextStyle(
+                          color: pnlColor,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
+              // P&L Percentage Pill
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.9),
-                  borderRadius: BorderRadius.circular(12),
+                  color: pnlColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   "$sign${totalPnlPercent.abs().toStringAsFixed(2)}%",
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
+                  style: TextStyle(
+                    color: pnlColor,
+                    fontSize: 13,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
             ],
           ),
-          const Spacer(),
+
+          const SizedBox(height: 24),
+          Divider(height: 1, color: theme.dividerColor.withOpacity(0.1)),
+          const SizedBox(height: 16),
+
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: TextButton.icon(
-                  icon: const Icon(Icons.exit_to_app),
-                  label: const Text("Exit all"),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Colors.white.withOpacity(0.15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Total Invested",
+                    style: TextStyle(
+                      color: theme.textTheme.bodySmall?.color,
+                      fontSize: 12,
                     ),
                   ),
-                  onPressed: onExitAll,
+                  const SizedBox(height: 4),
+                  Text(
+                    "₹${totalInvestment.toStringAsFixed(2)}",
+                    style: TextStyle(
+                      color: colorScheme.onSurface,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+
+              // Exit All Button
+              InkWell(
+                onTap: onExitAll,
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.error.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: colorScheme.error.withOpacity(0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.close_rounded,
+                        size: 16,
+                        color: colorScheme.error,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        "Exit All",
+                        style: TextStyle(
+                          color: colorScheme.error,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -298,20 +434,35 @@ class _EmptyState extends StatelessWidget {
   const _EmptyState();
   @override
   Widget build(BuildContext context) {
-    return const Column(
+    final theme = Theme.of(context);
+    return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        SizedBox(height: 20),
-        Icon(Icons.work_history_outlined, size: 48, color: Colors.grey),
-        SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.layers_clear_outlined,
+            size: 48,
+            color: theme.disabledColor,
+          ),
+        ),
+        const SizedBox(height: 24),
         Text(
           "No Open Positions",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.onSurface,
+          ),
         ),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         Text(
-          "Your intraday trades for the day will appear here.",
-          style: TextStyle(color: Colors.grey),
+          "Your intraday trades will appear here.",
+          style: TextStyle(color: theme.hintColor),
           textAlign: TextAlign.center,
         ),
       ],
@@ -319,7 +470,7 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-// --- 2. LIST ITEM (BACKGROUND FIXED) ---
+// --- 2. LIST ITEM ---
 class PositionStockItem extends StatefulWidget {
   final StockHoldingModel position;
   const PositionStockItem({super.key, required this.position});
@@ -397,19 +548,26 @@ class _PositionStockItemState extends State<PositionStockItem> {
     );
   }
 
-  Widget _buildLogoContainer(String name) {
+  Widget _buildLogoContainer(String name, ThemeData theme) {
     final letter = name.isNotEmpty ? name[0].toUpperCase() : "?";
     final color = Colors.primaries[name.hashCode % Colors.primaries.length];
     return Container(
-      width: 36, // Reduced size
-      height: 36,
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: theme.brightness == Brightness.dark
+            ? color.withOpacity(0.2)
+            : color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(10),
+      ),
       child: Center(
         child: Text(
           letter,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 20, // Reduced font
+          style: TextStyle(
+            color: theme.brightness == Brightness.dark
+                ? color.withRed(255).withGreen(255)
+                : color,
+            fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -430,93 +588,110 @@ class _PositionStockItemState extends State<PositionStockItem> {
       p.stockSymbol,
     );
 
-    // Theme data for Text Colors
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
-    // ⭐️ FIXED: Background is now Transparent (pehle jaisa)
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => _showDetailsSheet(context),
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: theme.dividerColor.withOpacity(0.1),
-                width: 1,
-              ),
-            ),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
-          child: Row(
-            children: [
-              if (instrument != null)
-                SmartLogo(instrument: instrument, radius: 0)
-              else
-                _buildLogoContainer(p.stockName),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      p.stockSymbol,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14, // Reduced Font
-                        color: colorScheme.onSurface, // Adaptive Color
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      "${p.quantity} shares",
-                      style: TextStyle(
-                        color: theme.textTheme.bodySmall?.color, // Grey
-                        fontSize: 12, // Reduced Font
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+    return InkWell(
+      onTap: () => _showDetailsSheet(context),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+        child: Row(
+          children: [
+            if (instrument != null)
+              SmartLogo(instrument: instrument, radius: 20)
+            else
+              _buildLogoContainer(p.stockName, theme),
+            const SizedBox(width: 16),
+
+            // Symbol & Qty
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ValueListenableBuilder<double>(
-                    valueListenable: _ltpNotifier,
-                    builder: (_, val, __) => Text(
-                      priceFormatter.format(val * p.quantity),
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14, // Reduced Font
-                        color: colorScheme.onSurface, // Adaptive Color
-                      ),
+                  Text(
+                    p.stockSymbol,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                      color: colorScheme.onSurface,
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  ValueListenableBuilder<double>(
-                    valueListenable: _plNotifier,
-                    builder: (_, plVal, __) => ValueListenableBuilder<double>(
-                      valueListenable: _percentNotifier,
-                      builder: (_, pctVal, __) {
-                        final sign = plVal >= 0 ? "+" : "-";
-                        final color = plVal >= 0 ? Colors.green : Colors.red;
-                        return Text(
-                          "$sign₹${plVal.abs().toStringAsFixed(2)} ($sign${pctVal.abs().toStringAsFixed(2)}%)",
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.dividerColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          "${p.quantity} Qty",
                           style: TextStyle(
-                            color: color,
-                            fontSize: 12, // Reduced Font
-                            fontWeight: FontWeight.w500,
+                            color: theme.textTheme.bodySmall?.color,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
                           ),
-                        );
-                      },
-                    ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+
+            const SizedBox(width: 12),
+
+            // P&L Column
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                ValueListenableBuilder<double>(
+                  valueListenable: _ltpNotifier,
+                  builder: (_, val, __) => Text(
+                    priceFormatter.format(val * p.quantity),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                ValueListenableBuilder<double>(
+                  valueListenable: _plNotifier,
+                  builder: (_, plVal, __) => ValueListenableBuilder<double>(
+                    valueListenable: _percentNotifier,
+                    builder: (_, pctVal, __) {
+                      final isPositive = plVal >= 0;
+                      final sign = isPositive ? "+" : "-";
+
+                      final color = isPositive
+                          ? (isDark
+                                ? const Color(0xFF66BB6A)
+                                : const Color(0xFF00C853))
+                          : (isDark
+                                ? const Color(0xFFEF5350)
+                                : const Color(0xFFFF3D00));
+
+                      return Text(
+                        "$sign₹${plVal.abs().toStringAsFixed(2)} (${pctVal.abs().toStringAsFixed(2)}%)",
+                        style: TextStyle(
+                          color: color,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -538,8 +713,8 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
     required this.percentNotifier,
   });
 
-  static const Color primaryPink = Color(0xFFF61C7A);
-  static const Color primaryBlue = Color(0xFF3500D4);
+  static const Color primaryColor = Color(0xFF00C853);
+  static const Color sellColor = Color(0xFFFF3D00);
 
   Widget _buildDetailRow(
     BuildContext context,
@@ -548,16 +723,15 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
   ) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      padding: const EdgeInsets.symmetric(vertical: 12.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             title,
             style: TextStyle(
-              color: theme.textTheme.bodySmall?.color,
-              fontSize: 13,
-              fontFamily: "Inter",
+              color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
+              fontSize: 14,
             ),
           ),
           valueWidget,
@@ -566,19 +740,26 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildLogoContainer(String name, {double radius = 25}) {
+  Widget _buildLogoContainer(String name, ThemeData theme) {
     final letter = name.isNotEmpty ? name[0].toUpperCase() : "?";
     final color = Colors.primaries[name.hashCode % Colors.primaries.length];
     return Container(
-      width: radius * 2,
-      height: radius * 2,
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        color: theme.brightness == Brightness.dark
+            ? color.withOpacity(0.2)
+            : color.withOpacity(0.1),
+        shape: BoxShape.circle,
+      ),
       child: Center(
         child: Text(
           letter,
           style: TextStyle(
-            color: Colors.white,
-            fontSize: radius,
+            color: theme.brightness == Brightness.dark
+                ? color.withRed(255).withGreen(255)
+                : color,
+            fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -672,8 +853,15 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        color: theme.scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
+          ),
+        ],
       ),
       child: SafeArea(
         child: Padding(
@@ -682,13 +870,24 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: theme.dividerColor.withOpacity(0.4),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   if (instrument != null)
-                    SmartLogo(instrument: instrument, radius: 25)
+                    SmartLogo(instrument: instrument, radius: 24)
                   else
-                    _buildLogoContainer(position.stockName, radius: 25),
+                    _buildLogoContainer(position.stockName, theme),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
@@ -697,7 +896,7 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
                         Text(
                           position.stockName,
                           style: TextStyle(
-                            fontSize: 18, // Reduced Font
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: colorScheme.onSurface,
                           ),
@@ -708,22 +907,37 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
                         Text(
                           position.stockSymbol,
                           style: TextStyle(
-                            color: theme.textTheme.bodySmall?.color,
-                            fontSize: 13, // Reduced Font
+                            color: theme.hintColor,
+                            fontSize: 13,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    color: colorScheme.onSurface,
-                    onPressed: () => Navigator.pop(context),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.secondaryContainer,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      "INTRADAY",
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSecondaryContainer,
+                      ),
+                    ),
                   ),
                 ],
               ),
-              const Divider(height: 30),
+              const SizedBox(height: 24),
+              Divider(height: 1, color: theme.dividerColor.withOpacity(0.1)),
+              const SizedBox(height: 16),
 
               _buildDetailRow(
                 context,
@@ -731,8 +945,8 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
                 Text(
                   "${position.quantity} Shares",
                   style: TextStyle(
-                    fontSize: 14, // Reduced Font
-                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
                     color: colorScheme.onSurface,
                   ),
                 ),
@@ -744,8 +958,8 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
                 Text(
                   priceFormatter.format(investedAmount),
                   style: TextStyle(
-                    fontSize: 14, // Reduced Font
-                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
                     color: colorScheme.onSurface,
                   ),
                 ),
@@ -753,14 +967,14 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
 
               _buildDetailRow(
                 context,
-                "Current Stock Price",
+                "Current Price",
                 ValueListenableBuilder<double>(
                   valueListenable: ltpNotifier,
                   builder: (_, ltpVal, __) => Text(
                     priceFormatter.format(ltpVal),
                     style: TextStyle(
-                      fontSize: 14, // Reduced Font
-                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
                       color: colorScheme.onSurface,
                     ),
                   ),
@@ -769,62 +983,48 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
 
               _buildDetailRow(
                 context,
-                "Current Profit (Value)",
+                "Total P&L",
                 ValueListenableBuilder<double>(
                   valueListenable: plNotifier,
                   builder: (_, plVal, __) {
-                    final sign = plVal >= 0 ? "+" : "-";
-                    final color = plVal >= 0 ? Colors.green : Colors.red;
-                    final currentValue = ltpNotifier.value * position.quantity;
+                    final isPositive = plVal >= 0;
+                    final sign = isPositive ? "+" : "-";
+                    final color = isPositive ? primaryColor : sellColor;
 
                     return ValueListenableBuilder<double>(
                       valueListenable: percentNotifier,
-                      builder: (_, pctVal, __) => Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            priceFormatter.format(currentValue),
-                            style: TextStyle(
-                              fontSize: 14, // Reduced Font
-                              fontWeight: FontWeight.bold,
-                              color: colorScheme.onSurface,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            "$sign₹${plVal.abs().toStringAsFixed(2)} ($sign${pctVal.abs().toStringAsFixed(2)}%)",
-                            style: TextStyle(
-                              color: color,
-                              fontSize: 12, // Reduced Font
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
+                      builder: (_, pctVal, __) => Text(
+                        "$sign₹${plVal.abs().toStringAsFixed(2)} ($sign${pctVal.abs().toStringAsFixed(2)}%)",
+                        style: TextStyle(
+                          color: color,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     );
                   },
                 ),
               ),
 
-              const Divider(height: 30),
+              const SizedBox(height: 32),
 
               Row(
                 children: [
                   Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => _handleBuy(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryPink,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: OutlinedButton(
+                      onPressed: () async => await _handleSell(context),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: sellColor, width: 1.5),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                       child: const Text(
-                        "BUY",
+                        "EXIT",
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.white,
+                          color: sellColor,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -833,16 +1033,16 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
                   const SizedBox(width: 16),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () async => await _handleSell(context),
+                      onPressed: () => _handleBuy(context),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryBlue,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        backgroundColor: primaryColor,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                       child: const Text(
-                        "SELL",
+                        "ADD MORE",
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.white,

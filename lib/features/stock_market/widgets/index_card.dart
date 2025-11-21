@@ -9,7 +9,7 @@ class IndexCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // --- ⭐️ Theme se colors lo ---
+    // --- ⭐️ Theme Data ---
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
@@ -26,56 +26,95 @@ class IndexCard extends StatelessWidget {
         instrument?.liveData["percentChange"]?.toStringAsFixed(2) ?? "0.00";
 
     final double changeValue = num.tryParse(netChange)?.toDouble() ?? 0.0;
-    // Green/Red colors same rehte hain
-    final changeColor = changeValue.isNegative ? Colors.red : Colors.green;
+    final isNegative = changeValue.isNegative;
 
-    final changeText = "$netChange($percentChange%)";
+    // Colors & Icon logic
+    final changeColor = isNegative ? Colors.redAccent : const Color(0xFF00C853);
+    final trendIcon = isNegative
+        ? Icons.trending_down_rounded
+        : Icons.trending_up_rounded;
+
+    final changeText = "$netChange ($percentChange%)";
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        // --- ⭐️ MODIFIED: Theme se background color ---
         color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: theme.dividerColor.withOpacity(0.08),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            // --- ⭐️ MODIFIED: Theme se shadow color ---
-            color: theme.shadowColor.withOpacity(0.1),
-            spreadRadius: 2,
-            blurRadius: 8,
+            color: Colors.black.withOpacity(0.04),
+            spreadRadius: 0,
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            name,
-            style: TextStyle(
-              // --- ⭐️ MODIFIED: Theme se grey text color ---
-              color: textTheme.bodySmall?.color,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
+          // Header Row: Title + Trend Icon Background
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  name,
+                  style: TextStyle(
+                    color: textTheme.bodyMedium?.color?.withOpacity(0.6),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: changeColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(trendIcon, size: 16, color: changeColor),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
+
+          const SizedBox(height: 12),
+
+          // Main Price Text
           Text(
             value != "0.00" ? "₹$value" : "...",
             style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              // --- ⭐️ MODIFIED: Theme se main text color ---
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
               color: colorScheme.onSurface,
+              letterSpacing: -0.5,
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            changeText,
-            style: TextStyle(
-              color: changeColor, // Green/Red
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
+
+          const SizedBox(height: 6),
+
+          // Change Percentage Text
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: changeColor.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              changeText,
+              style: TextStyle(
+                color: changeColor,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],

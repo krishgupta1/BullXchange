@@ -11,7 +11,6 @@ class ExplorePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // --- ⭐️ Get theme colors ---
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -20,54 +19,65 @@ class ExplorePage extends StatelessWidget {
         if (provider.isLoading && provider.topGainers.isEmpty) {
           return Center(
             child: CircularProgressIndicator(
-              // --- ⭐️ MODIFIED: Use theme color ---
-              color: colorScheme.secondary, // Pink
+              color: colorScheme.primary,
+              strokeWidth: 3,
             ),
           );
         }
         if (provider.errorMessage != null) {
           return Center(
-            child: Text(
-              provider.errorMessage!,
-              // --- ⭐️ MODIFIED: Use theme error color ---
-              style: TextStyle(color: colorScheme.error),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.error_outline_rounded,
+                  size: 48,
+                  color: colorScheme.error,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  provider.errorMessage!,
+                  style: TextStyle(
+                    color: colorScheme.error,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           );
         }
 
         return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: 24),
           child: Column(
             children: [
               // --- Top Gainers Section ---
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                // --- ⭐️ MODIFIED: Pass context for theme ---
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
                 child: _buildSectionHeader(context, "Top Gainers"),
               ),
-              const SizedBox(height: 10),
               _buildStockList(provider.topGainers.take(4).toList(), context),
+
               const SizedBox(height: 24),
 
               // --- Top Losers Section ---
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                // --- ⭐️ MODIFIED: Pass context for theme ---
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
                 child: _buildSectionHeader(context, "Top Losers"),
               ),
-              const SizedBox(height: 10),
               _buildStockList(provider.topLosers.take(4).toList(), context),
-              const SizedBox(height: 24),
+
+              const SizedBox(height: 32),
 
               // --- Tools Section ---
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                // --- ⭐️ MODIFIED: Pass context for theme ---
                 child: _buildSectionHeader(context, "Tools"),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                // --- ⭐️ MODIFIED: Pass context for theme ---
                 child: _buildToolsGrid(context),
               ),
               const SizedBox(height: 20),
@@ -82,7 +92,6 @@ class ExplorePage extends StatelessWidget {
 // --- Helper widgets ---
 
 Widget _buildSectionHeader(BuildContext context, String title) {
-  // --- ⭐️ Get theme colors ---
   final theme = Theme.of(context);
   final colorScheme = theme.colorScheme;
 
@@ -94,14 +103,15 @@ Widget _buildSectionHeader(BuildContext context, String title) {
 
   return Row(
     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    crossAxisAlignment: CrossAxisAlignment.center,
     children: [
       Text(
         title,
-        // --- ⭐️ MODIFIED: Use theme text color ---
-        // (colorScheme.onBackground)
-        style: theme.textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.bold,
+        style: theme.textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.w800,
+          fontSize: 18,
           color: colorScheme.onSurface,
+          letterSpacing: -0.5,
         ),
       ),
       if (stockCategories.contains(title))
@@ -110,10 +120,28 @@ Widget _buildSectionHeader(BuildContext context, String title) {
             context,
             MaterialPageRoute(builder: (context) => const ViewAllPage()),
           ),
-          child: Text(
-            "View all",
-            // --- ⭐️ MODIFIED: Use theme secondary color (Pink) ---
-            style: TextStyle(color: colorScheme.secondary, fontSize: 13),
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          child: Row(
+            children: [
+              Text(
+                "View all",
+                style: TextStyle(
+                  color: colorScheme.primary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 10,
+                color: colorScheme.primary,
+              ),
+            ],
           ),
         ),
     ],
@@ -129,85 +157,92 @@ Widget _buildStockList(List<Instrument> topStocks, BuildContext context) {
 }
 
 Widget _buildStockItem(Instrument instrument, BuildContext context) {
-  // --- ❗️ IMPORTANT ---
-  // Make sure your 'StockCard' widget is ALSO theme-aware
-  // (i.e., it doesn't use hardcoded Colors.white or Colors.black).
-  // It should use theme.colorScheme.surface for background
-  // and theme.colorScheme.onSurface for text.
-  // ---
-  return StockCard(
-    instrument: instrument,
-    onTap: () => Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => StockDetailPage(instrument: instrument),
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 4.0),
+    child: StockCard(
+      instrument: instrument,
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => StockDetailPage(instrument: instrument),
+        ),
       ),
+      fontSize: 13,
+      showChart: true,
     ),
-    fontSize: 12,
   );
 }
 
 Widget _buildToolsGrid(BuildContext context) {
-  // --- ⭐️ Get theme colors ---
   final theme = Theme.of(context);
   final colorScheme = theme.colorScheme;
+  final isDark = theme.brightness == Brightness.dark;
 
-  // --- ⭐️ Define theme-aware colors for backgrounds and icons ---
-  // Yeh colors light/dark mode ke hisaab se automatically adjust honge
-  final Color primaryContainer = colorScheme.primary.withOpacity(0.1);
-  final Color primaryIcon = colorScheme.primary;
+  // Define base colors but adjust opacity for modern glass/flat look
+  final Color primaryBase = colorScheme.primary;
+  final Color secondaryBase = colorScheme.secondary;
 
-  final Color secondaryContainer = colorScheme.secondary.withOpacity(0.1);
-  final Color secondaryIcon = colorScheme.secondary;
-
-  return Row(
-    children: [
-      Expanded(
-        child: _buildToolItem(
-          context,
-          Icons.campaign,
-          "IPO",
-          primaryContainer, // Theme BG
-          primaryIcon, // Theme Icon
+  return Container(
+    padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+    decoration: BoxDecoration(
+      color: theme.cardColor,
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
+      boxShadow: isDark
+          ? []
+          : [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: _buildToolItem(
+            context,
+            Icons.campaign_rounded,
+            "IPO",
+            primaryBase,
+          ),
         ),
-      ),
-      Expanded(
-        child: _buildToolItem(
-          context,
-          Icons.newspaper,
-          "NEWS",
-          secondaryContainer, // Theme BG
-          secondaryIcon, // Theme Icon
+        Expanded(
+          child: _buildToolItem(
+            context,
+            Icons.newspaper_rounded,
+            "NEWS",
+            secondaryBase,
+          ),
         ),
-      ),
-      Expanded(
-        child: _buildToolItem(
-          context,
-          Icons.broadcast_on_home,
-          "COMMUNITY",
-          primaryContainer, // Theme BG
-          primaryIcon, // Theme Icon
+        Expanded(
+          child: _buildToolItem(
+            context,
+            Icons.diversity_3_rounded,
+            "COMMUNITY",
+            primaryBase,
+          ),
         ),
-      ),
-      Expanded(
-        child: _buildToolItem(
-          context,
-          Icons.star,
-          "EVENT",
-          secondaryContainer, // Theme BG
-          secondaryIcon, // Theme Icon
+        Expanded(
+          child: _buildToolItem(
+            context,
+            Icons.event_note_rounded,
+            "EVENT",
+            secondaryBase,
+          ),
         ),
-      ),
-      Expanded(
-        child: _buildToolItem(
-          context,
-          Icons.calculate,
-          "CHARGES",
-          primaryContainer, // Theme BG
-          primaryIcon, // Theme Icon
+        Expanded(
+          child: _buildToolItem(
+            context,
+            Icons.calculate_rounded,
+            "CHARGES",
+            primaryBase,
+          ),
         ),
-      ),
-    ],
+      ],
+    ),
   );
 }
 
@@ -215,30 +250,38 @@ Widget _buildToolItem(
   BuildContext context,
   IconData icon,
   String label,
-  Color bgColor, // Theme color (from _buildToolsGrid)
-  Color iconColor, // Theme color (from _buildToolsGrid)
+  Color baseColor,
 ) {
-  // --- ⭐️ Get theme text color ---
   final theme = Theme.of(context);
 
-  return Column(
-    children: [
-      Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: bgColor, // --- ⭐️ MODIFIED ---
-          borderRadius: BorderRadius.circular(12),
+  return InkWell(
+    borderRadius: BorderRadius.circular(12),
+    onTap: () {}, // Preserving UI structure, logic not provided
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: baseColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Icon(icon, color: baseColor, size: 22),
         ),
-        // --- ⭐️ MODIFIED ---
-        child: Icon(icon, color: iconColor, size: 24),
-      ),
-      const SizedBox(height: 8),
-      Text(
-        label,
-        // --- ⭐️ MODIFIED: Use theme grey text color ---
-        style: TextStyle(color: theme.textTheme.bodySmall?.color, fontSize: 10),
-        textAlign: TextAlign.center,
-      ),
-    ],
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: TextStyle(
+            color: theme.textTheme.bodySmall?.color,
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.3,
+          ),
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    ),
   );
 }
