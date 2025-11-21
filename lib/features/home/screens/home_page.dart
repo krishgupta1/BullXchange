@@ -6,7 +6,9 @@ import 'package:bullxchange/features/portfolio/screens/portfolio_page.dart';
 import 'package:bullxchange/features/stock_market/screens/stock_page.dart';
 import 'package:flutter/material.dart';
 
+// --- IMPORTS ---
 import 'package:bullxchange/models/user_profile_data_model.dart';
+import 'package:bullxchange/models/order_model.dart'; // Import OrderModel
 import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
@@ -35,7 +37,7 @@ class _HomePageState extends State<HomePage> {
             'AI Stats Page',
             style: TextStyle(
               fontSize: 24,
-              color: Theme.of(context).colorScheme.onSurface, // Theme text
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         );
@@ -67,15 +69,32 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
-    return StreamProvider<UserProfileDataModel?>(
-      create: (_) => _userService.streamUserProfile(uid!),
-      initialData: null,
+    // --- ⭐️ CHANGE TO MULTI PROVIDER ⭐️ ---
+    // This allows you to provide BOTH the User Profile AND the Orders List
+    return MultiProvider(
+      providers: [
+        // 1. User Profile Stream
+        StreamProvider<UserProfileDataModel?>(
+          create: (_) => _userService.streamUserProfile(uid!),
+          initialData: null,
+        ),
+
+        // 2. ⭐️ ORDERS STREAM (THE FIX) ⭐️
+        // We use the function you created in UserService which filters by 'userId'
+        StreamProvider<List<OrderModel>>(
+          create: (_) => _userService.streamOpenOrders(uid!),
+          initialData: const [],
+          catchError: (context, error) {
+            // This prevents the "Exception caught by Provider" red screen
+            // It will just return an empty list if permission fails
+            print("Error streaming orders: $error");
+            return [];
+          },
+        ),
+      ],
       child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
-
-        // --- ⭐️⭐️ 2. DRAWER KO YAHAN ADD KARO ⭐️⭐️ ---
         drawer: const SideMenu(),
-
         body: IndexedStack(index: _selectedIndex, children: _widgetOptions),
         bottomNavigationBar: BottomNavBar(
           selectedIndex: _selectedIndex,

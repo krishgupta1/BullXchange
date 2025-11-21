@@ -1,5 +1,7 @@
+import 'package:bullxchange/services/firebase/fund_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:qr_flutter/qr_flutter.dart'; // Import QR package
 
 class AddFundPage extends StatefulWidget {
   const AddFundPage({super.key});
@@ -9,19 +11,27 @@ class AddFundPage extends StatefulWidget {
 }
 
 class _AddFundPageState extends State<AddFundPage> {
-  final TextEditingController _coinController = TextEditingController();
-  double _calculatedPrice = 0.0;
+  // --- CONFIGURATION ---
+  // REPLACE THIS WITH YOUR ACTUAL UPI ID (e.g., merchant@okicici, 9876543210@paytm)
+  final String _myUpiId = "9336772455-6@ybl";
+  final String _myName = "Bullxchange";
 
-  // Conversion Rate: 10,000 coins = 14 RS
+  final TextEditingController _coinController = TextEditingController();
+  final TextEditingController _utrController = TextEditingController();
+
+  final FundService _fundService = FundService();
+
+  double _calculatedPrice = 0.0;
+  bool _isSubmitting = false;
+
   final double _coinsPerBatch = 10000;
   final double _pricePerBatch = 14.0;
-
-  // Frequent buy options
   final List<int> _frequentOptions = [10000, 20000, 50000, 100000];
 
   @override
   void dispose() {
     _coinController.dispose();
+    _utrController.dispose();
     super.dispose();
   }
 
@@ -30,14 +40,10 @@ class _AddFundPageState extends State<AddFundPage> {
       setState(() => _calculatedPrice = 0.0);
       return;
     }
-
-    // Remove commas if user pastes them
     String cleanValue = value.replaceAll(',', '');
     int? coins = int.tryParse(cleanValue);
-
     if (coins != null) {
       setState(() {
-        // Formula: (Coins / 10000) * 14
         _calculatedPrice = (coins / _coinsPerBatch) * _pricePerBatch;
       });
     }
@@ -46,10 +52,159 @@ class _AddFundPageState extends State<AddFundPage> {
   void _selectFrequentOption(int coins) {
     _coinController.text = coins.toString();
     _calculatePrice(coins.toString());
-    // Move cursor to end
     _coinController.selection = TextSelection.fromPosition(
       TextPosition(offset: _coinController.text.length),
     );
+  }
+
+  // --- PAYMENT SHEET WITH DYNAMIC QR ---
+  void _showPaymentBottomSheet() {
+    // 1. Generate the UPI URL String
+    // Format: upi://pay?pa=UPI_ID&pn=NAME&am=AMOUNT&cu=INR
+    final String upiUrl =
+        "upi://pay?pa=$_myUpiId&pn=$_myName&am=${_calculatedPrice.toStringAsFixed(2)}&cu=INR";
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+            left: 20,
+            right: 20,
+            top: 20,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  "Scan to Pay",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  "Amount: ₹${_calculatedPrice.toStringAsFixed(2)}",
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.green,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // --- DYNAMIC QR CODE ---
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: QrImageView(
+                    data: upiUrl, // The magic string
+                    version: QrVersions.auto,
+                    size: 200.0,
+                    backgroundColor: Colors.white,
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+                Text(
+                  "UPI ID: $_myUpiId",
+                  style: const TextStyle(color: Colors.grey),
+                ),
+                const SizedBox(height: 20),
+                const Divider(),
+                const SizedBox(height: 10),
+
+                // --- UTR INPUT ---
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "Enter UTR / Reference No:",
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _utrController,
+                  decoration: const InputDecoration(
+                    hintText: "e.g. 325198410922",
+                    border: OutlineInputBorder(),
+                    filled: true,
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // --- SUBMIT BUTTON ---
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                    ),
+                    onPressed: () {
+                      if (_utrController.text.length < 6) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Please enter a valid UTR"),
+                          ),
+                        );
+                        return;
+                      }
+                      Navigator.pop(context);
+                      _submitRequest();
+                    },
+                    child: const Text(
+                      "Submit Payment Details",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _submitRequest() async {
+    setState(() => _isSubmitting = true);
+    try {
+      int coins = int.parse(_coinController.text.replaceAll(',', ''));
+
+      await _fundService.submitFundRequest(
+        amountInRupees: _calculatedPrice,
+        coins: coins,
+        utr: _utrController.text,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Colors.green,
+            content: Text("Request Submitted! Wait for Admin Approval."),
+          ),
+        );
+        _utrController.clear();
+        _coinController.clear();
+        setState(() => _calculatedPrice = 0.0);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error: $e")));
+    } finally {
+      setState(() => _isSubmitting = false);
+    }
   }
 
   @override
@@ -59,28 +214,14 @@ class _AddFundPageState extends State<AddFundPage> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: theme.scaffoldBackgroundColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          "Add Funds",
-          style: TextStyle(
-            color: colorScheme.onSurface,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
+      appBar: AppBar(title: const Text("Add Funds"), elevation: 0),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // --- Header Info ---
+              // Info Box
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -96,7 +237,7 @@ class _AddFundPageState extends State<AddFundPage> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        "Conversion Rate: 10,000 Coins = ₹14",
+                        "Rate: 10,000 Coins = ₹14",
                         style: TextStyle(
                           color: colorScheme.onSurface,
                           fontWeight: FontWeight.w600,
@@ -108,14 +249,8 @@ class _AddFundPageState extends State<AddFundPage> {
               ),
               const SizedBox(height: 30),
 
-              // --- Input Field ---
-              Text(
-                "Enter Coin Amount",
-                style: TextStyle(
-                  color: colorScheme.onSurface.withOpacity(0.7),
-                  fontSize: 14,
-                ),
-              ),
+              // Input
+              const Text("Enter Coin Amount"),
               const SizedBox(height: 10),
               TextField(
                 controller: _coinController,
@@ -129,67 +264,22 @@ class _AddFundPageState extends State<AddFundPage> {
                 onChanged: _calculatePrice,
                 decoration: InputDecoration(
                   hintText: "0",
-                  hintStyle: TextStyle(
-                    color: colorScheme.onSurface.withOpacity(0.3),
-                  ),
                   suffixText: "Coins",
                   filled: true,
-                  fillColor: colorScheme.surface,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 16,
-                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide.none,
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: theme.dividerColor.withOpacity(0.2),
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: colorScheme.primary,
-                      width: 2,
-                    ),
                   ),
                 ),
               ),
+              const SizedBox(height: 20),
 
-              const SizedBox(height: 30),
-
-              // --- Frequent Options (Chips) ---
-              Text(
-                "Quick Select",
-                style: TextStyle(
-                  color: colorScheme.onSurface.withOpacity(0.7),
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 12),
+              // Chips
               Wrap(
                 spacing: 10,
                 runSpacing: 10,
                 children: _frequentOptions.map((coins) {
                   return ActionChip(
-                    backgroundColor: colorScheme.surface,
-                    side: BorderSide(
-                      color: theme.dividerColor.withOpacity(0.2),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    label: Text(
-                      "$coins",
-                      style: TextStyle(
-                        color: colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    label: Text("$coins"),
                     onPressed: () => _selectFrequentOption(coins),
                   );
                 }).toList(),
@@ -197,73 +287,56 @@ class _AddFundPageState extends State<AddFundPage> {
 
               const Spacer(),
 
-              // --- Total Calculation Display ---
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Total Payable:",
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: colorScheme.onSurface.withOpacity(0.7),
-                      ),
+              // Total
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Total Payable:",
+                    style: TextStyle(
+                      color: colorScheme.onSurface.withOpacity(0.7),
                     ),
-                    Text(
-                      "₹${_calculatedPrice.toStringAsFixed(2)}",
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.primary,
-                      ),
+                  ),
+                  Text(
+                    "₹${_calculatedPrice.toStringAsFixed(2)}",
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.primary,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
+              const SizedBox(height: 10),
 
-              // --- Pay Button ---
+              // Main Button
               SizedBox(
                 width: double.infinity,
                 height: 55,
                 child: ElevatedButton(
-                  onPressed: _calculatedPrice > 0
-                      ? () {
-                          // TODO: Trigger Payment Gateway here
-                          _initiatePayment();
-                        }
-                      : null, // Disable if 0
+                  onPressed: (_calculatedPrice > 0 && !_isSubmitting)
+                      ? _showPaymentBottomSheet
+                      : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: colorScheme.primary,
-                    foregroundColor: colorScheme.onPrimary,
+                    foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    elevation: 2,
                   ),
-                  child: Text(
-                    "Pay ₹${_calculatedPrice.toStringAsFixed(2)}",
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  child: _isSubmitting
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : Text(
+                          "Pay ₹${_calculatedPrice.toStringAsFixed(2)}",
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
-              const SizedBox(height: 10),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  void _initiatePayment() {
-    // Logic for payment gateway (Razorpay/PhonePe) goes here
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          "Initiating payment for ₹${_calculatedPrice.toStringAsFixed(2)}",
         ),
       ),
     );
