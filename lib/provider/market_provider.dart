@@ -39,15 +39,15 @@ class StocksProvider extends ChangeNotifier {
   // ---------------------------------------------------------------------------
   bool get _isMarketOpen {
     final now = DateTime.now();
-    
+
     // Check Weekend
     if (now.weekday == DateTime.saturday || now.weekday == DateTime.sunday) {
       return false;
     }
-    
+
     // Check Time (09:15 - 15:30)
     final int totalMinutes = now.hour * 60 + now.minute;
-    final int openMinutes = 9 * 60 + 15;   // 09:15 AM
+    final int openMinutes = 9 * 60 + 15; // 09:15 AM
     final int closeMinutes = 15 * 60 + 30; // 03:30 PM
 
     return totalMinutes >= openMinutes && totalMinutes < closeMinutes;
@@ -62,27 +62,24 @@ class StocksProvider extends ChangeNotifier {
       if (allStocks.isNotEmpty) {
         // 1. Always fetch data once immediately
         _updateVisibleStocksData();
-        
+
         // 2. Start timer only if Market is Open
         if (_isMarketOpen) {
           print("🟢 Market Open. Starting StocksProvider timer (5s).");
-          
-          _refreshTimer = Timer.periodic(
-            const Duration(seconds: 5),
-            (timer) {
-              // Check inside timer
-              if (!_isMarketOpen) {
-                print("🔴 Market Closed. Stopping StocksProvider timer.");
-                timer.cancel();
-                // One last update to ensure data is fresh
-                _updateVisibleStocksData();
-              } else {
-                _updateVisibleStocksData();
-              }
-            },
-          );
+
+          _refreshTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+            // Check inside timer
+            if (!_isMarketOpen) {
+              print("🔴 Market Closed. Stopping StocksProvider timer.");
+              timer.cancel();
+              // One last update to ensure data is fresh
+              _updateVisibleStocksData();
+            } else {
+              _updateVisibleStocksData();
+            }
+          });
         } else {
-           print("🔴 Market Closed. StocksProvider timer not started.");
+          print("🔴 Market Closed. StocksProvider timer not started.");
         }
       }
     });

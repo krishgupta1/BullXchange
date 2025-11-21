@@ -26,14 +26,20 @@ class FundService {
   }
 
   // 2. ADMIN: Approves request & Adds Coins in ONE transaction
-  Future<void> approveRequest(String requestId, String userId, int coins) async {
+  Future<void> approveRequest(
+    String requestId,
+    String userId,
+    int coins,
+  ) async {
     await _db.runTransaction((transaction) async {
-      DocumentReference requestRef = _db.collection('fund_requests').doc(requestId);
+      DocumentReference requestRef = _db
+          .collection('fund_requests')
+          .doc(requestId);
       DocumentReference userRef = _db.collection('users').doc(userId);
 
       DocumentSnapshot requestSnapshot = await transaction.get(requestRef);
       if (!requestSnapshot.exists) throw Exception("Request not found");
-      
+
       // Check if already processed to prevent double addition
       if (requestSnapshot.get('status') == 'approved') {
         throw Exception("Request already approved");
@@ -45,7 +51,8 @@ class FundService {
       // Update User Wallet (Create field if not exists)
       DocumentSnapshot userSnapshot = await transaction.get(userRef);
       if (userSnapshot.exists) {
-        double currentBalance = (userSnapshot.data() as Map)['walletBalance']?.toDouble() ?? 0.0;
+        double currentBalance =
+            (userSnapshot.data() as Map)['walletBalance']?.toDouble() ?? 0.0;
         transaction.update(userRef, {'walletBalance': currentBalance + coins});
       } else {
         // If user doc doesn't exist, create it
@@ -57,7 +64,7 @@ class FundService {
   // 3. ADMIN: Rejects Request
   Future<void> rejectRequest(String requestId) async {
     await _db.collection('fund_requests').doc(requestId).update({
-      'status': 'rejected'
+      'status': 'rejected',
     });
   }
 }
