@@ -106,17 +106,17 @@ class _SellStockPageState extends State<SellStockPage> {
 
     final newTransaction = TransactionModel(
       userId: uid,
-      symbol: symbol,
       companyName: widget.instrument.name,
       transactionType: 'SELL',
       quantity: _quantity,
       price: _ltp,
       charges: _totalCharges,
       totalAmount: _totalAmount,
-      executedAt: now,
       exchange: _selectedExchange,
       productType: _selectedProductType,
-      orderType: 'Market', // Sell is always a Market order in this flow
+      orderType: 'Market',
+      stockSymbol: symbol,
+      transactionTime: now, // Sell is always a Market order in this flow
     );
 
     final holdingUpdate = StockHoldingModel(

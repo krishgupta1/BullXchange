@@ -20,14 +20,28 @@ class _SideMenuState extends State<SideMenu> {
   String _selectedMenuTitle = "Home";
 
   void onMenuPress(BuildContext context, String title) {
+    // 1. ⭐️ SPECIAL CASE FOR LOGOUT ⭐️
+    // Don't close the drawer or wait. Show the dialog immediately.
+    if (title == "Logout") {
+      _showLogoutDialog(context);
+      return;
+    }
+
+    // 2. For other items, close the drawer first
     Navigator.pop(context);
+
     if (title == "Home") {
       setState(() {
         _selectedMenuTitle = title;
       });
       return;
     }
+
+    // 3. Navigate after drawer animation
     Future.delayed(const Duration(milliseconds: 200), () {
+      // Safety Check: Ensure context is valid
+      if (!context.mounted) return;
+
       switch (title) {
         case 'Refer a Friend':
           Navigator.push(
@@ -47,9 +61,6 @@ class _SideMenuState extends State<SideMenu> {
             MaterialPageRoute(builder: (_) => const FaqPage()),
           );
           break;
-        case 'Logout':
-          _showLogoutDialog(context);
-          break;
       }
     });
   }
@@ -57,6 +68,7 @@ class _SideMenuState extends State<SideMenu> {
   void _showLogoutDialog(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -76,10 +88,20 @@ class _SideMenuState extends State<SideMenu> {
           ),
           TextButton(
             child: Text('Logout', style: TextStyle(color: colorScheme.error)),
-            onPressed: () {
+            onPressed: () async {
+              // 1. Capture the Navigator BEFORE async operations to prevent "null" errors
+              // We use rootNavigator: true to ensure we control the entire app stack
+              final navigator = Navigator.of(context, rootNavigator: true);
+
+              // 2. Close the Alert Dialog
               Navigator.of(ctx).pop();
-              FirebaseAuth.instance.signOut();
-              Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+
+              // 3. Sign out from Firebase
+              await FirebaseAuth.instance.signOut();
+
+              // 4. Navigate to Onboarding using the captured navigator
+              // We don't need to check 'mounted' here because we captured the navigator instance.
+              navigator.pushAndRemoveUntil(
                 MaterialPageRoute(builder: (_) => const OnboardingPage()),
                 (route) => false,
               );
@@ -303,7 +325,6 @@ class MenuButtonSection extends StatelessWidget {
                   isSelected: selectedTitle == item['title'],
                   onMenuPress: () => onMenuPress!(item['title']!),
                 ),
-                // --- ⭐️ NO DIVIDER HERE ---
               ],
             ],
           ),

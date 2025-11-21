@@ -73,7 +73,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   },
                   trailing: CupertinoSwitch(
                     value: isDarkMode,
-                    activeColor: colorScheme.primary,
+                    activeTrackColor: colorScheme.primary,
                     onChanged: (bool value) {
                       themeNotifier.setThemeMode(
                         value ? ThemeMode.dark : ThemeMode.light,
@@ -94,7 +94,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   },
                   trailing: CupertinoSwitch(
                     value: _notificationsEnabled,
-                    activeColor: colorScheme.primary,
+                    activeTrackColor: colorScheme.primary,
                     onChanged: (bool value) {
                       setState(() {
                         _notificationsEnabled = value;

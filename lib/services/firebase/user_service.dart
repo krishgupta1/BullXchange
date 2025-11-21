@@ -15,6 +15,43 @@ class UserService {
     'orders',
   );
 
+  // --- Stream for Recent Transactions (NO INDEX REQUIRED VERSION) ---
+  // 1. Fetches data without specific database ordering (avoids "Missing Index" error).
+  // 2. Sorts the data inside the app.
+  Stream<List<TransactionModel>> streamRecentTransactions(String uid) {
+    return transactionsRef
+        .where('userId', isEqualTo: uid)
+        // .orderBy(...) <--- REMOVED to avoid Index requirement
+        .snapshots()
+        .map((snapshot) {
+          try {
+            // Convert documents to Models
+            List<TransactionModel> transactions = snapshot.docs
+                .map((doc) => TransactionModel.fromSnapshot(doc))
+                .toList();
+
+            // SORT IN FLUTTER (Client-Side Sorting)
+            // Sorts by transactionTime Descending (Newest first)
+            transactions.sort(
+              (a, b) => b.transactionTime.compareTo(a.transactionTime),
+            );
+
+            // LIMIT IN FLUTTER
+            // Take only the top 10 after sorting
+            if (transactions.length > 10) {
+              return transactions.sublist(0, 10);
+            }
+
+            return transactions;
+          } catch (e) {
+            if (kDebugMode) {
+              print('Error mapping transactions: $e');
+            }
+            return [];
+          }
+        });
+  }
+
   // --- Profile Management ---
   Future<void> addUserProfile({
     required String uid,
@@ -31,7 +68,7 @@ class UserService {
       availableFunds: 100000.0,
       stocks: const [],
       positions: const [],
-      watchlist: const [], // <-- Already included
+      watchlist: const [],
     );
     try {
       await usersRef.doc(uid).set(profile.toJson());
@@ -69,18 +106,13 @@ class UserService {
     });
   }
 
-  // --- ⭐️ NEW FUNCTION TO UPDATE PROFILE ⭐️ ---
+  // --- Update Profile ---
   Future<void> updateUserProfile({
     required String uid,
     required String name,
     required String emailId,
     required String mobileNo,
   }) async {
-    // Note: This updates the Firestore document.
-    // To update the Firebase Auth email, you would need
-    // to call FirebaseAuth.instance.currentUser?.updateEmail()
-    // which requires re-authentication.
-
     final profileData = {
       'name': name,
       'emailId': emailId,
@@ -95,7 +127,6 @@ class UserService {
       rethrow;
     }
   }
-  // --- (End of new function) ---
 
   // --- Atomic Trade Function (Used by Buy/Sell pages) ---
   Future<String> executeTrade({
@@ -226,31 +257,27 @@ class UserService {
   // --- FUNCTION TO CANCEL ALL PENDING ORDERS ---
   Future<void> cancelAllOrders(String uid) async {
     try {
-      // 1. Find all orders that are 'PENDING' for this user
       final querySnapshot = await ordersRef
           .where('userId', isEqualTo: uid)
           .where('orderStatus', isEqualTo: 'PENDING')
           .get();
 
       if (querySnapshot.docs.isEmpty) {
-        return; // No pending orders to cancel
+        return;
       }
 
-      // 2. Create a batch write to update all found orders
       WriteBatch batch = FirebaseFirestore.instance.batch();
 
       for (var doc in querySnapshot.docs) {
-        // 3. Update the status of each order in the batch
         batch.update(doc.reference, {'orderStatus': 'CANCELLED'});
       }
 
-      // 4. Commit the batch write
       await batch.commit();
     } catch (e) {
       if (kDebugMode) {
         print('Error cancelling all orders: $e');
       }
-      rethrow; // Re-throw the error to be caught by the UI
+      rethrow;
     }
   }
 
@@ -286,7 +313,7 @@ class UserService {
     }
   }
 
-  // --- (Your unused functions below) ---
+  // --- Helper Functions ---
 
   Future<void> addTransaction(TransactionModel transaction) async {
     try {

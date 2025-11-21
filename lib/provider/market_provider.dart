@@ -34,15 +34,56 @@ class StocksProvider extends ChangeNotifier {
   int currentIndex = 0;
   bool isLoadingMore = false;
 
+  // ---------------------------------------------------------------------------
+  // ✅ NEW HELPER: Checks if Market is Open
+  // ---------------------------------------------------------------------------
+  bool get _isMarketOpen {
+    final now = DateTime.now();
+    
+    // Check Weekend
+    if (now.weekday == DateTime.saturday || now.weekday == DateTime.sunday) {
+      return false;
+    }
+    
+    // Check Time (09:15 - 15:30)
+    final int totalMinutes = now.hour * 60 + now.minute;
+    final int openMinutes = 9 * 60 + 15;   // 09:15 AM
+    final int closeMinutes = 15 * 60 + 30; // 03:30 PM
+
+    return totalMinutes >= openMinutes && totalMinutes < closeMinutes;
+  }
+
+  // ---------------------------------------------------------------------------
+  // ✅ UPDATED INITIALIZE
+  // ---------------------------------------------------------------------------
   void _initialize() {
     _initializeDio();
     loadInstruments().then((_) {
       if (allStocks.isNotEmpty) {
+        // 1. Always fetch data once immediately
         _updateVisibleStocksData();
-        _refreshTimer = Timer.periodic(
-          const Duration(seconds: 5),
-          (_) => _updateVisibleStocksData(),
-        );
+        
+        // 2. Start timer only if Market is Open
+        if (_isMarketOpen) {
+          print("🟢 Market Open. Starting StocksProvider timer (5s).");
+          
+          _refreshTimer = Timer.periodic(
+            const Duration(seconds: 5),
+            (timer) {
+              // Check inside timer
+              if (!_isMarketOpen) {
+                print("🔴 Market Closed. Stopping StocksProvider timer.");
+                timer.cancel();
+                // One last update to ensure data is fresh
+                _updateVisibleStocksData();
+              } else {
+                _updateVisibleStocksData();
+              }
+            },
+          );
+        } else {
+           print("🔴 Market Closed. StocksProvider timer not started.");
+        }
       }
     });
   }
@@ -141,7 +182,7 @@ class StocksProvider extends ChangeNotifier {
     _resetLazyLoading();
   }
 
-  // ----------------------------- Live Data Fetching (The Fix) -----------------------------
+  // ----------------------------- Live Data Fetching -----------------------------
   Future<void> fetchAndUpdateData(List<String> tokens) async {
     if (tokens.isEmpty) return;
 
@@ -153,7 +194,6 @@ class StocksProvider extends ChangeNotifier {
     try {
       final response = await _dio.post("/market/v1/market_data", data: payload);
 
-      // Safe access to nested JSON structure
       final List<dynamic> fetchedData =
           response.data?['data']?['fetched'] ?? [];
 
@@ -167,8 +207,6 @@ class StocksProvider extends ChangeNotifier {
         if (instrumentIndex != -1) {
           final instrument = displayedStocks[instrumentIndex];
 
-          // ⭐️ FIX: Safely cast the incoming values to num/double
-          // to prevent 'String is not a subtype of int' and 'String is not a subtype of double' errors.
           instrument.liveData = {
             'ltp': (quote['ltp'] as num?)?.toDouble(),
             'change': (quote['netChange'] as num?)?.toDouble(),
@@ -183,13 +221,8 @@ class StocksProvider extends ChangeNotifier {
           "Failed to fetch live data: ${e.response?.statusCode ?? e.message}";
       print("Dio Error during fetch: ${e.message}");
     } catch (e, st) {
-      // Keep this block for final debugging, as it tells you the exact line number.
-      print("====================================");
-      print("CRITICAL UNKNOWN ERROR: $e");
-      print("STACK TRACE: $st");
-      print("====================================");
-
-      errorMessage = "Data update failed! (Check console for error details.)";
+      print("CRITICAL ERROR: $e \n$st");
+      errorMessage = "Data update failed!";
     } finally {
       notifyListeners();
     }

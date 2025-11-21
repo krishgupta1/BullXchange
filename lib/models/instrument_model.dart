@@ -1,20 +1,22 @@
-// lib/models/instrument_model.dart
-
 class Instrument {
   final String token;
   final String symbol;
   final String name;
   final String exchSeg;
+  final String instrumentType;
 
-  // --- 🔽 ADD THIS LINE 🔽 ---
-  final String instrumentType; // e.g., 'EQUITY', 'INDICES'
+  // ⭐️ NEW FIELDS FOR OPTIONS (Required for Option Chain)
+  final String expiry;
+  final String strike;
+  final String lotSize;
 
-  // --- (Your existing fields) ---
+  // Existing fields for Equity/Details
   final double outstandingShares;
   final int avgVolume;
 
+  // Mutable state for live data
   Map<String, dynamic> liveData = {};
-  List<double> chartData = []; // Add this field for actual chart data
+  List<double> chartData = [];
 
   Instrument({
     required this.token,
@@ -22,13 +24,16 @@ class Instrument {
     required this.name,
     required this.exchSeg,
     required this.instrumentType,
+    required this.expiry,
+    required this.strike,
+    required this.lotSize,
     required this.outstandingShares,
     required this.avgVolume,
-    this.chartData = const [], // Initialize with empty list
+    this.chartData = const [],
   });
 
   factory Instrument.fromJson(Map<String, dynamic> json) {
-    // Parse chart data from API response
+    // Parse chart data if present
     List<double> chartPoints = [];
     if (json['chartData'] != null) {
       chartPoints = (json['chartData'] as List)
@@ -37,14 +42,25 @@ class Instrument {
     }
 
     return Instrument(
-      token: json['token'] ?? '',
-      symbol: json['symbol'] ?? '',
-      name: json['name'] ?? '',
-      exchSeg: json['exch_seg'] ?? '',
-      instrumentType: json['instrumenttype'] ?? '',
+      token: json['token']?.toString() ?? '',
+      symbol: json['symbol']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      exchSeg: json['exch_seg']?.toString() ?? '',
+      instrumentType: json['instrumenttype']?.toString() ?? '',
+
+      // ⭐️ OPTION FIELDS (Handle nulls for Stocks that don't have these)
+      expiry: json['expiry']?.toString() ?? '',
+      strike: json['strike']?.toString() ?? '0',
+      lotSize: json['lotsize']?.toString() ?? '0',
+
+      // Equity Fields
       outstandingShares: (json['outstandingShares'] as num?)?.toDouble() ?? 0.0,
       avgVolume: (json['avgVolume'] as num?)?.toInt() ?? 0,
-      chartData: chartPoints, // Use actual chart data from API
+
+      chartData: chartPoints,
     );
   }
+
+  // Helper to check if it is an option
+  bool get isOption => instrumentType == 'OPTIDX' || instrumentType == 'OPTSTK';
 }

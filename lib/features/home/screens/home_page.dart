@@ -27,7 +27,7 @@ class _HomePageState extends State<HomePage> {
   final List<Widget> _widgetOptions = <Widget>[
     const StockPage(),
     const FutureOptionPage(),
-    const PaperTradingPortfolio(),
+    const PortfolioPage(),
     Builder(
       builder: (context) {
         return Center(

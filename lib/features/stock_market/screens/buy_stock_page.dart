@@ -187,17 +187,17 @@ class _BuyStockPageState extends State<BuyStockPage> {
 
     final newTransaction = TransactionModel(
       userId: uid,
-      symbol: symbol,
       companyName: widget.instrument.name,
       transactionType: 'BUY',
       quantity: _quantity,
       price: _price,
       charges: _totalCharges,
       totalAmount: _totalAmount,
-      executedAt: now,
       exchange: _selectedExchange,
       productType: _selectedProductType,
       orderType: 'Market',
+      stockSymbol: symbol,
+      transactionTime: now,
     );
 
     final holdingUpdate = StockHoldingModel(

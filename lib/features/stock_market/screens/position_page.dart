@@ -87,17 +87,17 @@ class _PositionPageState extends State<PositionPage> {
 
         final newTransaction = TransactionModel(
           userId: uid,
-          symbol: position.stockSymbol,
           companyName: position.stockName,
           transactionType: 'SELL',
           quantity: quantity,
           price: ltp,
           charges: charges['total'] ?? 0.0,
           totalAmount: totalAmount,
-          executedAt: DateTime.now(),
           exchange: position.exchange,
           productType: 'Intraday',
           orderType: '',
+          stockSymbol: '',
+          transactionTime: DateTime.now(),
         );
 
         final holdingUpdate = StockHoldingModel(

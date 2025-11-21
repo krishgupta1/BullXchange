@@ -34,8 +34,7 @@ class OrderDetailsPage extends StatelessWidget {
     final String orderTypeLabel = isMarketOrder ? 'Market' : 'Limit';
     final String priceLabel = isMarketOrder ? 'Avg. Price' : 'Order Price';
 
-    final String nseOrderId =
-        "00${transaction.executedAt.millisecondsSinceEpoch.toString().substring(5)}";
+    final String nseOrderId = "240${transactionId.hashCode.abs()}";
 
     return Scaffold(
       // --- ⭐️ MODIFIED: Theme background color ---
@@ -173,8 +172,7 @@ class OrderDetailsPage extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        'Order ID: $transactionId',
-                        // --- ⭐️ MODIFIED: Theme grey color ---
+                        'Order ID: $nseOrderId',
                         style: TextStyle(
                           color: textTheme.bodySmall?.color,
                           fontSize: 12,

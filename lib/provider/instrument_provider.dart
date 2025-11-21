@@ -36,7 +36,7 @@ class InstrumentProvider with ChangeNotifier {
       )
       .toList();
 
-  // --- SPOT INDEX GETTERS (Using your corrected symbols) ---
+  // --- SPOT INDEX GETTERS ---
 
   Instrument? get nifty50 => _allInstruments.firstWhere(
     (inst) => inst.symbol == 'Nifty 50',
@@ -46,22 +46,18 @@ class InstrumentProvider with ChangeNotifier {
     (inst) => inst.symbol == 'Nifty Bank',
     orElse: () => Instrument.fromJson({}),
   );
-  // Corrected symbol: 'Nifty Fin Service' (without 's')
   Instrument? get finNifty => _allInstruments.firstWhere(
     (inst) => inst.symbol == 'Nifty Fin Service',
     orElse: () => Instrument.fromJson({}),
   );
-  // Corrected symbol: 'NIFTY MID SELECT'
   Instrument? get midcapNifty => _allInstruments.firstWhere(
     (inst) => inst.symbol == 'NIFTY MID SELECT',
     orElse: () => Instrument.fromJson({}),
   );
-
   Instrument? get sensex => _allInstruments.firstWhere(
     (inst) => inst.symbol == 'SENSEX',
     orElse: () => Instrument.fromJson({}),
   );
-
   Instrument? get bankex => _allInstruments.firstWhere(
     (inst) => inst.symbol == 'BANKEX',
     orElse: () => Instrument.fromJson({}),
@@ -114,6 +110,25 @@ class InstrumentProvider with ChangeNotifier {
     _initialize();
   }
 
+  // ---------------------------------------------------------------------------
+  // ✅ NEW HELPER: Checks if Market is Open (Mon-Fri, 09:15 to 15:30)
+  // ---------------------------------------------------------------------------
+  bool get _isMarketOpen {
+    final now = DateTime.now();
+
+    // 1. Check Weekend
+    if (now.weekday == DateTime.saturday || now.weekday == DateTime.sunday) {
+      return false;
+    }
+
+    // 2. Check Time limits (09:15 to 15:30)
+    final int totalMinutes = now.hour * 60 + now.minute;
+    final int openMinutes = 9 * 60 + 15; // 09:15 AM
+    final int closeMinutes = 15 * 60 + 30; // 03:30 PM
+
+    return totalMinutes >= openMinutes && totalMinutes < closeMinutes;
+  }
+
   Future<void> _initialize() async {
     try {
       final jsonString = await rootBundle.loadString(
@@ -134,19 +149,39 @@ class InstrumentProvider with ChangeNotifier {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // ✅ UPDATED METHOD: Handles Timer Logic based on Market Status
+  // ---------------------------------------------------------------------------
   Future<void> _startPeriodicFetches() async {
+    // 1. Always fetch once immediately so user sees data regardless of time
     await _fetchEssentialData();
     _refreshTimer?.cancel();
-    // ⭐️ FIX 1: Reduce duration to 1 second for near real-time updates
-    _refreshTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      _fetchEssentialData();
-    });
+
+    // 2. Only start periodic timer if market is OPEN
+    if (_isMarketOpen) {
+      AppLog.i("🟢 Market is OPEN. Starting periodic fetch (1s).");
+
+      _refreshTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+        // Check status on every tick
+        if (!_isMarketOpen) {
+          AppLog.i("🔴 Market Just Closed. Stopping background sync.");
+          timer.cancel();
+          // Fetch one last time to ensure we show the final 'Closing Price'
+          await _fetchEssentialData();
+        } else {
+          await _fetchEssentialData();
+        }
+      });
+    } else {
+      AppLog.i(
+        "🔴 Market is CLOSED. Periodic fetch skipped. Showing static data.",
+      );
+    }
   }
 
   /// Fetches indices and stocks in separate, safe API calls.
   Future<void> _fetchEssentialData() async {
     // Call 1: For ALL 6 indices
-    // ⭐️ FIX 2: Included all 6 indices for periodic updates
     await _updateInstruments([
       nifty50,
       bankNifty,
@@ -161,7 +196,6 @@ class InstrumentProvider with ChangeNotifier {
     await _updateInstruments(top50Stocks);
 
     // Call 3: Fetch chart data for those same stocks
-    // We keep this call as requested, assuming the underlying API service is correct
     await fetchChartDataFor(top50Stocks);
   }
 
@@ -203,39 +237,12 @@ class InstrumentProvider with ChangeNotifier {
       tokensByExchange,
     );
 
+    // Logging (Optional - kept as per your original code)
     try {
-      AppLog.d(
-        '🔎 _updateInstruments: requested tokensByExchange = $tokensByExchange',
-      );
+      // AppLog.d('🔎 _updateInstruments: requested tokensByExchange = $tokensByExchange');
     } catch (_) {}
 
     if (liveDataList.isNotEmpty) {
-      try {
-        if (liveDataList.isNotEmpty) {
-          final sample = liveDataList.take(3).toList();
-          for (var i = 0; i < sample.length; i++) {
-            final item = sample[i];
-            if (item is Map<String, dynamic>) {
-              AppLog.d('  sample[$i] keys = ${item.keys.toList()}');
-              for (var k in [
-                'symbolToken',
-                'symboltoken',
-                'symbol_token',
-                'token',
-              ]) {
-                if (item.containsKey(k)) {
-                  AppLog.d('    $k = ${item[k]}');
-                }
-              }
-            } else {
-              AppLog.d('  sample[$i] is ${item.runtimeType}');
-            }
-          }
-        }
-      } catch (e) {
-        AppLog.w('Error while logging liveDataList sample: $e');
-      }
-
       final Map<String, Map<String, dynamic>> liveDataMap = {};
       for (var stock in liveDataList) {
         if (stock is Map<String, dynamic>) {
@@ -266,7 +273,6 @@ class InstrumentProvider with ChangeNotifier {
     }
   }
 
-  /// Lookup helper to find an instrument by its exchange token.
   Instrument? getInstrumentByToken(String token) {
     try {
       return _allInstruments.firstWhere((i) => i.token == token);
@@ -275,7 +281,6 @@ class InstrumentProvider with ChangeNotifier {
     }
   }
 
-  /// Helper to find an instrument by its stock symbol (e.g., "RELIANCE-EQ")
   Instrument? getInstrumentBySymbol(String symbol) {
     final String eqSymbol = '$symbol-EQ';
 
@@ -290,10 +295,9 @@ class InstrumentProvider with ChangeNotifier {
   }
 
   // -----------------------------------------------------------------
-  // ✨ CHART DATA FETCH FUNCTION (Kept as requested) ✨
+  // ✨ CHART DATA FETCH FUNCTION
   // -----------------------------------------------------------------
   Future<void> fetchChartDataFor(List<Instrument> instruments) async {
-    // Avoid refetching if chart data is already present
     final instrumentsToFetch = instruments
         .where((i) => i.chartData.isEmpty)
         .toList();
@@ -312,8 +316,6 @@ class InstrumentProvider with ChangeNotifier {
 
     for (var instrument in instrumentsToFetch) {
       try {
-        // NOTE: This requires the implementation of 'fetchCandleData'
-        // in your AngelOneApiService to work correctly.
         final List<dynamic>? candleList = await _apiService.fetchCandleData(
           exchange: instrument.exchSeg,
           symbolToken: instrument.token,
@@ -323,7 +325,6 @@ class InstrumentProvider with ChangeNotifier {
         );
 
         if (candleList != null && candleList.isNotEmpty) {
-          // AngelOne API returns: [timestamp, open, high, low, close, volume]
           final List<double> chartPoints = candleList.map((candle) {
             if (candle is List && candle.length > 4) {
               return num.tryParse(candle[4].toString())?.toDouble() ?? 0.0;
@@ -343,9 +344,6 @@ class InstrumentProvider with ChangeNotifier {
       notifyListeners();
     }
   }
-  // -----------------------------------------------------------------
-  // ✨ END OF CHART DATA FETCH FUNCTION ✨
-  // -----------------------------------------------------------------
 
   Map<String, dynamic> _sanitizeLiveData(Map<String, dynamic> rawData) {
     final sanitizedData = Map<String, dynamic>.from(rawData);
