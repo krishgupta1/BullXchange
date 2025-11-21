@@ -1,3 +1,4 @@
+import 'package:bullxchange/features/account/screens/contact_us_page.dart';
 import 'package:bullxchange/features/account/screens/privacy_policy_page.dart';
 import 'package:bullxchange/features/account/screens/terms_and_conditions_page.dart';
 import 'package:bullxchange/features/auth/screens/reset_password_page.dart';
@@ -110,6 +111,12 @@ class _SettingsPageState extends State<SettingsPage> {
                   iconBgColor: iconBgColor,
                   onTap: () {
                     // Handle contact us logic here
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ContactUsPage(),
+                      ),
+                    );
                   },
                 ),
               ],

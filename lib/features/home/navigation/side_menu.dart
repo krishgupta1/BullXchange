@@ -72,22 +72,48 @@ class _SideMenuState extends State<SideMenu> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: colorScheme.surface,
-        title: Text('Logout', style: TextStyle(color: colorScheme.onSurface)),
-        content: Text(
-          'Are you sure you want to log out?',
-          style: TextStyle(color: colorScheme.onSurface),
+        backgroundColor: theme.cardColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: colorScheme.error.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.logout_rounded,
+                color: colorScheme.error,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text('Logout', style: theme.textTheme.titleLarge),
+          ],
         ),
+        content: Text(
+          'Are you sure you want to log out from your account?',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.textTheme.bodySmall?.color,
+          ),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
         actions: [
           TextButton(
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: colorScheme.onSurface),
-            ),
+            child: Text('Cancel', style: TextStyle(color: theme.disabledColor)),
             onPressed: () => Navigator.of(ctx).pop(),
           ),
-          TextButton(
-            child: Text('Logout', style: TextStyle(color: colorScheme.error)),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorScheme.error,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 0,
+            ),
+            child: const Text('Logout'),
             onPressed: () async {
               // 1. Capture the Navigator BEFORE async operations to prevent "null" errors
               // We use rootNavigator: true to ensure we control the entire app stack
@@ -100,7 +126,6 @@ class _SideMenuState extends State<SideMenu> {
               await FirebaseAuth.instance.signOut();
 
               // 4. Navigate to Onboarding using the captured navigator
-              // We don't need to check 'mounted' here because we captured the navigator instance.
               navigator.pushAndRemoveUntil(
                 MaterialPageRoute(builder: (_) => const OnboardingPage()),
                 (route) => false,
@@ -122,31 +147,48 @@ class _SideMenuState extends State<SideMenu> {
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
       constraints: const BoxConstraints(maxWidth: 288),
       decoration: BoxDecoration(
-        color: colorScheme.surface,
+        color: theme.scaffoldBackgroundColor,
         borderRadius: const BorderRadius.only(
-          topRight: Radius.circular(30),
-          bottomRight: Radius.circular(30),
+          topRight: Radius.circular(32),
+          bottomRight: Radius.circular(32),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 24,
+            offset: const Offset(4, 0),
+          ),
+        ],
       ),
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- Header ---
+            // --- Modern Header ---
             Padding(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.fromLTRB(24, 40, 24, 32),
               child: Row(
                 children: [
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundColor: colorScheme.primary.withOpacity(0.1),
-                    child: Icon(
-                      Icons.person,
-                      size: 28,
-                      color: colorScheme.primary,
+                  Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: colorScheme.primary.withOpacity(0.2),
+                        width: 2,
+                      ),
+                    ),
+                    child: CircleAvatar(
+                      radius: 26,
+                      backgroundColor: colorScheme.primary.withOpacity(0.1),
+                      child: Icon(
+                        Icons.person_rounded,
+                        size: 30,
+                        color: colorScheme.primary,
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -154,22 +196,19 @@ class _SideMenuState extends State<SideMenu> {
                       children: [
                         Text(
                           userProfile?.name ?? "Guest User",
-                          style: TextStyle(
-                            color: colorScheme.onSurface,
-                            fontSize: 16,
-                            fontFamily: "Inter",
+                          style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
+                            fontSize: 16,
                           ),
                           overflow: TextOverflow.ellipsis,
                           maxLines: 1,
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 4),
                         Text(
-                          userProfile?.emailId ?? "",
-                          style: TextStyle(
-                            color: theme.textTheme.bodySmall?.color,
-                            fontSize: 13,
-                            fontFamily: "Inter",
+                          userProfile?.emailId ?? "Welcome back",
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.disabledColor,
+                            fontSize: 12,
                           ),
                           overflow: TextOverflow.ellipsis,
                           maxLines: 1,
@@ -181,9 +220,17 @@ class _SideMenuState extends State<SideMenu> {
               ),
             ),
 
+            // --- Divider ---
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Divider(color: theme.dividerColor.withOpacity(0.1)),
+            ),
+            const SizedBox(height: 16),
+
             // --- Menu Sections ---
             Expanded(
               child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
                 child: Column(
                   children: [
                     MenuButtonSection(
@@ -191,7 +238,10 @@ class _SideMenuState extends State<SideMenu> {
                       selectedTitle: _selectedMenuTitle,
                       onMenuPress: (title) => onMenuPress(context, title),
                       menuItems: const [
-                        {'title': 'Home', 'icon': Icons.home_rounded},
+                        {
+                          'title': 'Home',
+                          'icon': Icons.space_dashboard_rounded,
+                        },
                         {
                           'title': 'Refer a Friend',
                           'icon': Icons.card_giftcard_rounded,
@@ -199,17 +249,90 @@ class _SideMenuState extends State<SideMenu> {
                       ],
                     ),
                     MenuButtonSection(
-                      title: "HELP",
+                      title: "HELP & SETTINGS",
                       selectedTitle: _selectedMenuTitle,
                       onMenuPress: (title) => onMenuPress(context, title),
                       menuItems: const [
                         {'title': 'Settings', 'icon': Icons.settings_rounded},
                         {
                           'title': 'Help & FAQ',
-                          'icon': Icons.help_outline_rounded,
+                          'icon': Icons.help_center_rounded,
                         },
                       ],
                     ),
+
+                    // --- Enhanced Theme Switcher ---
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 8,
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.cardColor,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: theme.dividerColor.withOpacity(0.05),
+                          ),
+                        ),
+                        child: Consumer<ThemeNotifier>(
+                          builder: (context, themeNotifier, child) {
+                            final bool isDarkMode =
+                                themeNotifier.themeMode == ThemeMode.dark;
+                            return Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: isDarkMode
+                                        ? Colors.amber.withOpacity(0.15)
+                                        : Colors.orange.withOpacity(0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    isDarkMode
+                                        ? Icons.dark_mode_rounded
+                                        : Icons.light_mode_rounded,
+                                    color: isDarkMode
+                                        ? Colors.amber
+                                        : Colors.orange,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Text(
+                                    isDarkMode ? "Dark Mode" : "Light Mode",
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                Transform.scale(
+                                  scale: 0.8,
+                                  child: CupertinoSwitch(
+                                    value: isDarkMode,
+                                    activeTrackColor: colorScheme.primary,
+                                    onChanged: (value) {
+                                      themeNotifier.setThemeMode(
+                                        value
+                                            ? ThemeMode.dark
+                                            : ThemeMode.light,
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+
                     MenuButtonSection(
                       title: "ACCOUNT",
                       selectedTitle: _selectedMenuTitle,
@@ -221,48 +344,6 @@ class _SideMenuState extends State<SideMenu> {
                   ],
                 ),
               ),
-            ),
-
-            // --- Theme Toggle ---
-            Consumer<ThemeNotifier>(
-              builder: (context, themeNotifier, child) {
-                final bool isDarkMode =
-                    themeNotifier.themeMode == ThemeMode.dark;
-
-                return Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.brightness_6_outlined,
-                        color: colorScheme.onSurface.withOpacity(0.7),
-                        size: 24,
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Text(
-                          "Theme",
-                          style: TextStyle(
-                            color: colorScheme.onSurface,
-                            fontSize: 15,
-                            fontFamily: "Inter",
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      CupertinoSwitch(
-                        value: isDarkMode,
-                        activeTrackColor: colorScheme.primary,
-                        onChanged: (value) {
-                          themeNotifier.setThemeMode(
-                            value ? ThemeMode.dark : ThemeMode.light,
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                );
-              },
             ),
           ],
         ),
@@ -288,34 +369,28 @@ class MenuButtonSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final textTheme = theme.textTheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.only(
-            left: 24,
+            left: 32,
             right: 24,
             top: 24,
-            bottom: 8,
+            bottom: 12,
           ),
           child: Text(
             title,
-            style: TextStyle(
-              color: textTheme.bodySmall?.color,
-              fontSize: 12,
-              fontFamily: "Inter",
-              fontWeight: FontWeight.w600,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.disabledColor,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
             ),
           ),
         ),
         Container(
-          margin: const EdgeInsets.symmetric(horizontal: 8),
-          decoration: BoxDecoration(
-            color: theme.scaffoldBackgroundColor,
-            borderRadius: BorderRadius.circular(20),
-          ),
+          margin: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(
             children: [
               for (var item in menuItems) ...[
@@ -325,6 +400,7 @@ class MenuButtonSection extends StatelessWidget {
                   isSelected: selectedTitle == item['title'],
                   onMenuPress: () => onMenuPress!(item['title']!),
                 ),
+                const SizedBox(height: 4),
               ],
             ],
           ),
@@ -351,51 +427,65 @@ class MenuRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
 
     return Stack(
       children: [
+        // Background Animation
         AnimatedPositioned(
-          duration: const Duration(milliseconds: 200),
+          duration: const Duration(milliseconds: 300),
           curve: Curves.fastOutSlowIn,
-          height: 48,
-          width: isSelected ? 272 : 0,
+          height: 56,
+          // Dynamically sized to fit parent margins (288 width - 32 margin = 256 approx)
+          width: isSelected ? 256 : 0,
           left: 0,
           child: Container(
             decoration: BoxDecoration(
               color: colorScheme.primary,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: colorScheme.primary.withOpacity(0.3),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
           ),
         ),
-        InkWell(
-          onTap: onMenuPress,
-          borderRadius: BorderRadius.circular(10),
-          child: Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: Icon(
+        // Content
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onMenuPress,
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              child: Row(
+                children: [
+                  Icon(
                     icon,
-                    size: 22,
+                    size: 24,
                     color: isSelected
                         ? Colors.white
-                        : colorScheme.onSurface.withOpacity(0.7),
+                        : theme.iconTheme.color?.withOpacity(0.7),
                   ),
-                ),
-                const SizedBox(width: 14),
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: isSelected ? Colors.white : colorScheme.onSurface,
-                    fontSize: 15,
-                    fontFamily: "Inter",
-                    fontWeight: FontWeight.w600,
+                  const SizedBox(width: 16),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: isSelected
+                          ? Colors.white
+                          : theme.textTheme.bodyMedium?.color,
+                      fontSize: 16,
+                      fontFamily: "Inter",
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w500,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

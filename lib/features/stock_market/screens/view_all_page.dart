@@ -4,6 +4,7 @@ import 'package:bullxchange/features/stock_market/widgets/stock_card.dart';
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -29,7 +30,6 @@ class _ViewAllPageState extends State<ViewAllPage> {
     super.initState();
     final provider = Provider.of<InstrumentProvider>(context, listen: false);
 
-    // --- (Stock filtering logic unchanged) ---
     allStocks = provider.allNSEStocks.where((stock) {
       final baseSymbol = stock.symbol.replaceAll('-EQ', '');
       final lowerCaseName = stock.name.toLowerCase();
@@ -106,89 +106,109 @@ class _ViewAllPageState extends State<ViewAllPage> {
 
   @override
   Widget build(BuildContext context) {
-    // --- ⭐️ Theme se colors lo ---
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      // --- ⭐️ MODIFIED: Background color theme se ---
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        // --- ⭐️ MODIFIED: Standard BackButton use kiya (theme-aware) ---
-        leading: BackButton(
-          onPressed: () => Navigator.pop(context),
-          // Color theme_provider.dart se aa jayega (kBrandPink)
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Container(
+            decoration: BoxDecoration(
+              color: theme.cardColor,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: theme.shadowColor.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: IconButton(
+              icon: Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: colorScheme.onSurface,
+                size: 18,
+              ),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
         ),
         title: Text(
-          "Select Stocks",
-          // --- ⭐️ MODIFIED: Style ab AppTheme se aa raha hai ---
-          style: theme.appBarTheme.titleTextStyle,
+          "Market Watch",
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
-        // --- ⭐️ MODIFIED: Background aur elevation AppTheme se aa raha hai ---
-        backgroundColor: theme.appBarTheme.backgroundColor,
-        elevation: theme.appBarTheme.elevation,
       ),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16.0,
-              vertical: 8.0,
-            ),
-            // --- ⭐️ MODIFIED: context pass kiya ---
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
             child: _buildSearchBar(context),
           ),
-          const SizedBox(height: 10),
           Expanded(
-            child: ClipRect(
-              child: Consumer<InstrumentProvider>(
-                builder: (context, provider, child) {
-                  if (allStocks.isEmpty) {
-                    // --- ⭐️ MODIFIED: context pass kiya ---
-                    return _buildShimmerLoadingList(context);
-                  }
+            child: Consumer<InstrumentProvider>(
+              builder: (context, provider, child) {
+                if (allStocks.isEmpty) {
+                  return _buildShimmerLoadingList(context);
+                }
 
-                  if (filteredStocks.isEmpty) {
-                    return Center(
-                      child: Text(
-                        "No stocks found.",
-                        // --- ⭐️ MODIFIED: Theme text color ---
-                        style: TextStyle(color: colorScheme.onSurface),
-                      ),
-                    );
-                  }
+                if (filteredStocks.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.search_off_rounded,
+                          size: 48,
+                          color: theme.disabledColor,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          "No stocks found",
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: theme.disabledColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
 
-                  return Scrollbar(
-                    controller: _scrollController,
-                    child: ListView.builder(
-                      physics: const BouncingScrollPhysics(),
-                      clipBehavior: Clip.none,
-                      controller: _scrollController,
-                      itemCount:
-                          displayedStocks.length + (isLoadingMore ? 1 : 0),
-                      itemBuilder: (context, index) {
-                        if (index >= displayedStocks.length) {
-                          // --- ⭐️ MODIFIED: context pass kiya ---
-                          return _buildLoadMoreShimmer(context);
-                        }
-                        final instrument = displayedStocks[index];
-                        return StockCard(
-                          // Yeh already theme-aware hai
-                          instrument: instrument,
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  StockDetailPage(instrument: instrument),
-                            ),
+                return ListView.separated(
+                  physics: const BouncingScrollPhysics(),
+                  controller: _scrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: displayedStocks.length + (isLoadingMore ? 1 : 0),
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    if (index >= displayedStocks.length) {
+                      return _buildLoadMoreShimmer(context);
+                    }
+                    final instrument = displayedStocks[index];
+                    return StockCard(
+                      instrument: instrument,
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                StockDetailPage(instrument: instrument),
                           ),
                         );
                       },
-                    ),
-                  );
-                },
-              ),
+                    );
+                  },
+                );
+              },
             ),
           ),
         ],
@@ -197,84 +217,76 @@ class _ViewAllPageState extends State<ViewAllPage> {
   }
 
   Widget _buildSearchBar(BuildContext context) {
-    // --- ⭐️ Theme se colors lo ---
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
 
-    return TextField(
-      controller: searchController,
-      onChanged: _searchStocks,
-      // --- ⭐️ MODIFIED: Theme text color ---
-      style: TextStyle(color: colorScheme.onSurface),
-      decoration: InputDecoration(
-        hintText: "Search company, stocks...",
-        // --- ⭐️ MODIFIED: Theme hint color ---
-        hintStyle: TextStyle(color: textTheme.bodySmall?.color, fontSize: 14),
-        prefixIcon: Padding(
-          padding: const EdgeInsets.only(left: 16.0, right: 12.0),
-          // --- ⭐️ MODIFIED: Theme accent color ---
-          child: Icon(Icons.circle, color: colorScheme.secondary, size: 16),
-        ),
-        filled: true,
-        // --- ⭐️ MODIFIED: Theme surface color (Not white) ---
-        fillColor: colorScheme.surface,
-        contentPadding: const EdgeInsets.symmetric(vertical: 15),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(30),
-          // --- ⭐️ MODIFIED: Theme border color ---
-          borderSide: BorderSide(
-            color: colorScheme.primary.withOpacity(0.3),
-            width: 2,
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: theme.shadowColor.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
+        ],
+        border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
+      ),
+      child: TextField(
+        controller: searchController,
+        onChanged: _searchStocks,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          fontWeight: FontWeight.w500,
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(30),
-          // --- ⭐️ MODIFIED: Theme border color ---
-          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+        decoration: InputDecoration(
+          hintText: "Search stocks...",
+          hintStyle: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.disabledColor,
+          ),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            color: colorScheme.primary,
+            size: 22,
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 16,
+          ),
+          isDense: true,
         ),
       ),
     );
   }
 }
 
-// ----------------------------------------------------
-// SHIMMER HELPER WIDGETS (Theme-Aware)
-// ----------------------------------------------------
-
 Widget _buildShimmerLoadingList(BuildContext context) {
-  // --- ⭐️ Theme se colors lo ---
   final theme = Theme.of(context);
+  final isDark = theme.brightness == Brightness.dark;
 
   return Shimmer.fromColors(
-    // --- ⭐️ MODIFIED: Theme-aware shimmer ---
-    baseColor: theme.brightness == Brightness.light
-        ? Colors.grey[300]!
-        : Colors.grey[800]!,
-    highlightColor: theme.brightness == Brightness.light
-        ? Colors.grey[100]!
-        : Colors.grey[700]!,
-    child: ListView.builder(
+    baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+    highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+    child: ListView.separated(
+      padding: const EdgeInsets.all(16),
       itemCount: 10,
-      itemBuilder: (context, index) {
-        return const StockShimmerItem(); // Yeh bhi theme-aware hona chahiye
-      },
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemBuilder: (context, index) => const StockShimmerItem(),
     ),
   );
 }
 
 Widget _buildLoadMoreShimmer(BuildContext context) {
-  // --- ⭐️ Theme se colors lo ---
   final theme = Theme.of(context);
+  final isDark = theme.brightness == Brightness.dark;
 
   return Shimmer.fromColors(
-    // --- ⭐️ MODIFIED: Theme-aware shimmer ---
-    baseColor: theme.brightness == Brightness.light
-        ? Colors.grey[300]!
-        : Colors.grey[800]!,
-    highlightColor: theme.brightness == Brightness.light
-        ? Colors.grey[100]!
-        : Colors.grey[700]!,
-    child: const Column(children: [StockShimmerItem(), StockShimmerItem()]),
+    baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+    highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+    child: const Padding(
+      padding: EdgeInsets.symmetric(vertical: 8.0),
+      child: StockShimmerItem(),
+    ),
   );
 }
