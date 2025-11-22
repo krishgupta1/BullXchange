@@ -6,9 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:bullxchange/models/user_profile_data_model.dart';
-import 'package:bullxchange/models/stock_holding_model.dart';
 import 'package:bullxchange/models/transaction_model.dart';
-import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:bullxchange/features/stock_market/screens/order_details_page.dart';
 
@@ -150,14 +148,6 @@ class _PortfolioPageState extends State<PortfolioPage> {
                 scrolledUnderElevation: 0,
                 elevation: 0,
                 centerTitle: true, // Center alignment like Settings
-                leading: IconButton(
-                  icon: Icon(
-                    Icons.arrow_back_ios_new,
-                    color: textColor,
-                    size: 20,
-                  ),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
                 title: Text(
                   "Portfolio",
                   style: TextStyle(
