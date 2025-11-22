@@ -21,9 +21,14 @@ class FutureOptionExplorePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Determine if we are in Dark Mode
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor:
+          Colors.transparent, // Transparent to use parent background
       body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -46,20 +51,20 @@ class FutureOptionExplorePage extends StatelessWidget {
 
                 if (instProvider.isLoading && validIndices.isEmpty) {
                   return const Padding(
-                    padding: EdgeInsets.all(16.0),
+                    padding: EdgeInsets.all(32.0),
                     child: Center(child: CircularProgressIndicator()),
                   );
                 }
 
                 return GridView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  // ✨ FIX: Removed horizontal padding to align with parent
+                  padding: const EdgeInsets.only(bottom: 100),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    // REVERTED: Back to 1.0 (Square) as per your preference.
-                    // This gives plenty of "free space inside" for the data.
                     childAspectRatio: 1.0,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
+                    crossAxisSpacing:
+                        16, // ✨ FIX: Increased to 16 to match top gap
+                    mainAxisSpacing: 16, // ✨ FIX: Increased for consistency
                   ),
                   itemCount: validIndices.length,
                   shrinkWrap: true,
@@ -70,6 +75,7 @@ class FutureOptionExplorePage extends StatelessWidget {
 
                     return _IndexGridCard(
                       instrument: instrument,
+                      isDarkMode: isDarkMode,
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -82,7 +88,6 @@ class FutureOptionExplorePage extends StatelessWidget {
                 );
               },
             ),
-            const SizedBox(height: 100),
           ],
         ),
       ),
@@ -91,13 +96,13 @@ class FutureOptionExplorePage extends StatelessWidget {
 
   Widget _buildSectionHeader(BuildContext context, String title) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16.0, 20.0, 16.0, 16.0),
+      // Adjusted padding to align text with the cards
+      padding: const EdgeInsets.only(top: 10.0, bottom: 16.0),
       child: Text(
         title,
-        style: const TextStyle(
-          fontSize: 22,
+        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
           fontWeight: FontWeight.bold,
-          color: Colors.white,
+          fontSize: 20,
         ),
       ),
     );
@@ -105,19 +110,22 @@ class FutureOptionExplorePage extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// 🎨 RESTORED SQUARE CARD: Uses vertical space effectively
+// 🎨 ALIGNED CARD WIDGET
 // ---------------------------------------------------------------------------
 class _IndexGridCard extends StatelessWidget {
   final Instrument instrument;
   final VoidCallback onTap;
+  final bool isDarkMode;
 
-  const _IndexGridCard({required this.instrument, required this.onTap});
+  const _IndexGridCard({
+    required this.instrument,
+    required this.onTap,
+    required this.isDarkMode,
+  });
 
   @override
   Widget build(BuildContext context) {
     final live = instrument.liveData;
-
-    // Logic to fix +0.00 issue
     final double ltp = double.tryParse(live['ltp']?.toString() ?? "0") ?? 0.0;
     final double prevClose =
         double.tryParse(
@@ -135,88 +143,119 @@ class _IndexGridCard extends StatelessWidget {
     }
 
     final isPositive = change >= 0;
-    final color = isPositive
-        ? const Color(0xFF4CAF50)
-        : const Color(0xFFE53935);
+
+    // UI Colors
+    final displayColor = isPositive
+        ? const Color(0xFF2E7D32) // Green
+        : const Color(0xFFC62828); // Red
+
     final sign = isPositive ? '+' : '';
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1C1C1E),
+    // ✨ FIX: Color Matching
+    // Matches the top cards (0xFF1C1C1E is standard dark surface)
+    final cardColor = isDarkMode ? const Color(0xFF1C1C1E) : Colors.white;
+
+    final borderColor = isDarkMode
+        ? Colors.white.withOpacity(0.08)
+        : Colors.grey.withOpacity(0.15);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borderColor),
+        boxShadow: isDarkMode
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.06),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withOpacity(0.08)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1. Top Section: Logo & Name
-            Row(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SmartLogo(instrument: instrument, radius: 20),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _formatName(instrument.name),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                // 1. Header
+                Row(
+                  children: [
+                    SmartLogo(instrument: instrument, radius: 20),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            instrument.name.toUpperCase(),
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            instrument.symbol.split('-').first,
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: isDarkMode
+                                  ? Colors.grey[500]
+                                  : Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
-                      Text(
-                        instrument.symbol.split('-').first,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey.shade500,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                    ),
+                  ],
+                ),
+
+                const Spacer(),
+
+                // 2. Price Section
+                Text(
+                  ltp.toStringAsFixed(2),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+                const SizedBox(height: 6),
+
+                // 3. Change Badge
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: displayColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    '$sign${change.toStringAsFixed(2)} ($sign${changePercent.toStringAsFixed(2)}%)',
+                    style: TextStyle(
+                      color: displayColor,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ],
             ),
-
-            // 2. Spacer pushes price to bottom, utilizing the "free space inside"
-            const Spacer(),
-
-            // 3. Bottom Section: Price & Change
-            Text(
-              ltp.toStringAsFixed(2),
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              '$sign${change.toStringAsFixed(2)} ($sign${changePercent.toStringAsFixed(2)}%)',
-              style: TextStyle(
-                color: color,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
-  }
-
-  String _formatName(String name) {
-    return name.toUpperCase();
   }
 }

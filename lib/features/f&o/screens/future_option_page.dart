@@ -34,41 +34,37 @@ class _FutureOptionPageState extends State<FutureOptionPage>
     _loadUserData();
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
   Future<void> _loadUserData() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
+
       if (user != null) {
+        if (!mounted) return;
         setState(() => _uid = user.uid);
       }
 
+      // 1. Check Display Name from Auth
       if (user != null &&
           user.displayName != null &&
           user.displayName!.trim().isNotEmpty) {
+        if (!mounted) return;
         setState(() => _userName = user.displayName);
         return;
       }
 
+      // 2. Fallback to Firestore Profile
       if (_uid != null) {
         final profile = await UserService().readUserProfile(_uid!);
+        if (!mounted) return; // Safety check after async
+
         if (profile != null && profile.name.trim().isNotEmpty) {
-          if (!mounted) return;
           setState(() => _userName = profile.name);
-          return;
         }
       }
     } catch (_) {
-      // Ignore errors
+      // Fail silently
     }
   }
-
-  // ----------------------------------------------------
-  // BUILD METHOD
-  // ----------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
@@ -76,6 +72,8 @@ class _FutureOptionPageState extends State<FutureOptionPage>
 
     return Consumer<InstrumentProvider>(
       builder: (context, provider, child) {
+        // Scaffold automatically uses Theme.of(context).scaffoldBackgroundColor
+        // This ensures seamless Light/Dark mode switching.
         return Scaffold(
           body: SafeArea(
             child: Padding(
@@ -84,24 +82,16 @@ class _FutureOptionPageState extends State<FutureOptionPage>
                 children: [
                   const SizedBox(height: 16),
 
-                  // ✨ 2. USE THE NEW MainPageHeader WIDGET
+                  // ✨ Header with Actions Removed
                   MainPageHeader(
                     userName: _userName,
                     defaultUserName: 'Kitsbase',
-                    welcomeMessage:
-                        'Welcome to BullXchange', // Corrected message
-                    actions: [
-                      IconButton(
-                        onPressed: () {
-                          // TODO: Implement options menu
-                        },
-                        icon: const Icon(Icons.more_horiz),
-                      ),
-                    ],
+                    welcomeMessage: 'Welcome to BullXchange',
+                    actions: const [], // Empty list removes the menu button
                   ),
                   const SizedBox(height: 30),
 
-                  // ✨ 3. USE THE NEW IndexCard WIDGET
+                  // ✨ Index Cards
                   Row(
                     children: [
                       Expanded(
@@ -121,7 +111,7 @@ class _FutureOptionPageState extends State<FutureOptionPage>
                   ),
                   const SizedBox(height: 20),
 
-                  // ✨ 4. USE THE NEW ActionTabBar WIDGET
+                  // ✨ Action Tabs
                   ActionTabBar(
                     labels: const [
                       "Explore",
@@ -138,6 +128,7 @@ class _FutureOptionPageState extends State<FutureOptionPage>
                   ),
                   const SizedBox(height: 20),
 
+                  // ✨ Content Area
                   Expanded(
                     child: IndexedStack(
                       index: _selectedActionIndex,
