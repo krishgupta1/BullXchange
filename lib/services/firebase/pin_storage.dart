@@ -1,52 +1,89 @@
 import 'dart:convert';
 import 'dart:math';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:crypto/crypto.dart';
 
-/// Provides secure, device-only storage for a user's 4-digit app PIN.
-///
-/// We never store the raw PIN. Instead we store a salted hash so that
-/// even if secure storage is compromised, the original PIN cannot be
-/// derived easily.
 class PinStorageService {
-  static const _pinKey = 'app_pin_hash_v1';
-  static const _saltKey = 'app_pin_salt_v1';
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Use default options for broadest platform compatibility.
-  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
-
-  /// Returns true if a PIN has been set on this device.
+  /// Returns true if the current user has a PIN set in Firestore.
   Future<bool> hasPin() async {
-    final hash = await _secureStorage.read(key: _pinKey);
-    return hash != null && hash.isNotEmpty;
+    final user = _auth.currentUser;
+    if (user == null) return false;
+
+    try {
+      final doc = await _firestore.collection('users').doc(user.uid).get();
+      if (!doc.exists || doc.data() == null) return false;
+
+      final data = doc.data()!;
+      // Check if the hash key exists and is not empty
+      return data.containsKey('pinHash') &&
+          data['pinHash'].toString().isNotEmpty;
+    } catch (e) {
+      return false;
+    }
   }
 
-  /// Sets the PIN after hashing with a random salt.
+  /// Sets the PIN (Hashed) to the current user's Firestore document.
   Future<void> setPin(String pin) async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception("User must be logged in to set a PIN");
+
     _assertValidPin(pin);
+
     final salt = _generateSalt();
     final hash = _hash(pin, salt);
-    await _secureStorage.write(key: _saltKey, value: salt);
-    await _secureStorage.write(key: _pinKey, value: hash);
+
+    // Update the existing user document with the PIN data
+    await _firestore.collection('users').doc(user.uid).update({
+      'pinHash': hash,
+      'pinSalt': salt,
+      'pinUpdatedAt': FieldValue.serverTimestamp(),
+    });
   }
 
-  /// Verifies an input against the stored hash.
+  /// Verifies an input PIN against the Hash stored in Firestore.
   Future<bool> verifyPin(String pin) async {
+    final user = _auth.currentUser;
+    if (user == null) return false;
+
     _assertValidPin(pin);
-    final salt = await _secureStorage.read(key: _saltKey);
-    final storedHash = await _secureStorage.read(key: _pinKey);
-    if (salt == null || storedHash == null) return false;
-    final inputHash = _hash(pin, salt);
-    return fixedTimeComparison(storedHash, inputHash);
+
+    try {
+      final doc = await _firestore.collection('users').doc(user.uid).get();
+      if (!doc.exists || doc.data() == null) return false;
+
+      final data = doc.data()!;
+
+      final storedHash = data['pinHash'] as String?;
+      final salt = data['pinSalt'] as String?;
+
+      if (storedHash == null || salt == null) return false;
+
+      final inputHash = _hash(pin, salt);
+
+      // Compare the newly generated hash with the one from Firestore
+      return fixedTimeComparison(storedHash, inputHash);
+    } catch (e) {
+      // If network fails or permission denied, fail safe to false
+      return false;
+    }
   }
 
-  /// Clears the stored PIN (e.g., on logout).
+  /// Clears the stored PIN from Firestore (Optional utility)
   Future<void> clearPin() async {
-    await _secureStorage.delete(key: _pinKey);
-    await _secureStorage.delete(key: _saltKey);
+    final user = _auth.currentUser;
+    if (user != null) {
+      await _firestore.collection('users').doc(user.uid).update({
+        'pinHash': FieldValue.delete(),
+        'pinSalt': FieldValue.delete(),
+      });
+    }
   }
 
-  // --- Helpers ---
+  // --- Helpers (Same as before) ---
   void _assertValidPin(String pin) {
     if (pin.length != 4 || int.tryParse(pin) == null) {
       throw ArgumentError('PIN must be exactly 4 digits');
@@ -54,7 +91,6 @@ class PinStorageService {
   }
 
   String _generateSalt() {
-    // 16 cryptographically-secure random bytes, base64 encoded.
     final rand = Random.secure();
     final values = List<int>.generate(16, (_) => rand.nextInt(256));
     return base64UrlEncode(values);
@@ -66,7 +102,6 @@ class PinStorageService {
     return digest.toString();
   }
 
-  /// Constant-time string comparison to mitigate timing attacks.
   bool fixedTimeComparison(String a, String b) {
     if (a.length != b.length) return false;
     var result = 0;

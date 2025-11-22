@@ -36,8 +36,11 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
 
     try {
       if (widget.expectedPin != null) {
+        // --- SETUP MODE: User is confirming the new PIN ---
         if (pin == widget.expectedPin) {
+          // Save to Firebase
           await _pinStorage.setPin(pin);
+
           if (!mounted) return;
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (_) => const HomePage()),
@@ -47,7 +50,9 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
           setState(() => _error = 'PINs do not match. Please try again.');
         }
       } else {
+        // --- LOGIN MODE: Verify against Firebase ---
         final isPinCorrect = await _pinStorage.verifyPin(pin);
+
         if (isPinCorrect) {
           if (!mounted) return;
           Navigator.of(context).pushAndRemoveUntil(
@@ -58,6 +63,11 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
           setState(() => _error = 'Incorrect PIN');
         }
       }
+    } catch (e) {
+      // Handle network errors or permission issues
+      setState(
+        () => _error = 'Verification failed. Please check your internet.',
+      );
     } finally {
       if (mounted) setState(() => _isVerifying = false);
     }
@@ -65,22 +75,20 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // --- ⭐️ Theme se colors lo ---
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
 
-    // --- ⭐️ MODIFIED: Pinput theme ---
     final defaultPinTheme = PinTheme(
       width: 56,
       height: 56,
       textStyle: TextStyle(
         fontSize: 20,
         fontWeight: FontWeight.w600,
-        color: colorScheme.onSurface, // Theme text color
+        color: colorScheme.onSurface,
       ),
       decoration: BoxDecoration(
-        color: colorScheme.surface, // Theme surface color
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: theme.dividerColor.withOpacity(0.5)),
       ),
@@ -88,25 +96,18 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
 
     final focusedPinTheme = defaultPinTheme.copyWith(
       decoration: defaultPinTheme.decoration!.copyWith(
-        border: Border.all(
-          color: colorScheme.primary,
-          width: 2,
-        ), // Theme primary color
+        border: Border.all(color: colorScheme.primary, width: 2),
       ),
     );
 
     final submittedPinTheme = focusedPinTheme;
-    // --- ⭐️ END OF MODIFICATION ---
 
     return Scaffold(
-      // --- ⭐️ MODIFIED: Theme background color ---
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
-        // --- ⭐️⭐️ FIX: Column ko SingleChildScrollView mein wrap kiya ⭐️⭐️ ---
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            // --- ⭐️⭐️ FIX: IntrinsicHeight use kiya taaki page poori height le ⭐️⭐️ ---
             child: ConstrainedBox(
               constraints: BoxConstraints(
                 minHeight: MediaQuery.of(context).size.height - kToolbarHeight,
@@ -130,7 +131,6 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
                               );
                             },
                             padding: EdgeInsets.zero,
-                            // --- ⭐️ MODIFIED: Theme icon color ---
                             icon: Icon(
                               Icons.arrow_back_ios,
                               size: 18,
@@ -148,7 +148,6 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
                         height: 150,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          // --- ⭐️ MODIFIED: Theme color ---
                           color: colorScheme.primary.withOpacity(0.1),
                         ),
                         child: Padding(
@@ -156,7 +155,6 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
                           child: Image.asset(
                             'assets/images/lock.png',
                             fit: BoxFit.contain,
-                            // --- ⭐️ MODIFIED: Theme color ---
                             color: colorScheme.primary,
                           ),
                         ),
@@ -171,7 +169,6 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w700,
-                          // --- ⭐️ MODIFIED: Theme text color ---
                           color: colorScheme.onSurface,
                         ),
                       ),
@@ -184,7 +181,6 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
                             : 'Unlock to continue',
                         style: TextStyle(
                           fontSize: 16,
-                          // --- ⭐️ MODIFIED: Theme grey color ---
                           color: textTheme.bodySmall?.color,
                         ),
                       ),
@@ -212,7 +208,6 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
                               _obscurePin
                                   ? Icons.visibility_off_outlined
                                   : Icons.visibility_outlined,
-                              // --- ⭐️ MODIFIED: Theme grey color ---
                               color: textTheme.bodySmall?.color,
                             ),
                             onPressed: () {
@@ -242,7 +237,6 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
-                              // --- ⭐️ MODIFIED: Theme primary color ---
                               color: colorScheme.primary,
                             ),
                           ),
@@ -253,21 +247,18 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
                       Center(
                         child: Text(
                           _error!,
-                          // --- ⭐️ MODIFIED: Theme error color ---
                           style: TextStyle(color: colorScheme.error),
                         ),
                       ),
                     ],
-                    // --- ⭐️⭐️ FIX: Spacer() ko SizedBox se replace kiya ⭐️⭐️ ---
                     const Spacer(),
-                    const SizedBox(height: 32), // Thoda space diya
+                    const SizedBox(height: 32),
                     SizedBox(
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
                         onPressed: _isVerifying ? null : _verify,
                         style: ElevatedButton.styleFrom(
-                          // --- ⭐️ MODIFIED: Theme button color ---
                           backgroundColor: colorScheme.primary,
                           foregroundColor: colorScheme.onPrimary,
                           shape: RoundedRectangleBorder(
@@ -282,7 +273,7 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                     valueColor: AlwaysStoppedAnimation<Color>(
-                                      colorScheme.onPrimary, // White
+                                      colorScheme.onPrimary,
                                     ),
                                   ),
                                 ),
