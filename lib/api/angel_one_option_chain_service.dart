@@ -15,7 +15,6 @@ class AngelOneOptionChainService {
   Map<String, String> _getSymbolConfig(String inputSymbol) {
     final s = inputSymbol.toUpperCase().replaceAll(' ', '').trim();
 
-    // NSE Indices
     if (s == "NIFTY" || s == "NIFTY50") {
       return {"spotToken": "99926000", "optionName": "NIFTY", "segment": "NFO"};
     } else if (s == "BANKNIFTY" || s == "NIFTYBANK") {
@@ -36,9 +35,7 @@ class AngelOneOptionChainService {
         "optionName": "MIDCPNIFTY",
         "segment": "NFO",
       };
-    }
-    // BSE Indices
-    else if (s == "SENSEX") {
+    } else if (s == "SENSEX") {
       return {
         "spotToken": "99919000",
         "optionName": "SENSEX",
@@ -69,9 +66,12 @@ class AngelOneOptionChainService {
       final config = _getSymbolConfig(symbol);
       String spotToken = config['spotToken']!;
       final String optionName = config['optionName']!;
-      final String segment = config['segment']!;
 
-      // Dynamic Token Search
+      String segment = config['segment']!;
+      if (exchange == 'BSE') segment = 'BFO';
+      if (exchange == 'NSE') segment = 'NFO';
+
+      // 1. Search for Spot Token if missing
       if (spotToken.isEmpty) {
         try {
           final underlying = allInstruments.firstWhere(
@@ -80,44 +80,57 @@ class AngelOneOptionChainService {
                 i.symbol.endsWith("-EQ"),
           );
           spotToken = underlying.token;
-        } catch (e) {
-          throw "Spot Token not found for $symbol";
+        } catch (_) {}
+      }
+
+      // 2. Fetch Spot Price (Handle 0 values for weekends)
+      double referencePrice = 0.0;
+      final spotExchange = (segment == "BFO") ? "BSE" : "NSE";
+
+      if (spotToken.isNotEmpty) {
+        final spotData = await _fetchMarketData(spotToken, spotExchange);
+        if (spotData != null) {
+          double ltp = double.tryParse(spotData['ltp']?.toString() ?? "0") ?? 0;
+          double close =
+              double.tryParse(spotData['close']?.toString() ?? "0") ?? 0;
+          // ⭐️ Prioritize LTP, but use Close if LTP is 0 (Weekend Logic)
+          referencePrice = (ltp > 0) ? ltp : close;
         }
       }
 
-      // Fetch Spot Price
-      double referencePrice = 0.0;
-      final spotExchange = (segment == "BFO") ? "BSE" : "NSE";
-      final spotData = await _fetchMarketData(spotToken, spotExchange);
-
-      if (spotData != null) {
-        double ltp = double.tryParse(spotData['ltp']?.toString() ?? "0") ?? 0;
-        double close =
-            double.tryParse(spotData['close']?.toString() ?? "0") ?? 0;
-        referencePrice = (ltp > 0) ? ltp : close;
-      }
-
-      // Fallback to Futures if Spot is 0
+      // 3. Fallback to Futures if Spot is still 0
       if (referencePrice == 0.0) {
+        AppLog.w(
+          "⚠️ Spot Price is 0. Trying Futures fallback for $optionName...",
+        );
         referencePrice = await _fetchFuturesPrice(
           optionName,
           allInstruments,
           segment,
         );
       }
-      if (referencePrice == 0.0) throw "Market Data Unavailable (Price is 0).";
 
-      // Filter Options
+      // ⭐️ Final Safety Net: If even Futures fail, return error but don't crash
+      if (referencePrice == 0.0) {
+        throw "Market Data Unavailable (Price is 0). Market might be closed.";
+      }
+
+      // 4. Filter Options
       final List<Instrument> options = allInstruments.where((i) {
-        return i.name == optionName &&
+        final bool nameMatch =
+            i.name.toUpperCase() == optionName ||
+            i.name.toUpperCase().contains(optionName);
+        return nameMatch &&
             (i.instrumentType == "OPTIDX" || i.instrumentType == "OPTSTK") &&
             i.exchSeg == segment;
       }).toList();
 
-      if (options.isEmpty) throw "No Options found.";
+      if (options.isEmpty) throw "No Options found for $optionName ($segment).";
 
+      // 5. Find Expiry & Range
       final String nearestExpiry = _findNearestExpiry(options);
-      final double range = referencePrice * 0.03; // 3% Range
+      final double range = referencePrice * 0.03;
+
       final List<Instrument> targetOptions = options.where((i) {
         if (i.expiry != nearestExpiry) return false;
         double strike = double.tryParse(i.strike) ?? 0.0;
@@ -126,7 +139,12 @@ class AngelOneOptionChainService {
             strike <= (referencePrice + range);
       }).toList();
 
-      // Batch Fetch Live Data (50 limit)
+      if (targetOptions.isEmpty) {
+        // If tight range fails, try a wider range
+        throw "No strikes found near $referencePrice (Expiry: $nearestExpiry)";
+      }
+
+      // 6. Batch Fetch
       final List<String> allTokens = targetOptions.map((e) => e.token).toList();
       final Map<String, dynamic> liveDataMap = {};
 
@@ -170,10 +188,10 @@ class AngelOneOptionChainService {
       String strikeKey = strike.toStringAsFixed(2);
       final data = liveData[inst.token];
 
-      // ⭐️ EXTRACT LOT SIZE from your Instrument model
       int lotSize = int.tryParse(inst.lotSize) ?? 1;
 
       double ltp = double.tryParse(data?['ltp']?.toString() ?? "0") ?? 0.0;
+      // ⭐️ Use Close if LTP is 0 (Fixes weekend 0 values)
       if (ltp == 0)
         ltp = double.tryParse(data?['close']?.toString() ?? "0") ?? 0.0;
 
@@ -181,7 +199,7 @@ class AngelOneOptionChainService {
         'openInterest': data?['opnInterest'] ?? 0,
         'lastPrice': ltp,
         'pChange': data?['percentChange'] ?? 0.0,
-        'lotSize': lotSize, // Passing to UI
+        'lotSize': lotSize,
       };
 
       if (!rows.containsKey(strikeKey))
@@ -222,33 +240,33 @@ class AngelOneOptionChainService {
       final futures = i
           .where(
             (inst) =>
-                inst.name == n &&
+                (inst.name == n || inst.name.contains(n)) &&
                 inst.instrumentType == "FUTIDX" &&
                 inst.exchSeg == s,
           )
           .toList();
+
       if (futures.isEmpty) return 0.0;
+
       final String expiry = _findNearestExpiry(futures);
       final target = futures.firstWhere((f) => f.expiry == expiry);
+
       final data = await _fetchMarketData(target.token, s);
       if (data != null) {
-        return (data['ltp'] as num?)?.toDouble() ??
-            (data['close'] as num?)?.toDouble() ??
-            0.0;
+        double val = (data['ltp'] as num?)?.toDouble() ?? 0.0;
+        // ⭐️ Fallback to Close for Futures too
+        if (val == 0) val = (data['close'] as num?)?.toDouble() ?? 0.0;
+        return val;
       }
     } catch (_) {}
     return 0.0;
   }
 
   String _findNearestExpiry(List<Instrument> o) {
+    if (o.isEmpty) throw "No instruments";
     final Set<String> exps = o.map((e) => e.expiry).toSet();
     final DateFormat f = DateFormat("ddMMMyyyy", "en_US");
-    final DateTime now = DateTime.now().copyWith(
-      hour: 0,
-      minute: 0,
-      second: 0,
-      millisecond: 0,
-    );
+    final DateTime now = DateTime.now().copyWith(hour: 0, minute: 0, second: 0);
     final List<DateTime> dates = [];
 
     for (var e in exps) {

@@ -21,38 +21,18 @@ class _OptionChainPageState extends State<OptionChainPage>
     _tabController = TabController(length: 3, vsync: this);
   }
 
-  // ⭐️ FIXED SYMBOL MAPPING
   String _getApiSymbol(String uiSymbol) {
     final s = uiSymbol.toUpperCase().trim();
-
-    // 1. Nifty Midcap Select -> MIDCPNIFTY (NSE Official Ticker)
     if (s == "NIFTY MID SELECT" ||
         s.contains("MID SELECT") ||
         s.contains("MIDCPNIFTY")) {
       return "MIDCPNIFTY";
     }
-
-    // 2. BSE Indices
-    // Try standard names. If 'BSE:BANKEX' failed, your API likely expects just 'BANKEX'
-    // but requires the Provider to switch exchanges internally.
     if (s == "BANKEX") return "BANKEX";
     if (s == "SENSEX") return "SENSEX";
-
-    // 3. Nifty Financial Services
-    if (s == "FINNIFTY" || s.contains("FINANCIAL")) {
-      return "FINNIFTY";
-    }
-
-    // 4. Bank Nifty
-    if (s == "BANKNIFTY" || s == "BANK NIFTY") {
-      return "BANKNIFTY";
-    }
-
-    // 5. Nifty 50
-    if (s == "NIFTY" || s == "NIFTY 50" || s == "NIFTY50") {
-      return "NIFTY";
-    }
-
+    if (s == "FINNIFTY" || s.contains("FINANCIAL")) return "FINNIFTY";
+    if (s == "BANKNIFTY" || s == "BANK NIFTY") return "BANKNIFTY";
+    if (s == "NIFTY" || s == "NIFTY 50" || s == "NIFTY50") return "NIFTY";
     return s;
   }
 
@@ -62,7 +42,7 @@ class _OptionChainPageState extends State<OptionChainPage>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.symbol), // Keep the user-friendly name in title
+        title: Text(widget.symbol),
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
@@ -98,30 +78,32 @@ class _OptionChainBodyState extends State<_OptionChainBody> {
   final ScrollController _scrollController = ScrollController();
   bool _hasScrolledToAtm = false;
   final double _estimatedRowHeight = 58.0;
-
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
   }
 
-  // --- FORMATTERS ---
+  // --- ⭐️ FIXED FORMATTERS (Hides 0s) ---
   String _formatPrice(dynamic v) {
     if (v == null) return "-";
     final p = double.tryParse(v.toString()) ?? 0.0;
+    if (p == 0) return "-"; // ⭐️ Shows - instead of 0.00
     return p.toStringAsFixed(2);
   }
 
   String _formatChange(dynamic v) {
     if (v == null) return "";
     final p = double.tryParse(v.toString()) ?? 0.0;
-    if (p == 0) return "0.00%";
+    if (p == 0) return "-"; // ⭐️ Shows - instead of 0.00%
     return "${p > 0 ? '+' : ''}${p.toStringAsFixed(2)}%";
   }
 
   String _formatOI(dynamic oiVal, dynamic lotSizeVal) {
     if (oiVal == null) return "-";
     double oi = double.tryParse(oiVal.toString()) ?? 0.0;
+    if (oi == 0) return "-"; // ⭐️ Shows - instead of 0
+
     int lotSize = int.tryParse(lotSizeVal.toString()) ?? 1;
     double lots = oi / lotSize;
     final f = NumberFormat("#,##0", "en_US");
@@ -135,16 +117,13 @@ class _OptionChainBodyState extends State<_OptionChainBody> {
     return Colors.grey;
   }
 
-  // --- SCROLL LOGIC ---
   void _scrollToAtm(int atmIndex, double viewportHeight) {
     if (_hasScrolledToAtm) return;
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         final double targetY = atmIndex * _estimatedRowHeight;
         final double offset =
             targetY - (viewportHeight / 2) + (_estimatedRowHeight / 2);
-
         _scrollController.animateTo(
           offset,
           duration: const Duration(milliseconds: 600),
@@ -161,48 +140,27 @@ class _OptionChainBodyState extends State<_OptionChainBody> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final txtColor = isDark ? Colors.white : Colors.black87;
 
-    // Loading
     if (provider.isLoading && provider.rows.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    // Error / Empty State
     if (!provider.isLoading && provider.rows.isEmpty) {
       return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 40, color: Colors.grey),
-              const SizedBox(height: 10),
-              Text(
-                "No data found for ${provider.symbol}",
-                style: const TextStyle(color: Colors.grey, fontSize: 16),
-              ),
-              const SizedBox(height: 10),
-              // ⭐️ HELPFUL DEBUG MESSAGE FOR YOU
-              if (provider.symbol == "BANKEX")
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.blue.withOpacity(0.3)),
-                  ),
-                  child: const Text(
-                    "Tech Note: Since SENSEX works, your Provider likely supports BSE. \n\nIf BANKEX fails here, check 'option_chain_provider.dart'. You probably need to add:\n\nif (symbol == 'BANKEX') exchange = 'BSE';",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.blue, fontSize: 12),
-                  ),
-                ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () => provider.fetchOptionChain(),
-                child: const Text("Retry"),
-              ),
-            ],
-          ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 40, color: Colors.grey),
+            const SizedBox(height: 10),
+            Text(
+              "No data found for ${provider.symbol}",
+              style: const TextStyle(color: Colors.grey, fontSize: 16),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () => provider.fetchOptionChain(),
+              child: const Text("Retry"),
+            ),
+          ],
         ),
       );
     }
@@ -213,7 +171,6 @@ class _OptionChainBodyState extends State<_OptionChainBody> {
 
     return Column(
       children: [
-        // --- HEADER ---
         Container(
           color: const Color(0xFF1E1E1E),
           padding: const EdgeInsets.symmetric(vertical: 10),
@@ -267,13 +224,10 @@ class _OptionChainBodyState extends State<_OptionChainBody> {
             ],
           ),
         ),
-
-        // --- LIST ---
         Expanded(
           child: LayoutBuilder(
             builder: (context, constraints) {
               _scrollToAtm(atmIndex!, constraints.maxHeight);
-
               return RefreshIndicator(
                 onRefresh: () async {
                   _hasScrolledToAtm = false;
@@ -300,7 +254,6 @@ class _OptionChainBodyState extends State<_OptionChainBody> {
                   itemBuilder: (ctx, i) {
                     final row = rows[i];
                     final isAtm = atmIndex == i;
-
                     return Container(
                       color: Colors.black,
                       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -401,6 +354,7 @@ class _OptionChainBodyState extends State<_OptionChainBody> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          // ⭐️ ONLY SHOW IF NOT "-"
           Text(
             top,
             style: TextStyle(
@@ -409,7 +363,7 @@ class _OptionChainBodyState extends State<_OptionChainBody> {
               color: txt,
             ),
           ),
-          if (sub.isNotEmpty)
+          if (sub.isNotEmpty && sub != "-")
             Padding(
               padding: const EdgeInsets.only(top: 2),
               child: Text(sub, style: TextStyle(fontSize: 10, color: subColor)),
