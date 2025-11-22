@@ -36,6 +36,8 @@ class _StockDetailPageState extends State<StockDetailPage> {
     }
 
     try {
+      // This triggers a Firestore update.
+      // Since the StreamBuilder is now scoped to the Icon, only the Icon rebuilds.
       await _userService.toggleWatchlistStock(uid!, widget.instrument.token);
     } catch (e) {
       ScaffoldMessenger.of(
@@ -61,72 +63,75 @@ class _StockDetailPageState extends State<StockDetailPage> {
         : colorScheme.secondary;
     final priceParts = ltp.toStringAsFixed(2).split('.');
 
-    return StreamBuilder<UserProfileDataModel?>(
-      stream: (uid != null) ? _userService.streamUserProfile(uid!) : null,
-      builder: (context, snapshot) {
-        bool isInWatchlist = false;
-        if (snapshot.hasData && snapshot.data != null) {
-          isInWatchlist = snapshot.data!.watchlist.contains(
-            widget.instrument.token,
-          );
-        }
+    // ⭐️ FIX: Scaffold is the top-level widget now.
+    // The StreamBuilder has been moved inside the AppBar actions.
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: AppBar(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
+        centerTitle: true,
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Container(
+            decoration: BoxDecoration(
+              color: theme.cardColor,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: theme.shadowColor.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: IconButton(
+              icon: Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: colorScheme.onSurface,
+                size: 18,
+              ),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+        ),
+        title: Text(
+          widget.instrument.symbol.replaceAll('-EQ', ''),
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: Container(
+              margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.shadowColor.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              // ⭐️ FIX: STREAM BUILDER IS HERE
+              // Only this specific button listens to Firestore changes
+              child: StreamBuilder<UserProfileDataModel?>(
+                stream: (uid != null)
+                    ? _userService.streamUserProfile(uid!)
+                    : null,
+                builder: (context, snapshot) {
+                  bool isInWatchlist = false;
+                  if (snapshot.hasData && snapshot.data != null) {
+                    isInWatchlist = snapshot.data!.watchlist.contains(
+                      widget.instrument.token,
+                    );
+                  }
 
-        return Scaffold(
-          backgroundColor: theme.scaffoldBackgroundColor,
-          appBar: AppBar(
-            backgroundColor: theme.scaffoldBackgroundColor,
-            elevation: 0,
-            centerTitle: true,
-            leading: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: theme.cardColor,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: theme.shadowColor.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  icon: Icon(
-                    Icons.arrow_back_ios_new_rounded,
-                    color: colorScheme.onSurface,
-                    size: 18,
-                  ),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ),
-            ),
-            title: Text(
-              widget.instrument.symbol.replaceAll('-EQ', ''),
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 8.0),
-                child: Container(
-                  margin: const EdgeInsets.symmetric(
-                    vertical: 8,
-                    horizontal: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: theme.cardColor,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: theme.shadowColor.withOpacity(0.1),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: IconButton(
+                  return IconButton(
                     icon: Icon(
                       isInWatchlist
                           ? Icons.bookmark_rounded
@@ -137,173 +142,163 @@ class _StockDetailPageState extends State<StockDetailPage> {
                       size: 22,
                     ),
                     onPressed: _toggleWatchlist,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          body: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // --- Header Section (Card Style) ---
-                Container(
-                  margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: theme.cardColor,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: theme.shadowColor.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      _buildCompanyHeader(context, widget.instrument),
-                      const SizedBox(height: 20),
-                      const Divider(height: 1, thickness: 0.5),
-                      const SizedBox(height: 20),
-                      _buildPriceDetails(
-                        context,
-                        priceParts,
-                        netChange,
-                        percentChange,
-                        changeColor,
-                      ),
-                    ],
-                  ),
-                ),
-
-                // --- Chart Section (Card Style) ---
-                Container(
-                  height: 420,
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: theme.cardColor,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: theme.shadowColor.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  // ClipRRect is essential here to keep the WebView inside the rounded corners
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
-                    child: TradingViewChart(instrument: widget.instrument),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // --- Statistics Section ---
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Text(
-                    "Market Statistics",
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                Consumer<InstrumentProvider>(
-                  builder: (context, prov, child) {
-                    final matched =
-                        prov.getInstrumentByToken(widget.instrument.token) ??
-                        widget.instrument;
-                    final apiOpen =
-                        (matched.liveData['open'] as num?)?.toDouble() ?? 0.0;
-                    final apiHigh =
-                        (matched.liveData['high'] as num?)?.toDouble() ?? 0.0;
-                    final apiLow =
-                        (matched.liveData['low'] as num?)?.toDouble() ?? 0.0;
-                    final apiVolume =
-                        (matched.liveData['tradeVolume'] as num?)?.toInt() ?? 0;
-                    final apiAvgPrice =
-                        (matched.liveData['avgPrice'] as num?)?.toDouble() ??
-                        0.0;
-                    final apiUpperCircuit =
-                        (matched.liveData['upperCircuit'] as num?)
-                            ?.toDouble() ??
-                        0.0;
-                    final apiLowerCircuit =
-                        (matched.liveData['lowerCircuit'] as num?)
-                            ?.toDouble() ??
-                        0.0;
-                    final api52WkHigh =
-                        (matched.liveData['52WeekHigh'] as num?)?.toDouble() ??
-                        0.0;
-                    final api52WkLow =
-                        (matched.liveData['52WeekLow'] as num?)?.toDouble() ??
-                        0.0;
-
-                    final double outstandingShares = matched.outstandingShares;
-                    final int avgVolume = matched.avgVolume;
-                    final double marketCap = ltp * outstandingShares;
-
-                    return _buildStatisticsCard(
-                      context: context,
-                      open: apiOpen,
-                      high: apiHigh,
-                      low: apiLow,
-                      volume: apiVolume,
-                      avgPrice: apiAvgPrice,
-                      upperCircuit: apiUpperCircuit,
-                      lowerCircuit: apiLowerCircuit,
-                      fiftyTwoWeekHigh: api52WkHigh,
-                      fiftyTwoWeekLow: api52WkLow,
-                      marketCap: marketCap,
-                      avgVolume: avgVolume.toDouble(),
-                      outstandingShares: outstandingShares,
-                    );
-                  },
-                ),
-                const SizedBox(
-                  height: 100,
-                ), // Bottom padding for floating buttons
-              ],
-            ),
-          ),
-          bottomNavigationBar: Container(
-            decoration: BoxDecoration(
-              color: theme.scaffoldBackgroundColor,
-              boxShadow: [
-                BoxShadow(
-                  color: theme.shadowColor.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -5),
-                ),
-              ],
-            ),
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: SizedBox(
-                  height: 56.0,
-                  child: _buildBottomButtons(context, ltp, widget.instrument),
-                ),
+                  );
+                },
               ),
             ),
           ),
-        );
-      },
+        ],
+      ),
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // --- Header Section (Card Style) ---
+            Container(
+              margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.shadowColor.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  _buildCompanyHeader(context, widget.instrument),
+                  const SizedBox(height: 20),
+                  const Divider(height: 1, thickness: 0.5),
+                  const SizedBox(height: 20),
+                  _buildPriceDetails(
+                    context,
+                    priceParts,
+                    netChange,
+                    percentChange,
+                    changeColor,
+                  ),
+                ],
+              ),
+            ),
+
+            // --- Chart Section (Card Style) ---
+            // Because Scaffold doesn't rebuild, this Widget state is preserved
+            Container(
+              height: 420,
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.shadowColor.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: TradingViewChart(instrument: widget.instrument),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // --- Statistics Section ---
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Text(
+                "Market Statistics",
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.5,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            Consumer<InstrumentProvider>(
+              builder: (context, prov, child) {
+                final matched =
+                    prov.getInstrumentByToken(widget.instrument.token) ??
+                    widget.instrument;
+                final apiOpen =
+                    (matched.liveData['open'] as num?)?.toDouble() ?? 0.0;
+                final apiHigh =
+                    (matched.liveData['high'] as num?)?.toDouble() ?? 0.0;
+                final apiLow =
+                    (matched.liveData['low'] as num?)?.toDouble() ?? 0.0;
+                final apiVolume =
+                    (matched.liveData['tradeVolume'] as num?)?.toInt() ?? 0;
+                final apiAvgPrice =
+                    (matched.liveData['avgPrice'] as num?)?.toDouble() ?? 0.0;
+                final apiUpperCircuit =
+                    (matched.liveData['upperCircuit'] as num?)?.toDouble() ??
+                    0.0;
+                final apiLowerCircuit =
+                    (matched.liveData['lowerCircuit'] as num?)?.toDouble() ??
+                    0.0;
+                final api52WkHigh =
+                    (matched.liveData['52WeekHigh'] as num?)?.toDouble() ?? 0.0;
+                final api52WkLow =
+                    (matched.liveData['52WeekLow'] as num?)?.toDouble() ?? 0.0;
+
+                final double outstandingShares = matched.outstandingShares;
+                final int avgVolume = matched.avgVolume;
+                final double marketCap = ltp * outstandingShares;
+
+                return _buildStatisticsCard(
+                  context: context,
+                  open: apiOpen,
+                  high: apiHigh,
+                  low: apiLow,
+                  volume: apiVolume,
+                  avgPrice: apiAvgPrice,
+                  upperCircuit: apiUpperCircuit,
+                  lowerCircuit: apiLowerCircuit,
+                  fiftyTwoWeekHigh: api52WkHigh,
+                  fiftyTwoWeekLow: api52WkLow,
+                  marketCap: marketCap,
+                  avgVolume: avgVolume.toDouble(),
+                  outstandingShares: outstandingShares,
+                );
+              },
+            ),
+            const SizedBox(height: 100),
+          ],
+        ),
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor,
+          boxShadow: [
+            BoxShadow(
+              color: theme.shadowColor.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: SizedBox(
+              height: 56.0,
+              child: _buildBottomButtons(context, ltp, widget.instrument),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
-  // --- Refactored Widgets ---
+  // --- Refactored Widgets (No Changes Needed Here) ---
 
   Widget _buildCompanyHeader(BuildContext context, Instrument instrument) {
     final textTheme = Theme.of(context).textTheme;

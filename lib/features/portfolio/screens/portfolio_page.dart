@@ -2,6 +2,7 @@ import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:bullxchange/models/user_profile_data_model.dart';
@@ -20,48 +21,49 @@ class PortfolioPage extends StatefulWidget {
 
 class _PortfolioPageState extends State<PortfolioPage> {
   final UserService _userService = UserService();
-
-  // 1. Declare the stream variable
   late Stream<List<TransactionModel>> _transactionStream;
   String _currentUid = "";
-
-  // --- THEME COLORS ---
-  static const Color kGreen = Color(0xFF00D09C);
-  static const Color kRed = Color(0xFFEB5B3C);
-  static const Color kDarkBg = Color(0xFF121212);
-  static const Color kLightBg = Color(0xFFF5F7F9);
-  static const Color kDarkCard = Color(0xFF1E1E1E);
-  static const Color kLightCard = Colors.white;
 
   @override
   void initState() {
     super.initState();
-    // 2. Initialize the stream ONCE here.
-    // This prevents the loading spinner from appearing on every screen rebuild.
     final User? firebaseUser = FirebaseAuth.instance.currentUser;
     _currentUid = firebaseUser?.uid ?? "";
 
     if (_currentUid.isNotEmpty) {
       _transactionStream = _userService.streamRecentTransactions(_currentUid);
     } else {
-      _transactionStream = Stream.value([]); // Empty stream if not logged in
+      _transactionStream = Stream.value([]);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Theme Detection
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? kDarkBg : kLightBg;
-    final cardColor = isDark ? kDarkCard : kLightCard;
-    final textColor = isDark ? Colors.white : Colors.black87;
-    final subText = isDark ? Colors.grey[400] : Colors.grey[600];
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    // --- Colors Matching Your UI ---
+    final Color backgroundColor = isDark
+        ? Colors.black
+        : const Color(0xFFF2F2F7);
+    final Color cardColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
+    final Color textColor = theme.textTheme.bodyLarge!.color!;
+    final Color subTextColor = const Color(0xFF8E8E93);
+
     final currency = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
+    const Color kGreen = Color(0xFF34C759);
+    const Color kRed = Color(0xFFFF3B30);
+    const Color kBlue = Color(0xFF007AFF);
 
     if (_currentUid.isEmpty) {
       return Scaffold(
-        backgroundColor: bgColor,
-        body: const Center(child: Text("Please login to view portfolio")),
+        backgroundColor: backgroundColor,
+        body: Center(
+          child: Text(
+            "Please login to view portfolio",
+            style: TextStyle(color: textColor),
+          ),
+        ),
       );
     }
 
@@ -70,14 +72,14 @@ class _PortfolioPageState extends State<PortfolioPage> {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
-            backgroundColor: bgColor,
-            body: const Center(child: CircularProgressIndicator()),
+            backgroundColor: backgroundColor,
+            body: Center(child: CircularProgressIndicator(color: kBlue)),
           );
         }
 
         if (!snapshot.hasData || snapshot.data == null) {
           return Scaffold(
-            backgroundColor: bgColor,
+            backgroundColor: backgroundColor,
             body: Center(
               child: Text(
                 "Profile Not Found",
@@ -87,9 +89,9 @@ class _PortfolioPageState extends State<PortfolioPage> {
           );
         }
 
-        final UserProfileDataModel userProfile = snapshot.data!;
-        final List<StockHoldingModel> holdings = userProfile.stocks;
-        final double availableCash = userProfile.availableFunds;
+        final userProfile = snapshot.data!;
+        final holdings = userProfile.stocks;
+        final availableCash = userProfile.availableFunds;
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
           Provider.of<InstrumentProvider>(
@@ -100,15 +102,15 @@ class _PortfolioPageState extends State<PortfolioPage> {
 
         return Consumer<InstrumentProvider>(
           builder: (context, instrumentProvider, child) {
-            // --- CALCULATIONS ---
             double totalEquityValue = 0;
             double totalInvested = 0;
             double todaysPL = 0;
             final List<Map<String, dynamic>> calculatedHoldings = [];
 
             for (var holding in holdings) {
-              final Instrument? instrument = instrumentProvider
-                  .getInstrumentBySymbol(holding.stockSymbol);
+              final instrument = instrumentProvider.getInstrumentBySymbol(
+                holding.stockSymbol,
+              );
               final double currentPrice =
                   (instrument?.liveData['ltp'] as num?)?.toDouble() ??
                   holding.transactionPrice;
@@ -141,36 +143,105 @@ class _PortfolioPageState extends State<PortfolioPage> {
                 : 0.0;
 
             return Scaffold(
-              backgroundColor: bgColor,
+              backgroundColor: backgroundColor,
+              // ⭐️ MODIFIED APP BAR
               appBar: AppBar(
-                backgroundColor: bgColor,
-                surfaceTintColor: Colors.transparent,
+                backgroundColor: backgroundColor,
+                scrolledUnderElevation: 0,
+                elevation: 0,
+                centerTitle: true, // Center alignment like Settings
+                leading: IconButton(
+                  icon: Icon(
+                    Icons.arrow_back_ios_new,
+                    color: textColor,
+                    size: 20,
+                  ),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
                 title: Text(
                   "Portfolio",
                   style: TextStyle(
+                    fontFamily: 'EudoxusSans',
                     fontWeight: FontWeight.bold,
                     color: textColor,
+                    fontSize: 28, // Large size to match "Settings"
                   ),
                 ),
                 actions: [
+                  // Kept this action but made it subtle to match clean look
                   IconButton(
-                    icon: Icon(Icons.analytics_outlined, color: textColor),
+                    icon: Icon(Icons.more_horiz, color: textColor),
                     onPressed: () {},
                   ),
                 ],
               ),
               body: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.only(bottom: 100),
+                physics: const ClampingScrollPhysics(),
+                padding: const EdgeInsets.only(bottom: 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildUserDetail(
-                      userProfile.name,
-                      textColor,
-                      subText,
-                      cardColor,
+                    const SizedBox(height: 10),
+
+                    _buildSectionHeader("Account", subTextColor),
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: cardColor,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 4,
+                        ),
+                        leading: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: kBlue,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.person, color: Colors.white),
+                        ),
+                        title: Text(
+                          userProfile.name.isEmpty
+                              ? "Trader"
+                              : userProfile.name,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: textColor,
+                            fontSize: 16,
+                          ),
+                        ),
+                        subtitle: Text(
+                          "BullXchange Pro",
+                          style: TextStyle(color: subTextColor, fontSize: 13),
+                        ),
+                        trailing: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: kBlue.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            "PRO",
+                            style: TextStyle(
+                              color: kBlue,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
+
+                    const SizedBox(height: 24),
+
+                    _buildSectionHeader("Overview", subTextColor),
                     _buildSummaryCard(
                       totalPortfolioValue,
                       todaysPL,
@@ -179,40 +250,56 @@ class _PortfolioPageState extends State<PortfolioPage> {
                       overallPL,
                       overallPLPercent,
                       cardColor,
-                      subText,
                       textColor,
+                      subTextColor,
                       currency,
+                      kGreen,
+                      kRed,
                     ),
+
+                    const SizedBox(height: 24),
+
+                    _buildSectionHeader("Allocation", subTextColor),
                     _buildAllocationChart(
                       totalEquityValue,
                       availableCash,
+                      cardColor,
                       textColor,
-                      subText,
+                      subTextColor,
+                      kBlue,
+                      kGreen,
                     ),
-                    _buildHoldingsHeader(textColor, kGreen),
+
+                    const SizedBox(height: 24),
+
+                    _buildSectionHeader(
+                      "Holdings",
+                      subTextColor,
+                      trailing: "See All",
+                    ),
                     _buildHoldingsList(
                       calculatedHoldings,
                       currency,
                       cardColor,
-                      subText,
                       textColor,
+                      subTextColor,
+                      kGreen,
+                      kRed,
                     ),
 
-                    // 3. Pass the Initialized Stream to the widget
+                    const SizedBox(height: 24),
+
+                    _buildSectionHeader("Recent Activity", subTextColor),
                     _buildRecentTransactions(
-                      _currentUid,
                       currency,
                       cardColor,
-                      subText,
                       textColor,
+                      subTextColor,
+                      kGreen,
+                      kRed,
                     ),
                   ],
                 ),
-              ),
-              bottomNavigationBar: _buildBottomBar(
-                textColor,
-                cardColor,
-                subText,
               ),
             );
           },
@@ -221,414 +308,302 @@ class _PortfolioPageState extends State<PortfolioPage> {
     );
   }
 
-  // --- Helper Widgets (Same as before) ---
+  // --- WIDGETS (Unchanged from previous reliable version) ---
 
-  Widget _buildRecentTransactions(
-    String uid,
-    NumberFormat currency,
-    Color cardColor,
-    Color? subText,
-    Color textColor,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-          child: Text(
-            "Recent Transactions",
-            style: TextStyle(
-              color: textColor,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        StreamBuilder<List<TransactionModel>>(
-          stream: _userService.streamRecentTransactions(uid),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Center(child: CircularProgressIndicator(color: kGreen)),
-              );
-            }
-            if (snapshot.hasError) {
-              return Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Center(
-                  child: Text(
-                    "Error loading transactions.",
-                    style: TextStyle(color: subText),
-                  ),
-                ),
-              );
-            }
-            if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Center(
-                  child: Text(
-                    "No recent transactions found.",
-                    style: TextStyle(color: subText),
-                  ),
-                ),
-              );
-            }
-
-            final transactions = snapshot.data!;
-
-            return ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              physics: const NeverScrollableScrollPhysics(),
-              shrinkWrap: true,
-              itemCount: transactions.length,
-              itemBuilder: (context, index) {
-                final txn = transactions[index];
-                bool isBuy = txn.transactionType == "BUY";
-
-                final String txnTime = DateFormat(
-                  'h:mm a, d MMM',
-                ).format(txn.transactionTime);
-
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  decoration: BoxDecoration(
-                    color: cardColor,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: ListTile(
-                    // --- ⭐️ NEW: NAVIGATE ON TAP ---
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => OrderDetailsPage(
-                            transaction: txn,
-                            // Pass the ID safely (txn.id might be null initially)
-                            transactionId: txn.id ?? "Unknown ID",
-                          ),
-                        ),
-                      );
-                    },
-
-                    // --------------------------------
-                    leading: CircleAvatar(
-                      backgroundColor: (isBuy ? kGreen : kRed).withOpacity(0.1),
-                      child: Icon(
-                        isBuy ? Icons.arrow_upward : Icons.arrow_downward,
-                        color: isBuy ? kGreen : kRed,
-                        size: 20,
-                      ),
-                    ),
-                    title: Text(
-                      txn.stockSymbol,
-                      style: TextStyle(
-                        color: textColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                    subtitle: Text(
-                      txnTime,
-                      style: TextStyle(color: subText, fontSize: 12),
-                    ),
-                    trailing: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          currency.format(txn.totalAmount),
-                          style: TextStyle(
-                            color: textColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                        Text(
-                          "${txn.quantity} Qty",
-                          style: TextStyle(color: subText, fontSize: 11),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  // ... (Copy _buildUserDetail, _buildSummaryCard, _buildAllocationChart, _buildHoldingsHeader, _buildHoldingsList, _buildBottomBar, _buildDataCell, _buildLegendDot, _buildSummaryColumn from previous response)
-
-  // For brevity, assuming helper widgets are below:
-  Widget _buildUserDetail(
-    String userName,
-    Color textColor,
-    Color? subText,
-    Color cardColor,
-  ) {
+  Widget _buildSectionHeader(
+    String title,
+    Color subTextColor, {
+    String? trailing,
+  }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          children: [
-            const CircleAvatar(
-              backgroundColor: Color(0xFF5367FF),
-              radius: 20,
-              child: Icon(Icons.person, color: Colors.white, size: 24),
-            ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  userName.isEmpty ? "Trader" : userName,
-                  style: TextStyle(
-                    color: textColor,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  "BullXchange Portfolio",
-                  style: TextStyle(
-                    color: subText,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-            const Spacer(),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: const Color(0xFF5367FF).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.star, color: Color(0xFF5367FF), size: 16),
-                  SizedBox(width: 4),
-                  Text(
-                    "Diamond Trader",
-                    style: TextStyle(
-                      color: Color(0xFF5367FF),
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSummaryCard(
-    double totalPortfolioValue,
-    double todaysPL,
-    double totalInvested,
-    double availableCash,
-    double overallPL,
-    double overallPLPercent,
-    Color cardColor,
-    Color? subText,
-    Color textColor,
-    NumberFormat currency,
-  ) {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
-        ],
-      ),
-      child: Column(
+      padding: const EdgeInsets.only(left: 20, right: 20, bottom: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            "Total Portfolio Value",
+            title.toUpperCase(),
             style: TextStyle(
-              color: subText,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
+              color: subTextColor,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
             ),
           ),
-          const SizedBox(height: 5),
-          Text(
-            currency.format(totalPortfolioValue),
-            style: TextStyle(
-              color: textColor,
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
+          if (trailing != null)
+            Text(
+              trailing,
+              style: const TextStyle(
+                color: Color(0xFF007AFF),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                todaysPL >= 0 ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-                color: todaysPL >= 0 ? kGreen : kRed,
-              ),
-              Text(
-                "Today's P/L: ${currency.format(todaysPL)}",
-                style: TextStyle(
-                  color: todaysPL >= 0 ? kGreen : kRed,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Divider(color: subText?.withOpacity(0.1)),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildSummaryColumn(
-                "Invested",
-                currency.format(totalInvested),
-                textColor,
-                subText,
-              ),
-              _buildSummaryColumn(
-                "Cash",
-                currency.format(availableCash),
-                textColor,
-                subText,
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    "Overall P/L",
-                    style: TextStyle(color: subText, fontSize: 12),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "${overallPL >= 0 ? '+' : ''}${currency.format(overallPL)}",
-                    style: TextStyle(
-                      color: overallPL >= 0 ? kGreen : kRed,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                  Text(
-                    "(${overallPLPercent.toStringAsFixed(2)}%)",
-                    style: TextStyle(
-                      color: overallPL >= 0 ? kGreen : kRed,
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
         ],
       ),
     );
   }
 
   Widget _buildAllocationChart(
-    double totalEquityValue,
-    double availableCash,
+    double equity,
+    double cash,
+    Color cardColor,
     Color textColor,
-    Color? subText,
+    Color subTextColor,
+    Color stockColor,
+    Color cashColor,
   ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+    if (equity <= 0 && cash <= 0) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Center(
           child: Text(
-            "Asset Allocation",
-            style: TextStyle(
-              color: textColor,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            "No assets to display",
+            style: TextStyle(color: subTextColor),
           ),
         ),
-        Container(
-          height: 150,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              Expanded(
-                child: PieChart(
-                  PieChartData(
-                    sectionsSpace: 0,
-                    centerSpaceRadius: 30,
-                    sections: [
-                      PieChartSectionData(
-                        value: totalEquityValue,
-                        color: const Color(0xFF5367FF),
-                        radius: 25,
-                        showTitle: false,
-                      ),
-                      PieChartSectionData(
-                        value: availableCash,
-                        color: kGreen,
-                        radius: 25,
-                        showTitle: false,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildLegendDot("Stocks", const Color(0xFF5367FF), textColor),
-                  const SizedBox(height: 8),
-                  _buildLegendDot("Cash", kGreen, textColor),
+      );
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            height: 120,
+            width: 120,
+            child: PieChart(
+              PieChartData(
+                sectionsSpace: 0,
+                centerSpaceRadius: 30,
+                startDegreeOffset: -90,
+                sections: [
+                  if (equity > 0)
+                    PieChartSectionData(
+                      value: equity,
+                      color: stockColor,
+                      radius: 18,
+                      showTitle: false,
+                    ),
+                  if (cash > 0)
+                    PieChartSectionData(
+                      value: cash,
+                      color: cashColor,
+                      radius: 18,
+                      showTitle: false,
+                    ),
                 ],
               ),
-              const SizedBox(width: 30),
-            ],
+            ),
           ),
+          const SizedBox(width: 24),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildLegendItem(
+                  "Stocks",
+                  equity,
+                  stockColor,
+                  textColor,
+                  subTextColor,
+                ),
+                const SizedBox(height: 16),
+                _buildLegendItem(
+                  "Cash",
+                  cash,
+                  cashColor,
+                  textColor,
+                  subTextColor,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLegendItem(
+    String title,
+    double value,
+    Color color,
+    Color textColor,
+    Color subTextColor,
+  ) {
+    final currency = NumberFormat.compactCurrency(locale: 'en_IN', symbol: '₹');
+    return Row(
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 10),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                color: subTextColor,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            Text(
+              currency.format(value),
+              style: TextStyle(
+                color: textColor,
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
       ],
     );
   }
 
-  Widget _buildHoldingsHeader(Color textColor, Color actionColor) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildSummaryCard(
+    double totalValue,
+    double todaysPL,
+    double invested,
+    double cash,
+    double overallPL,
+    double plPercent,
+    Color cardColor,
+    Color textColor,
+    Color subTextColor,
+    NumberFormat currency,
+    Color kGreen,
+    Color kRed,
+  ) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
         children: [
           Text(
-            "Holdings",
+            "Total Portfolio Value",
+            style: TextStyle(color: subTextColor, fontSize: 13),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            currency.format(totalValue),
             style: TextStyle(
               color: textColor,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+              fontSize: 34,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.5,
             ),
           ),
-          Text(
-            "See All",
-            style: TextStyle(
-              color: actionColor,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: (todaysPL >= 0 ? kGreen : kRed).withOpacity(0.15),
+              borderRadius: BorderRadius.circular(8),
             ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  todaysPL >= 0
+                      ? Icons.arrow_upward_rounded
+                      : Icons.arrow_downward_rounded,
+                  size: 14,
+                  color: todaysPL >= 0 ? kGreen : kRed,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  "Today: ${currency.format(todaysPL.abs())}",
+                  style: TextStyle(
+                    color: todaysPL >= 0 ? kGreen : kRed,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Invested",
+                      style: TextStyle(color: subTextColor, fontSize: 12),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      currency.format(invested),
+                      style: TextStyle(
+                        color: textColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Cash",
+                      style: TextStyle(color: subTextColor, fontSize: 12),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      currency.format(cash),
+                      style: TextStyle(
+                        color: textColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      "Overall Returns",
+                      style: TextStyle(color: subTextColor, fontSize: 12),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "${overallPL >= 0 ? '+' : ''}${currency.format(overallPL)}",
+                      style: TextStyle(
+                        color: overallPL >= 0 ? kGreen : kRed,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -636,266 +611,238 @@ class _PortfolioPageState extends State<PortfolioPage> {
   }
 
   Widget _buildHoldingsList(
-    List<Map<String, dynamic>> calculatedHoldings,
+    List<Map<String, dynamic>> holdings,
     NumberFormat currency,
     Color cardColor,
-    Color? subText,
     Color textColor,
+    Color subTextColor,
+    Color kGreen,
+    Color kRed,
   ) {
-    if (calculatedHoldings.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.all(20.0),
+    if (holdings.isEmpty) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(12),
+        ),
         child: Center(
-          child: Text("No holdings yet.", style: TextStyle(color: subText)),
+          child: Text(
+            "No holdings found",
+            style: TextStyle(color: subTextColor),
+          ),
         ),
       );
     }
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      physics: const NeverScrollableScrollPhysics(),
-      shrinkWrap: true,
-      itemCount: calculatedHoldings.length,
-      itemBuilder: (context, index) {
-        final stock = calculatedHoldings[index];
-        final double profitLoss = stock['currentVal'] - stock['investedVal'];
-        final double investedVal = stock['investedVal'];
-        final double plPercent = (investedVal > 0)
-            ? (profitLoss / investedVal) * 100
-            : 0.0;
-        final bool isProfit = profitLoss >= 0;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ListView.separated(
+        padding: EdgeInsets.zero,
+        physics: const NeverScrollableScrollPhysics(),
+        shrinkWrap: true,
+        itemCount: holdings.length,
+        separatorBuilder: (ctx, idx) => Divider(
+          height: 1,
+          thickness: 0.5,
+          indent: 60,
+          color: subTextColor.withOpacity(0.2),
+        ),
+        itemBuilder: (context, index) {
+          final stock = holdings[index];
+          final double profitLoss = stock['currentVal'] - stock['investedVal'];
+          final bool isProfit = profitLoss >= 0;
+
+          return ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 4,
+            ),
+            leading: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.show_chart,
+                color: Colors.orange,
+                size: 20,
+              ),
+            ),
+            title: Text(
+              stock['symbol'],
+              style: TextStyle(
+                color: textColor,
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
+            ),
+            subtitle: Text(
+              "${stock['quantity']} Qty • Avg ${currency.format(stock['avgBuyPrice'])}",
+              style: TextStyle(color: subTextColor, fontSize: 12),
+            ),
+            trailing: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  currency.format(stock['currentVal']),
+                  style: TextStyle(
+                    color: textColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+                Text(
+                  "${isProfit ? '+' : ''}${currency.format(profitLoss)}",
+                  style: TextStyle(
+                    color: isProfit ? kGreen : kRed,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildRecentTransactions(
+    NumberFormat currency,
+    Color cardColor,
+    Color textColor,
+    Color subTextColor,
+    Color kGreen,
+    Color kRed,
+  ) {
+    return StreamBuilder<List<TransactionModel>>(
+      stream: _transactionStream,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: Text(
+                "No recent transactions",
+                style: TextStyle(color: subTextColor),
+              ),
+            ),
+          );
+        }
+
+        final transactions = snapshot.data!;
+
         return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
+          margin: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
             color: cardColor,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: subText!.withOpacity(0.05)),
           ),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        stock['symbol'],
-                        style: TextStyle(
-                          color: textColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+          child: ListView.separated(
+            padding: EdgeInsets.zero,
+            physics: const NeverScrollableScrollPhysics(),
+            shrinkWrap: true,
+            itemCount: transactions.length > 5 ? 5 : transactions.length,
+            separatorBuilder: (ctx, idx) => Divider(
+              height: 1,
+              thickness: 0.5,
+              indent: 60,
+              color: subTextColor.withOpacity(0.2),
+            ),
+            itemBuilder: (context, index) {
+              final txn = transactions[index];
+              final bool isBuy = txn.transactionType == "BUY";
+              final String txnTime = DateFormat(
+                'd MMM',
+              ).format(txn.transactionTime);
+
+              return ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => OrderDetailsPage(
+                        transaction: txn,
+                        transactionId: txn.id ?? "Unknown ID",
                       ),
-                      Text(
-                        stock['companyName'],
-                        style: TextStyle(color: subText, fontSize: 12),
-                      ),
-                    ],
+                    ),
+                  );
+                },
+                leading: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: (isBuy ? kGreen : kRed).withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        currency.format(stock['currentPrice']),
-                        style: TextStyle(
-                          color: textColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      Text(
-                        "LTP",
-                        style: TextStyle(color: subText, fontSize: 10),
-                      ),
-                    ],
+                  child: Icon(
+                    isBuy ? Icons.arrow_downward : Icons.arrow_upward,
+                    color: isBuy ? kGreen : kRed,
+                    size: 18,
                   ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Divider(color: subText.withOpacity(0.1), height: 1),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildDataCell(
-                    "Qty",
-                    "${stock['quantity']}",
-                    subText,
-                    textColor,
+                ),
+                title: Text(
+                  txn.stockSymbol,
+                  style: TextStyle(
+                    color: textColor,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
                   ),
-                  _buildDataCell(
-                    "Avg",
-                    currency.format(stock['avgBuyPrice']),
-                    subText,
-                    textColor,
-                  ),
-                  _buildDataCell(
-                    "Value",
-                    currency.format(stock['currentVal']),
-                    subText,
-                    textColor,
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        "P/L",
-                        style: TextStyle(color: subText, fontSize: 11),
+                ),
+                subtitle: Text(
+                  "${isBuy ? 'Bought' : 'Sold'} • $txnTime",
+                  style: TextStyle(color: subTextColor, fontSize: 12),
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      currency.format(txn.totalAmount),
+                      style: TextStyle(
+                        color: textColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        "${isProfit ? '+' : ''}${currency.format(profitLoss)}",
-                        style: TextStyle(
-                          color: isProfit ? kGreen : kRed,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                      ),
-                      Text(
-                        "${plPercent.toStringAsFixed(2)}%",
-                        style: TextStyle(
-                          color: isProfit ? kGreen : kRed,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.chevron_right,
+                      color: subTextColor.withOpacity(0.5),
+                      size: 20,
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
         );
       },
-    );
-  }
-
-  Widget _buildBottomBar(Color textColor, Color cardColor, Color? subText) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: cardColor,
-        border: Border(top: BorderSide(color: subText!.withOpacity(0.1))),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: OutlinedButton(
-              onPressed: () {},
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: textColor.withOpacity(0.5)),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Text(
-                "Watchlist",
-                style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kRed,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                "Sell",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kGreen,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                "Buy",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSummaryColumn(
-    String label,
-    String value,
-    Color textColor,
-    Color? subText,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: TextStyle(color: subText, fontSize: 12)),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(
-            color: textColor,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDataCell(
-    String label,
-    String value,
-    Color? subText,
-    Color textColor,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: TextStyle(color: subText, fontSize: 11)),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          style: TextStyle(
-            color: textColor,
-            fontWeight: FontWeight.w600,
-            fontSize: 13,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLegendDot(String text, Color color, Color textColor) {
-    return Row(
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          text,
-          style: TextStyle(color: textColor, fontWeight: FontWeight.w500),
-        ),
-      ],
     );
   }
 }
