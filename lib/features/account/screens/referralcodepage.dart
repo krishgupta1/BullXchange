@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:bullxchange/widgets/custom_back_button.dart';
 
 import 'package:flutter/services.dart'; // Required for Clipboard
 import 'package:dotted_border/dotted_border.dart'; // Make sure you have this package
@@ -19,24 +20,18 @@ class ReferralCodePage extends StatelessWidget {
       // --- ⭐️ MODIFIED: Theme background color ---
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        // --- ⭐️ MODIFIED: Theme app bar colors ---
-        backgroundColor: theme.appBarTheme.backgroundColor,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: colorScheme.secondary),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-
+        leading: const CustomBackButton(),
         title: Text(
           'Referral Code',
-          // --- ⭐️⭐️ FIX: 'color' override hata diya ⭐️⭐️ ---
-          // Ab yeh theme_provider.dart se color lega
-          // (Light mode mein blue, Dark mode mein white)
-          style: theme.appBarTheme.titleTextStyle?.copyWith(fontSize: 20),
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontSize: 20,
+            color: colorScheme.onSurface,
+          ),
         ),
         centerTitle: true,
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
+        scrolledUnderElevation: 0,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24.0),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:bullxchange/widgets/custom_back_button.dart';
 
 class TermsAndConditionsPage extends StatelessWidget {
   const TermsAndConditionsPage({super.key});
@@ -15,22 +16,19 @@ class TermsAndConditionsPage extends StatelessWidget {
       // --- ⭐️ MODIFIED: Theme background color ---
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        // --- ⭐️ MODIFIED: Saari styling ab theme_provider.dart se aa rahi hai ---
-        elevation: 4,
-        shadowColor: colorScheme.secondary.withOpacity(0.2),
-        backgroundColor: theme.appBarTheme.backgroundColor,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: colorScheme.secondary),
-          onPressed: () => Navigator.pop(context),
-        ),
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        leading: const CustomBackButton(),
         title: Text(
           'Terms & Conditions',
-          style: theme.appBarTheme.titleTextStyle?.copyWith(
-            fontSize: 22,
-            fontWeight: FontWeight.w800,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: colorScheme.onSurface,
           ),
         ),
-        centerTitle: true,
       ),
       body: Container(
         // --- ⭐️ MODIFIED: Gradient hata diya ---

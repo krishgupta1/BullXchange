@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:bullxchange/widgets/custom_back_button.dart';
 import 'package:flutter/services.dart'; // Clipboard ke liye
 
 class ContactUsPage extends StatelessWidget {
@@ -15,20 +16,18 @@ class ContactUsPage extends StatelessWidget {
       // --- Theme background ---
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: theme.appBarTheme.backgroundColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_new,
-            color: colorScheme.secondary,
-          ), // Pink
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: const CustomBackButton(),
         title: Text(
           'Contact Us',
-          style: theme.appBarTheme.titleTextStyle?.copyWith(fontSize: 20),
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontSize: 20,
+            color: colorScheme.onSurface,
+          ),
         ),
         centerTitle: true,
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
+        scrolledUnderElevation: 0,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),

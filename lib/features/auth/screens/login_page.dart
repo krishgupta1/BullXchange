@@ -5,6 +5,7 @@ import 'package:bullxchange/features/auth/screens/reset_password_page.dart';
 import 'package:bullxchange/provider/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:bullxchange/widgets/custom_back_button.dart';
 import 'package:provider/provider.dart';
 
 class LoginPage extends StatefulWidget {
@@ -46,21 +47,16 @@ class _LoginPageState extends State<LoginPage> {
             children: [
               const SizedBox(height: 20),
               SizedBox(
-                width: 40,
-                height: 40,
+                width: 56,
+                height: 56,
                 child: Center(
-                  child: IconButton(
+                  child: CustomBackButton(
                     onPressed: () => Navigator.pushReplacement(
                       context,
                       slideLeftToRight(const OnboardingPage12()),
                     ),
+                    iconSize: 18,
                     padding: EdgeInsets.zero,
-                    icon: Icon(
-                      Icons.arrow_back_ios,
-                      // --- ⭐️ MODIFIED: Theme accent color (Pink) ---
-                      color: colorScheme.secondary,
-                      size: 18,
-                    ),
                   ),
                 ),
               ),

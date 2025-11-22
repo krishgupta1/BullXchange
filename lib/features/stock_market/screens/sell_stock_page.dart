@@ -6,6 +6,7 @@ import 'package:bullxchange/models/transaction_model.dart';
 import 'package:bullxchange/services/firebase/charge_calculator_service.dart';
 import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:flutter/material.dart';
+import 'package:bullxchange/widgets/custom_back_button.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -114,7 +115,7 @@ class _SellStockPageState extends State<SellStockPage> {
       productType: _selectedProductType,
       orderType: 'Market',
       stockSymbol: symbol,
-      transactionTime: now, // Sell is always a Market order in this flow
+      transactionTime: now,
     );
 
     final holdingUpdate = StockHoldingModel(
@@ -166,9 +167,11 @@ class _SellStockPageState extends State<SellStockPage> {
       return Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
+          leading: const CustomBackButton(),
+          centerTitle: true,
           backgroundColor: theme.scaffoldBackgroundColor,
           elevation: 0,
-          leading: const BackButton(),
+          scrolledUnderElevation: 0,
         ),
         body: Center(
           child: Text(
@@ -182,50 +185,29 @@ class _SellStockPageState extends State<SellStockPage> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: theme.scaffoldBackgroundColor,
-        elevation: 0,
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Container(
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: theme.shadowColor.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: IconButton(
-              icon: Icon(
-                Icons.arrow_back_ios_new_rounded,
-                color: colorScheme.onSurface,
-                size: 18,
-              ),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ),
-        ),
+        leading: const CustomBackButton(),
         title: Column(
           children: [
             Text(
               'Sell Order',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
+                color: theme.colorScheme.onSurface,
               ),
             ),
             Text(
               widget.instrument.symbol.replaceAll('-EQ', ''),
               style: theme.textTheme.bodySmall?.copyWith(
-                color: colorScheme.error, // Red for Sell
+                color: colorScheme.error,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ],
         ),
         centerTitle: true,
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
+        scrolledUnderElevation: 0,
       ),
       body: SafeArea(
         child: Column(
@@ -279,7 +261,7 @@ class _SellStockPageState extends State<SellStockPage> {
               shape: BoxShape.circle,
               border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
             ),
-            child: SmartLogo(instrument: widget.instrument, radius: 22),
+            child: SmartLogo(instrument: widget.instrument, radius: 24),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -288,7 +270,7 @@ class _SellStockPageState extends State<SellStockPage> {
               children: [
                 Text(
                   widget.instrument.name,
-                  style: theme.textTheme.bodySmall?.copyWith(
+                  style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w500,
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -306,14 +288,14 @@ class _SellStockPageState extends State<SellStockPage> {
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: colorScheme.error.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
               "SELL",
-              style: theme.textTheme.labelSmall?.copyWith(
+              style: theme.textTheme.labelMedium?.copyWith(
                 color: colorScheme.error,
                 fontWeight: FontWeight.bold,
               ),
@@ -341,10 +323,10 @@ class _SellStockPageState extends State<SellStockPage> {
               ),
             ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: theme.dividerColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 'Holding: $_ownedQuantity',
@@ -367,10 +349,7 @@ class _SellStockPageState extends State<SellStockPage> {
             errorText: _errorText,
             filled: true,
             fillColor: theme.cardColor,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 16,
-            ),
+            contentPadding: const EdgeInsets.all(16),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide(
@@ -379,10 +358,7 @@ class _SellStockPageState extends State<SellStockPage> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(
-                color: colorScheme.primary, // Use primary for focus
-                width: 2,
-              ),
+              borderSide: BorderSide(color: colorScheme.primary, width: 2),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
@@ -394,73 +370,7 @@ class _SellStockPageState extends State<SellStockPage> {
             ),
           ),
         ),
-        const SizedBox(height: 24),
-        Text(
-          "Holding Details",
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 12),
-        // Read-only chips for Product and Exchange since they are fixed for selling
-        Row(
-          children: [
-            Expanded(
-              child: _buildFixedDetailItem(
-                context,
-                'Product',
-                _selectedProductType,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _buildFixedDetailItem(
-                context,
-                'Exchange',
-                _selectedExchange,
-              ),
-            ),
-          ],
-        ),
       ],
-    );
-  }
-
-  Widget _buildFixedDetailItem(
-    BuildContext context,
-    String label,
-    String value,
-  ) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.disabledColor,
-              fontSize: 11,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: colorScheme.onSurface.withOpacity(0.8),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -515,7 +425,7 @@ class _SellStockPageState extends State<SellStockPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Total Amount',
+                'Total Receive',
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -524,7 +434,7 @@ class _SellStockPageState extends State<SellStockPage> {
                 formatter.format(_totalAmount),
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: colorScheme.primary, // Positive cash flow
+                  color: colorScheme.primary,
                 ),
               ),
             ],
@@ -605,7 +515,7 @@ class _SellStockPageState extends State<SellStockPage> {
     bool isEnabled = _quantity > 0 && !_isPlacingOrder && _errorText == null;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: theme.scaffoldBackgroundColor,
         boxShadow: [
@@ -642,7 +552,7 @@ class _SellStockPageState extends State<SellStockPage> {
                   ),
                 )
               : const Text(
-                  "Swipe to Sell", // UI enhancement text
+                  "Swipe to Sell",
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,

@@ -7,6 +7,7 @@ import 'package:bullxchange/provider/theme_provider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:bullxchange/widgets/custom_back_button.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -37,10 +38,7 @@ class _SettingsPageState extends State<SettingsPage> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: colorScheme.onSurface),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+        leading: const CustomBackButton(),
         title: Text(
           'Settings',
           style: TextStyle(

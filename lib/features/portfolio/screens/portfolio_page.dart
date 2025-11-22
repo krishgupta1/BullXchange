@@ -2,7 +2,6 @@ import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:bullxchange/models/user_profile_data_model.dart';
@@ -142,23 +141,19 @@ class _PortfolioPageState extends State<PortfolioPage> {
 
             return Scaffold(
               backgroundColor: backgroundColor,
-              // ⭐️ MODIFIED APP BAR
               appBar: AppBar(
                 backgroundColor: backgroundColor,
                 scrolledUnderElevation: 0,
                 elevation: 0,
-                centerTitle: true, // Center alignment like Settings
+                centerTitle: true,
                 title: Text(
                   "Portfolio",
                   style: TextStyle(
-                    fontFamily: 'EudoxusSans',
-                    fontWeight: FontWeight.bold,
-                    color: textColor,
-                    fontSize: 28, // Large size to match "Settings"
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 actions: [
-                  // Kept this action but made it subtle to match clean look
                   IconButton(
                     icon: Icon(Icons.more_horiz, color: textColor),
                     onPressed: () {},

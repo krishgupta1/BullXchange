@@ -9,14 +9,15 @@ import 'package:bullxchange/features/stock_market/widgets/index_card.dart';
 import 'package:bullxchange/features/stock_market/widgets/main_page_header.dart';
 import 'package:bullxchange/features/stock_market/widgets/shimmer_loading.dart';
 import 'package:bullxchange/features/stock_market/widgets/stock_card.dart';
-import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/models/order_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
+import 'package:bullxchange/models/instrument_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:bullxchange/widgets/custom_back_button.dart';
 
 class StockPage extends StatefulWidget {
   final int initialActionIndex;
@@ -43,10 +44,6 @@ class _StockPageState extends State<StockPage>
   bool _stocksInitialized = false;
   bool _isLoadingMore = false;
   final int _batchSize = 50;
-
-  // --- (initState, dispose, _loadUserData, _initializeStocks, _onScroll,
-  //      _loadMoreItems, _onSearchChanged, _searchStocks, _cancelSearch
-  //      functions unchanged in logic) ---
 
   @override
   void initState() {
@@ -194,7 +191,6 @@ class _StockPageState extends State<StockPage>
   Widget build(BuildContext context) {
     super.build(context);
 
-    // --- ⭐️ Theme se colors lo ---
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -207,7 +203,6 @@ class _StockPageState extends State<StockPage>
         builder: (context, provider, child) {
           if (provider.isLoading && provider.allNSEStocks.isEmpty) {
             return Scaffold(
-              // --- ⭐️ MODIFIED: Theme background color ---
               backgroundColor: theme.scaffoldBackgroundColor,
               body: Center(
                 child: CircularProgressIndicator(color: colorScheme.primary),
@@ -216,7 +211,6 @@ class _StockPageState extends State<StockPage>
           }
           if (provider.errorMessage != null) {
             return Scaffold(
-              // --- ⭐️ MODIFIED: Theme background color ---
               backgroundColor: theme.scaffoldBackgroundColor,
               body: Center(
                 child: Padding(
@@ -224,7 +218,6 @@ class _StockPageState extends State<StockPage>
                   child: Text(
                     'Error: ${provider.errorMessage}',
                     textAlign: TextAlign.center,
-                    // --- ⭐️ MODIFIED: Theme error color ---
                     style: TextStyle(color: colorScheme.error),
                   ),
                 ),
@@ -232,7 +225,6 @@ class _StockPageState extends State<StockPage>
             );
           }
           return Scaffold(
-            // --- ⭐️ MODIFIED: Theme background color ---
             backgroundColor: theme.scaffoldBackgroundColor,
             body: SafeArea(
               child: Column(
@@ -249,7 +241,6 @@ class _StockPageState extends State<StockPage>
                             children: [
                               Expanded(
                                 child: IndexCard(
-                                  // Yeh already theme-aware hai
                                   instrument: provider.nifty50,
                                   title: "NIFTY 50",
                                 ),
@@ -257,7 +248,6 @@ class _StockPageState extends State<StockPage>
                               const SizedBox(width: 16),
                               Expanded(
                                 child: IndexCard(
-                                  // Yeh already theme-aware hai
                                   instrument: provider.bankNifty,
                                   title: "BANK NIFTY",
                                 ),
@@ -266,7 +256,6 @@ class _StockPageState extends State<StockPage>
                           ),
                           const SizedBox(height: 20),
                           ActionTabBar(
-                            // Yeh bhi theme-aware hona chahiye
                             labels: const [
                               "Explore",
                               "Holdings",
@@ -293,23 +282,23 @@ class _StockPageState extends State<StockPage>
                         children: [
                           SingleChildScrollView(
                             physics: const BouncingScrollPhysics(),
-                            child: ExplorePage(), // Theme-aware
+                            child: ExplorePage(),
                           ),
                           SingleChildScrollView(
                             physics: const BouncingScrollPhysics(),
-                            child: HoldingsPage(), // Theme-aware
+                            child: HoldingsPage(),
                           ),
                           SingleChildScrollView(
                             physics: const BouncingScrollPhysics(),
-                            child: PositionPage(), // Theme-aware
+                            child: PositionPage(),
                           ),
                           SingleChildScrollView(
                             physics: const BouncingScrollPhysics(),
-                            child: OrderPage(), // Theme-aware
+                            child: OrderPage(),
                           ),
                           SingleChildScrollView(
                             physics: const BouncingScrollPhysics(),
-                            child: WatchListPage(), // Theme-aware
+                            child: WatchListPage(),
                           ),
                         ],
                       ),
@@ -337,12 +326,7 @@ class _StockPageState extends State<StockPage>
     );
   }
 
-  // ----------------------------------------------------
-  // WIDGET BUILDER METHODS (Theme-Aware)
-  // ----------------------------------------------------
-
   Widget _buildHeader() {
-    // --- ⭐️ Theme se colors lo ---
     final colorScheme = Theme.of(context).colorScheme;
 
     if (_isSearching) {
@@ -353,14 +337,9 @@ class _StockPageState extends State<StockPage>
       userName: _userName,
       defaultUserName: 'User',
       welcomeMessage: 'Welcome to BullXchange',
-
-      // --- ⭐️⭐️ YAHAN DRAWER KHOLNE KA LOGIC ADD KARNA HAI ⭐️⭐️ ---
       onProfileTap: () {
-        // Yeh apne parent (HomePage) ke Scaffold ko dhoondega aur drawer khol dega
         Scaffold.of(context).openDrawer();
       },
-
-      // --- ⭐️⭐️ END OF FIX ⭐️⭐️ ---
       actions: [
         IconButton(
           onPressed: () {
@@ -370,14 +349,11 @@ class _StockPageState extends State<StockPage>
           },
           icon: Icon(Icons.search, color: colorScheme.onSurface),
         ),
-
-        // --- Three-dot menu yahaan se hata diya hai ---
       ],
     );
   }
 
   Widget _buildSearchBar() {
-    // --- ⭐️ Theme se colors lo ---
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
@@ -385,29 +361,33 @@ class _StockPageState extends State<StockPage>
     return TextField(
       controller: _searchController,
       autofocus: true,
-      // --- ⭐️ MODIFIED: Theme text color ---
       style: TextStyle(color: colorScheme.onSurface),
       decoration: InputDecoration(
         hintText: "Search company, stocks...",
-        // --- ⭐️ MODIFIED: Theme hint color ---
         hintStyle: TextStyle(color: textTheme.bodySmall?.color, fontSize: 14),
-        prefixIcon: IconButton(
-          // --- ⭐️ MODIFIED: Theme accent color (Pink) ---
-          icon: Icon(Icons.arrow_back, color: colorScheme.secondary),
-          onPressed: _cancelSearch,
+        // --- ⭐️ FIX START: Added padding and constraints to fix overlap ---
+        prefixIcon: Padding(
+          padding: const EdgeInsets.only(left: 12.0, right: 8.0),
+          child: CustomBackButton(
+            onPressed: _cancelSearch,
+            iconSize: 20,
+            padding: EdgeInsets.zero,
+          ),
         ),
+        prefixIconConstraints: const BoxConstraints(
+          minWidth: 48,
+          minHeight: 48,
+        ),
+        // --- ⭐️ FIX END ---
         suffixIcon: IconButton(
-          // --- ⭐️ MODIFIED: Theme grey color ---
           icon: Icon(Icons.close, color: textTheme.bodySmall?.color),
           onPressed: () => _searchController.clear(),
         ),
         filled: true,
-        // --- ⭐️ MODIFIED: Theme surface color ---
         fillColor: colorScheme.surface,
         contentPadding: const EdgeInsets.symmetric(vertical: 15),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
-          // --- ⭐️ MODIFIED: Theme border colors ---
           borderSide: BorderSide(
             color: colorScheme.primary.withOpacity(0.3),
             width: 2,
@@ -422,7 +402,6 @@ class _StockPageState extends State<StockPage>
   }
 
   Widget _buildSearchResultsList(BuildContext context) {
-    // --- ⭐️ Theme se colors lo ---
     final colorScheme = Theme.of(context).colorScheme;
 
     if (_searchController.text.isEmpty) {
@@ -431,7 +410,6 @@ class _StockPageState extends State<StockPage>
           padding: const EdgeInsets.all(32.0),
           child: Text(
             "Start typing to search for stocks.",
-            // --- ⭐️ MODIFIED: Theme text color ---
             style: TextStyle(color: colorScheme.onSurface),
           ),
         ),
@@ -446,7 +424,6 @@ class _StockPageState extends State<StockPage>
           padding: const EdgeInsets.all(32.0),
           child: Text(
             "No stocks found.",
-            // --- ⭐️ MODIFIED: Theme text color ---
             style: TextStyle(color: colorScheme.onSurface),
           ),
         ),
@@ -457,7 +434,6 @@ class _StockPageState extends State<StockPage>
         ...List.generate(_displayedStocks.length, (index) {
           final instrument = _displayedStocks[index];
           return StockCard(
-            // Yeh already theme-aware hai
             instrument: instrument,
             onTap: () => Navigator.push(
               context,
@@ -473,11 +449,9 @@ class _StockPageState extends State<StockPage>
   }
 
   Widget _buildShimmerLoadingList() {
-    // --- ⭐️ Theme se colors lo ---
     final theme = Theme.of(context);
 
     return Shimmer.fromColors(
-      // --- ⭐️ MODIFIED: Theme-aware shimmer ---
       baseColor: theme.brightness == Brightness.light
           ? Colors.grey.shade300
           : Colors.grey.shade800,
@@ -491,11 +465,9 @@ class _StockPageState extends State<StockPage>
   }
 
   Widget _buildLoadMoreShimmer() {
-    // --- ⭐️ Theme se colors lo ---
     final theme = Theme.of(context);
 
     return Shimmer.fromColors(
-      // --- ⭐️ MODIFIED: Theme-aware shimmer ---
       baseColor: theme.brightness == Brightness.light
           ? Colors.grey.shade300
           : Colors.grey.shade800,

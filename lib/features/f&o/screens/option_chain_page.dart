@@ -1,4 +1,5 @@
 import 'package:bullxchange/provider/option_chain_provider.dart';
+import 'package:bullxchange/widgets/custom_back_button.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -42,7 +43,18 @@ class _OptionChainPageState extends State<OptionChainPage>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.symbol),
+        leading: const CustomBackButton(),
+        title: Text(
+          widget.symbol,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         bottom: TabBar(
           controller: _tabController,
           tabs: const [

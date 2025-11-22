@@ -13,6 +13,36 @@ import 'package:provider/provider.dart';
 
 import 'package:bullxchange/features/stock_market/screens/buy_stock_page.dart';
 import 'package:bullxchange/features/stock_market/screens/sell_stock_page.dart';
+import 'package:bullxchange/widgets/trade_action_buttons.dart';
+
+// --- HELPER: Consistent Intraday Badge ---
+Widget _buildIntradayBadge(BuildContext context) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+    decoration: BoxDecoration(
+      color: Colors.blue.withOpacity(0.15),
+      borderRadius: BorderRadius.circular(4),
+      border: Border.all(color: Colors.blue.withOpacity(0.3), width: 1),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(Icons.timer_outlined, size: 10, color: Colors.blue),
+        const SizedBox(width: 3),
+        Text(
+          "INTRADAY",
+          style: TextStyle(
+            fontSize: 9,
+            fontWeight: FontWeight.w700,
+            color: isDark ? Colors.blue.shade200 : Colors.blue.shade700,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
 // --- 1. MAIN PAGE ---
 class PositionPage extends StatefulWidget {
@@ -149,7 +179,12 @@ class _PositionPageState extends State<PositionPage> {
           children: [
             Icon(Icons.lock_outline, size: 48, color: colorScheme.secondary),
             const SizedBox(height: 16),
-            const Text("Please log in to see your positions."),
+            Text(
+              "Please log in to see your positions.",
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: colorScheme.onSurface,
+              ),
+            ),
           ],
         ),
       );
@@ -210,24 +245,8 @@ class _PositionPageState extends State<PositionPage> {
                         color: colorScheme.onSurface,
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colorScheme.secondaryContainer,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        "Intraday",
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onSecondaryContainer,
-                        ),
-                      ),
-                    ),
+                    // --- UPDATED: VISIBLE INTRADAY BADGE IN HEADER ---
+                    _buildIntradayBadge(context),
                   ],
                 ),
               ),
@@ -269,7 +288,6 @@ class _PositionPageState extends State<PositionPage> {
     final isDark = theme.brightness == Brightness.dark;
 
     final sign = totalPnl >= 0 ? "+" : "-";
-    // Adaptive Colors
     final profitColor = isDark
         ? const Color(0xFF66BB6A)
         : const Color(0xFF00C853);
@@ -338,7 +356,6 @@ class _PositionPageState extends State<PositionPage> {
                   ),
                 ],
               ),
-              // P&L Percentage Pill
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                 decoration: BoxDecoration(
@@ -356,11 +373,9 @@ class _PositionPageState extends State<PositionPage> {
               ),
             ],
           ),
-
           const SizedBox(height: 24),
           Divider(height: 1, color: theme.dividerColor.withOpacity(0.1)),
           const SizedBox(height: 16),
-
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -385,8 +400,6 @@ class _PositionPageState extends State<PositionPage> {
                   ),
                 ],
               ),
-
-              // Exit All Button
               InkWell(
                 onTap: onExitAll,
                 borderRadius: BorderRadius.circular(8),
@@ -462,7 +475,9 @@ class _EmptyState extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           "Your intraday trades will appear here.",
-          style: TextStyle(color: theme.hintColor),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.textTheme.bodySmall?.color?.withOpacity(0.8),
+          ),
           textAlign: TextAlign.center,
         ),
       ],
@@ -617,9 +632,12 @@ class _PositionStockItemState extends State<PositionStockItem> {
                       color: colorScheme.onSurface,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
+                      // --- UPDATED: VISIBLE INTRADAY BADGE IN LIST ---
+                      _buildIntradayBadge(context),
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 6,
@@ -633,7 +651,7 @@ class _PositionStockItemState extends State<PositionStockItem> {
                           "${p.quantity} Qty",
                           style: TextStyle(
                             color: theme.textTheme.bodySmall?.color,
-                            fontSize: 11,
+                            fontSize: 10,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -903,34 +921,25 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          position.stockSymbol,
-                          style: TextStyle(
-                            color: theme.hintColor,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
+                        const SizedBox(height: 4),
+                        // --- UPDATED: VISIBLE INTRADAY BADGE IN BOTTOM SHEET ---
+                        Row(
+                          children: [
+                            Text(
+                              position.stockSymbol,
+                              style: TextStyle(
+                                color:
+                                    theme.textTheme.bodySmall?.color ??
+                                    colorScheme.onSurface.withOpacity(0.7),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            _buildIntradayBadge(context),
+                          ],
                         ),
                       ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colorScheme.secondaryContainer,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      "INTRADAY",
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSecondaryContainer,
-                      ),
                     ),
                   ),
                 ],
@@ -1008,50 +1017,12 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
 
               const SizedBox(height: 32),
 
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () async => await _handleSell(context),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: sellColor, width: 1.5),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        "EXIT",
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: sellColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => _handleBuy(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        "ADD MORE",
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+              TradeActionButtons(
+                onSell: () async => await _handleSell(context),
+                onBuy: () => _handleBuy(context),
+                sellLabel: 'EXIT',
+                buyLabel: 'ADD MORE',
+                height: 56.0,
               ),
             ],
           ),

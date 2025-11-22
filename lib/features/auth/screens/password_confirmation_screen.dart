@@ -1,5 +1,6 @@
 import 'package:bullxchange/features/auth/screens/reset_password_page.dart';
 import 'package:flutter/material.dart';
+import 'package:bullxchange/widgets/custom_back_button.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'setup_pin_screen.dart';
 
@@ -79,27 +80,19 @@ class _PasswordConfirmationScreenState
       // --- ⭐️ MODIFIED: Theme background color ---
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        // --- ⭐️ MODIFIED: Theme app bar colors ---
-        backgroundColor: theme.appBarTheme.backgroundColor,
-        elevation: 0,
-        leading: IconButton(
-          // --- ⭐️ MODIFIED: Theme icon color (Pink) ---
-          icon: Icon(
-            Icons.arrow_back_ios,
-            color: colorScheme.secondary,
-            size: 18,
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: const CustomBackButton(),
         centerTitle: true,
         title: Text(
           "Confirm Password",
-          // --- ⭐️ MODIFIED: Theme title style ---
-          style: theme.appBarTheme.titleTextStyle?.copyWith(
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
             fontSize: 20,
             fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
           ),
         ),
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
+        scrolledUnderElevation: 0,
       ),
       body: SafeArea(
         // --- ⭐️⭐️ FIX: Column ko SingleChildScrollView mein wrap kiya ⭐️⭐️ ---

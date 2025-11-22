@@ -3,7 +3,7 @@ import 'package:bullxchange/features/auth/screens/login_page.dart';
 import 'package:bullxchange/features/auth/screens/signup_page.dart';
 import 'package:bullxchange/features/auth/navigation/route_transitions.dart';
 import 'package:flutter/material.dart';
-// import 'package:bullxchange/features/auth/widgets/app_back_button.dart'; // <-- Ise hata diya, standard BackButton use karenge
+import 'package:bullxchange/widgets/custom_back_button.dart';
 
 class OnboardingPage12 extends StatelessWidget {
   const OnboardingPage12({super.key});
@@ -15,8 +15,10 @@ class OnboardingPage12 extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
 
+    // --- ⭐️ FIX: Check if Dark Mode is active ---
+    final isDarkMode = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      // --- ⭐️ MODIFIED: Theme background color ---
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: LayoutBuilder(
@@ -31,14 +33,9 @@ class OnboardingPage12 extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         const SizedBox(height: 20),
-                        // --- ⭐️ MODIFIED: Standard BackButton (theme-aware) ---
                         Align(
                           alignment: Alignment.centerLeft,
-                          child: IconButton(
-                            icon: Icon(
-                              Icons.arrow_back_ios_new,
-                              color: colorScheme.secondary,
-                            ),
+                          child: CustomBackButton(
                             onPressed: () {
                               if (Navigator.of(context).canPop()) {
                                 Navigator.of(context).pop();
@@ -51,7 +48,6 @@ class OnboardingPage12 extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 40),
-                        // Illustration
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           child: AspectRatio(
@@ -65,9 +61,8 @@ class OnboardingPage12 extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 24),
-                        // Title
                         Text(
-                          'Get Started  with BullXchange',
+                          'Get Started with BullXchange',
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.headlineMedium
                               ?.copyWith(
@@ -76,19 +71,16 @@ class OnboardingPage12 extends StatelessWidget {
                               ),
                         ),
                         const SizedBox(height: 16),
-                        // Description
                         Text(
                           "Discover India’s top stocks and F&O to trade and learn.",
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.bodyLarge
                               ?.copyWith(
-                                // --- ⭐️ MODIFIED: Theme grey color ---
                                 color: textTheme.bodySmall?.color,
                                 height: 1.4,
                               ),
                         ),
                         const SizedBox(height: 20),
-                        // Page indicators
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -106,7 +98,6 @@ class OnboardingPage12 extends StatelessWidget {
                           ],
                         ),
                         const Spacer(),
-                        // Get Started button
                         ElevatedButton(
                           onPressed: () {
                             Navigator.pushReplacement(
@@ -115,9 +106,8 @@ class OnboardingPage12 extends StatelessWidget {
                             );
                           },
                           style: ElevatedButton.styleFrom(
-                            // --- ⭐️ MODIFIED: Theme button color ---
                             backgroundColor: colorScheme.primary,
-                            foregroundColor: colorScheme.onPrimary, // White
+                            foregroundColor: colorScheme.onPrimary,
                             minimumSize: const Size.fromHeight(64),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(24),
@@ -129,13 +119,13 @@ class OnboardingPage12 extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
-                              // --- ⭐️⭐️ FIX: Text color ko explicitly white kiya ---
                               color: colorScheme.onPrimary,
                             ),
                           ),
                         ),
                         const SizedBox(height: 16),
-                        // Sign in button (outlined)
+
+                        // --- ⭐️ SIGN IN BUTTON FIX ---
                         OutlinedButton(
                           onPressed: () {
                             Navigator.pushReplacement(
@@ -144,13 +134,17 @@ class OnboardingPage12 extends StatelessWidget {
                             );
                           },
                           style: OutlinedButton.styleFrom(
-                            // --- ⭐️ MODIFIED: Theme colors ---
                             backgroundColor: colorScheme.surface,
-                            // --- ⭐️⭐️ FIX: Text color ko blue kiya ---
-                            foregroundColor: colorScheme.primary,
+                            // Hint color for ripples
+                            foregroundColor: isDarkMode
+                                ? Colors.white
+                                : colorScheme.primary,
                             side: BorderSide(
-                              color: colorScheme.secondary,
-                            ), // Pink border
+                              // Ensure border is visible in dark mode too
+                              color: isDarkMode
+                                  ? Colors.white38
+                                  : colorScheme.secondary,
+                            ),
                             minimumSize: const Size.fromHeight(64),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(24),
@@ -161,8 +155,10 @@ class OnboardingPage12 extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
-                              // --- ⭐️⭐️ FIX: Text color ko explicitly blue kiya ---
-                              color: colorScheme.primary,
+                              // ⭐️ FIX: If Dark Mode -> White, Else -> Primary Blue
+                              color: isDarkMode
+                                  ? Colors.white
+                                  : colorScheme.primary,
                             ),
                           ),
                         ),
@@ -180,14 +176,14 @@ class OnboardingPage12 extends StatelessWidget {
   }
 }
 
-// --- (Route transition function unchanged) ---
+// --- (Route transition remains unchanged) ---
 Route _slideLeftToRight(Widget page) {
   return PageRouteBuilder(
     pageBuilder: (context, animation, secondaryAnimation) => page,
     transitionDuration: const Duration(milliseconds: 400),
     reverseTransitionDuration: const Duration(milliseconds: 400),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      const begin = Offset(-1.0, 0.0); // from left
+      const begin = Offset(-1.0, 0.0);
       const end = Offset.zero;
       const curve = Curves.easeInOutCubic;
       final tween = Tween(
@@ -199,7 +195,6 @@ Route _slideLeftToRight(Widget page) {
   );
 }
 
-// --- ⭐️ MODIFIED: _Dot widget ab theme-aware hai ---
 class _Dot extends StatelessWidget {
   const _Dot({required this.active, this.isLong = false});
 
@@ -208,11 +203,9 @@ class _Dot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // --- ⭐️ Theme se colors lo ---
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    // --- ⭐️ MODIFIED: Colors ab theme se aa rahe hain ---
     final Color activeColor = colorScheme.primary;
     final Color inactiveColor = theme.dividerColor.withOpacity(0.5);
 

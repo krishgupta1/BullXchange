@@ -1,5 +1,6 @@
 import 'package:bullxchange/services/firebase/fund_service.dart';
 import 'package:flutter/material.dart';
+import 'package:bullxchange/widgets/custom_back_button.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart'; // Import QR package
 
@@ -214,7 +215,20 @@ class _AddFundPageState extends State<AddFundPage> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(title: const Text("Add Funds"), elevation: 0),
+      appBar: AppBar(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        leading: const CustomBackButton(),
+        title: Text(
+          'Add Funds',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          ),
+        ),
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20.0),

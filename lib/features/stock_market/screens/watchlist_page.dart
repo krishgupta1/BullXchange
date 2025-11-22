@@ -8,6 +8,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+// Ideally, import your Instrument model to use it in Selector types
+// import 'package:bullxchange/models/instrument_model.dart';
+
 class WatchListPage extends StatefulWidget {
   const WatchListPage({super.key});
 
@@ -21,6 +24,7 @@ class _WatchListPageState extends State<WatchListPage> {
 
   bool _isEditMode = false;
   final Set<String> _selectedTokens = {};
+  UserProfileDataModel? _lastProfile;
 
   void _toggleEditMode() {
     setState(() {
@@ -42,7 +46,6 @@ class _WatchListPageState extends State<WatchListPage> {
   void _deleteSelectedStocks() async {
     if (uid == null || _selectedTokens.isEmpty) return;
 
-    // --- MERGED: Theme-aware dialog from the new branch ---
     final colorScheme = Theme.of(context).colorScheme;
 
     final bool? didConfirm = await showDialog<bool>(
@@ -67,10 +70,7 @@ class _WatchListPageState extends State<WatchListPage> {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(
-              'Remove',
-              style: TextStyle(color: colorScheme.error),
-            ), // Red
+            child: Text('Remove', style: TextStyle(color: colorScheme.error)),
           ),
         ],
       ),
@@ -95,7 +95,6 @@ class _WatchListPageState extends State<WatchListPage> {
 
   @override
   Widget build(BuildContext context) {
-    // --- MERGED: Theme-aware logic from the new branch ---
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -108,94 +107,105 @@ class _WatchListPageState extends State<WatchListPage> {
       );
     }
 
-    // --- MERGED: StreamBuilder for user data (rebuilds on watchlist change) ---
-    return StreamBuilder<UserProfileDataModel?>(
-      stream: _userService.streamUserProfile(uid!),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(
-            child: CircularProgressIndicator(color: colorScheme.primary),
-          );
-        }
+    // We limit StreamBuilder scope to just the header/count and the list area so
+    // that frequent user-profile updates (e.g. watchlist changes) do not rebuild
+    // unrelated parts of the page. This ensures we only reload data, not the whole UI.
 
-        if (snapshot.hasError) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Text(
-                "Error loading watchlist data: ${snapshot.error}",
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.red),
+    final provider = Provider.of<InstrumentProvider>(context, listen: false);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Small StreamBuilder only for header count and edit/delete state
+              StreamBuilder<UserProfileDataModel?>(
+                stream: _userService.streamUserProfile(uid!),
+                builder: (context, snapshot) {
+                  final int count = (snapshot.hasData && snapshot.data != null)
+                      ? snapshot.data!.watchlist.length
+                      : 0;
+
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildWatchlistHeader(
+                        count,
+                        context,
+                        _isEditMode,
+                        _toggleEditMode,
+                        _deleteSelectedStocks,
+                        _selectedTokens.isNotEmpty,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildSortHeader(context),
+                    ],
+                  );
+                },
               ),
-            ),
-          );
-        }
+            ],
+          ),
+        ),
+        Divider(
+          height: 1,
+          thickness: 1,
+          color: theme.dividerColor.withOpacity(0.1),
+        ),
 
-        if (!snapshot.hasData || snapshot.data == null) {
-          return Center(
-            child: Text(
-              "Could not load user profile.",
-              style: TextStyle(color: colorScheme.onSurface),
-            ),
-          );
-        }
+        // List area StreamBuilder: only this subtree rebuilds on profile updates
+        StreamBuilder<UserProfileDataModel?>(
+          stream: _userService.streamUserProfile(uid!),
+          builder: (context, snapshot) {
+            // Keep the last known profile so brief disconnects or reconnects
+            // do not force a full-page loading state.
+            if (snapshot.hasError) {
+              // Show a small inline error but attempt to use cached data below
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Watchlist stream error: ${snapshot.error}',
+                      ),
+                    ),
+                  );
+                }
+              });
+            }
 
-        final userProfile = snapshot.data!;
-        final userWatchlistTokens = userProfile.watchlist;
+            if (snapshot.hasData && snapshot.data != null) {
+              _lastProfile = snapshot.data;
+            }
 
-        // --- MERGED: Performance optimization (listen: false) ---
-        final provider = Provider.of<InstrumentProvider>(
-          context,
-          listen: false,
-        );
+            final userProfile = snapshot.data ?? _lastProfile;
 
-        final watchlistStocks = provider.allNSEStocks
-            .where((stock) => userWatchlistTokens.contains(stock.token))
-            .toList();
+            if (userProfile == null) {
+              // If we have no data at all, show an empty-state rather than a
+              // fullscreen spinner to avoid the feeling of a page reload.
+              return const Center(child: _EmptyState());
+            }
 
-        if (watchlistStocks.isEmpty && !_isEditMode) {
-          return const Center(child: _EmptyState());
-        }
+            final userWatchlistTokens = userProfile.watchlist;
 
-        // --- MERGED: Kept the layout fix (mainAxisSize: MainAxisSize.min)
-        //          AND the new theme-aware/optimized content.
-        return Column(
-          // --- THIS IS THE LAYOUT FIX FROM 'HEAD' ---
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min, // Also shrink header
-                children: [
-                  _buildWatchlistHeader(
-                    watchlistStocks.length,
-                    context,
-                    _isEditMode,
-                    _toggleEditMode,
-                    _deleteSelectedStocks,
-                    _selectedTokens.isNotEmpty,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildSortHeader(context), // Pass context
-                ],
-              ),
-            ),
-            Divider(
-              height: 1,
-              thickness: 1,
-              color: theme.dividerColor.withOpacity(0.1),
-            ),
+            // Filter the stocks once based on user's list
+            final watchlistStocks = provider.allNSEStocks
+                .where((stock) => userWatchlistTokens.contains(stock.token))
+                .toList();
 
-            // --- MERGED: Kept the layout fix (shrinkWrap/physics)
-            //          AND the new optimized widget (_WatchlistStockItem)
-            ListView.builder(
-              shrinkWrap: true, // <-- LAYOUT FIX
-              physics: const NeverScrollableScrollPhysics(), // <-- LAYAYOUT FIX
+            if (watchlistStocks.isEmpty && !_isEditMode) {
+              return const Center(child: _EmptyState());
+            }
+
+            return ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
               itemCount: watchlistStocks.length,
+              addAutomaticKeepAlives: false,
               itemBuilder: (context, index) {
-                final instrumentToken =
-                    watchlistStocks[index].token; // ⭐️ Sirf token pass kiya
+                final instrumentToken = watchlistStocks[index].token;
                 final isSelected = _selectedTokens.contains(instrumentToken);
 
                 return InkWell(
@@ -217,23 +227,22 @@ class _WatchListPageState extends State<WatchListPage> {
                       }
                     }
                   },
-                  // --- MERGED: Use new optimized item widget ---
                   child: _WatchlistStockItem(
+                    key: ValueKey(instrumentToken),
                     token: instrumentToken,
                     isEditMode: _isEditMode,
                     isSelected: isSelected,
                   ),
                 );
               },
-            ),
-          ],
-        );
-      },
+            );
+          },
+        ),
+      ],
     );
   }
 }
 
-// --- MERGED: Theme-aware _EmptyState ---
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
 
@@ -272,7 +281,6 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-// --- MERGED: Theme-aware _buildWatchlistHeader ---
 Widget _buildWatchlistHeader(
   int stockCount,
   BuildContext context,
@@ -325,7 +333,6 @@ Widget _buildWatchlistHeader(
   );
 }
 
-// --- MERGED: Theme-aware _buildSortHeader ---
 Widget _buildSortHeader(BuildContext context) {
   final textTheme = Theme.of(context).textTheme;
 
@@ -352,13 +359,14 @@ Widget _buildSortHeader(BuildContext context) {
   );
 }
 
-// --- MERGED: New optimized _WatchlistStockItem widget ---
+// --- OPTIMIZED WIDGET: Uses Selector instead of Consumer ---
 class _WatchlistStockItem extends StatelessWidget {
   final String token;
   final bool isEditMode;
   final bool isSelected;
 
   const _WatchlistStockItem({
+    super.key,
     required this.token,
     required this.isEditMode,
     required this.isSelected,
@@ -366,17 +374,26 @@ class _WatchlistStockItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // This Consumer *will* rebuild when prices change
-    return Consumer<InstrumentProvider>(
-      builder: (context, provider, child) {
-        final instrument = provider.getInstrumentByToken(token);
+    // 1. Selector ensures this widget ONLY rebuilds if THIS SPECIFIC token's data changes.
+    // Replace 'Instrument' with your actual model class name if different.
+    return Selector<InstrumentProvider, dynamic>(
+      // Changed to dynamic to avoid type errors if I don't know your exact model class, change to Instrument?
+      selector: (context, provider) => provider.getInstrumentByToken(token),
+      shouldRebuild: (previous, next) {
+        // If your provider returns a NEW object instance every update, standard equality is fine:
+        return previous != next;
+
+        // If your provider updates properties inside the SAME object, use this instead:
+        // return previous?.lastPrice != next?.lastPrice || previous?.changePercent != next?.changePercent;
+      },
+      builder: (context, instrument, child) {
         if (instrument == null) {
           return Container(
             height: 60,
             alignment: Alignment.centerLeft,
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Text(
-              "Loading $token...",
+              "Loading...",
               style: TextStyle(
                 color: Theme.of(context).textTheme.bodySmall?.color,
               ),
@@ -406,6 +423,7 @@ class _WatchlistStockItem extends StatelessWidget {
                   ),
                 ),
               Expanded(
+                // StockCard is now isolated and won't rebuild unnecessarily
                 child: StockCard(
                   instrument: instrument,
                   onTap: null, // Handled by parent InkWell

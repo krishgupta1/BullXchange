@@ -1,5 +1,6 @@
 import 'package:bullxchange/models/transaction_model.dart';
 import 'package:flutter/material.dart';
+import 'package:bullxchange/widgets/custom_back_button.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
@@ -40,43 +41,19 @@ class OrderDetailsPage extends StatelessWidget {
       // --- ⭐️ MODIFIED: Theme background color ---
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        // --- ⭐️ MODIFIED: Theme app bar colors ---
-        backgroundColor: theme.appBarTheme.backgroundColor,
-        elevation: 0,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 8.0),
-          child: Container(
-            margin: const EdgeInsets.symmetric(vertical: 8),
-            decoration: BoxDecoration(
-              // --- ⭐️ MODIFIED: Theme surface color ---
-              color: colorScheme.surface,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  // --- ⭐️ MODIFIED: Theme shadow color ---
-                  color: theme.shadowColor.withOpacity(0.1),
-                  spreadRadius: 1,
-                  blurRadius: 5,
-                ),
-              ],
-            ),
-            child: IconButton(
-              icon: Icon(
-                Icons.arrow_back_ios_new,
-                // --- ⭐️ MODIFIED: Theme icon color ---
-                color: colorScheme.onSurface,
-                size: 20,
-              ),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ),
-        ),
+        leading: const CustomBackButton(),
         title: Text(
           'Order details',
-          // --- ⭐️ MODIFIED: Theme title style ---
-          style: theme.appBarTheme.titleTextStyle?.copyWith(fontSize: 18),
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          ),
         ),
         centerTitle: true,
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
+        scrolledUnderElevation: 0,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),

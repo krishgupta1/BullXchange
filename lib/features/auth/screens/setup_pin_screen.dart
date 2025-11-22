@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:bullxchange/widgets/custom_back_button.dart';
 import 'package:pinput/pinput.dart';
 import 'package:bullxchange/features/auth/screens/verify_pin_screen.dart';
 
@@ -103,21 +104,12 @@ class _SetupPinScreenState extends State<SetupPinScreen> {
                   children: [
                     const SizedBox(height: 20),
                     SizedBox(
-                      width: 40,
-                      height: 40,
+                      width: 56,
+                      height: 56,
                       child: Center(
-                        child: IconButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
+                        child: CustomBackButton(
+                          onPressed: () => Navigator.pop(context),
                           padding: EdgeInsets.zero,
-                          alignment: Alignment.center,
-                          icon: Icon(
-                            Icons.arrow_back_ios,
-                            // --- ⭐️ MODIFIED: Theme accent color (Pink) ---
-                            color: colorScheme.secondary,
-                            size: 18,
-                          ),
                         ),
                       ),
                     ),

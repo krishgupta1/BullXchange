@@ -12,6 +12,7 @@ import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/models/stock_holding_model.dart';
 import 'package:bullxchange/models/transaction_model.dart';
 import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
+import 'package:bullxchange/widgets/custom_back_button.dart';
 
 class BuyStockPage extends StatefulWidget {
   final Instrument instrument;
@@ -26,7 +27,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
   final _limitPriceController = TextEditingController();
 
   String _selectedProductType = 'Delivery';
-  String _selectedExchange = 'NSE';
+  final String _selectedExchange = 'NSE'; // Default to NSE, UI toggle removed
   String _selectedOrderType = 'Market';
 
   Map<String, double> _chargesBreakdown = {};
@@ -88,7 +89,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
         }
       }
     } catch (e) {
-      print("Error fetching funds: $e");
+      debugPrint("Error fetching funds: $e");
     } finally {
       if (mounted) {
         setState(() => _isLoadingFunds = false);
@@ -226,14 +227,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
         );
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: Colors.red,
-            content: Text('Failed to execute trade: ${e.toString()}'),
-          ),
-        );
-      }
+      throw e;
     }
   }
 
@@ -254,27 +248,16 @@ class _BuyStockPageState extends State<BuyStockPage> {
       instrumentToken: widget.instrument.token,
     );
 
-    try {
-      await _userService.placeLimitOrder(newOrder);
+    await _userService.placeLimitOrder(newOrder);
 
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: Colors.blue,
           content: Text('Limit order for $symbol placed successfully.'),
         ),
       );
-      if (mounted) {
-        Navigator.of(context).popUntil((route) => route.isFirst);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: Colors.red,
-            content: Text('Failed to place limit order: ${e.toString()}'),
-          ),
-        );
-      }
+      Navigator.of(context).popUntil((route) => route.isFirst);
     }
   }
 
@@ -288,9 +271,10 @@ class _BuyStockPageState extends State<BuyStockPage> {
       return Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
+          leading: const CustomBackButton(),
+          centerTitle: true,
           backgroundColor: theme.scaffoldBackgroundColor,
           elevation: 0,
-          leading: const BackButton(),
         ),
         body: Center(
           child: Text(
@@ -304,38 +288,14 @@ class _BuyStockPageState extends State<BuyStockPage> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: theme.scaffoldBackgroundColor,
-        elevation: 0,
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Container(
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: theme.shadowColor.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: IconButton(
-              icon: Icon(
-                Icons.arrow_back_ios_new_rounded,
-                color: colorScheme.onSurface,
-                size: 18,
-              ),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ),
-        ),
+        leading: const CustomBackButton(),
         title: Column(
           children: [
             Text(
               'Buy Order',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
+                color: theme.colorScheme.onSurface,
               ),
             ),
             Text(
@@ -348,6 +308,9 @@ class _BuyStockPageState extends State<BuyStockPage> {
           ],
         ),
         centerTitle: true,
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
+        scrolledUnderElevation: 0,
       ),
       body: SafeArea(
         child: Column(
@@ -394,38 +357,75 @@ class _BuyStockPageState extends State<BuyStockPage> {
         ],
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Container(
-            padding: const EdgeInsets.all(2),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
-            ),
-            child: SmartLogo(instrument: widget.instrument, radius: 22),
-          ),
-          const SizedBox(width: 16),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Text(
-                  widget.instrument.name,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w500,
+                Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: colorScheme.outline.withOpacity(0.1),
+                    ),
                   ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
+                  child: SmartLogo(instrument: widget.instrument, radius: 24),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  formatter.format(_ltp),
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.instrument.name,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        formatter.format(_ltp),
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                "Available",
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.disabledColor,
+                ),
+              ),
+              const SizedBox(height: 2),
+              _isLoadingFunds
+                  ? SizedBox(
+                      height: 12,
+                      width: 12,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: colorScheme.secondary,
+                      ),
+                    )
+                  : Text(
+                      _priceFormatter.format(_availableFunds),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.secondary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+            ],
           ),
         ],
       ),
@@ -440,18 +440,27 @@ class _BuyStockPageState extends State<BuyStockPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "Order Type",
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 12),
-        _buildSegmentedControl(
-          context: context,
-          options: ['Market', 'Limit'],
-          selectedValue: _selectedOrderType,
-          onChanged: _onOrderTypeChanged,
+        Row(
+          children: [
+            Expanded(
+              child: _buildSegmentedControl(
+                context: context,
+                options: ['Market', 'Limit'],
+                selectedValue: _selectedOrderType,
+                onChanged: _onOrderTypeChanged,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildSegmentedControl(
+                context: context,
+                options: ['Delivery', 'Intraday'],
+                selectedValue: _selectedProductType,
+                onChanged: (value) =>
+                    setState(() => _selectedProductType = value),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 24),
         Row(
@@ -463,39 +472,18 @@ class _BuyStockPageState extends State<BuyStockPage> {
                 children: [
                   Text(
                     "Quantity",
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   TextField(
                     controller: _quantityController,
                     keyboardType: TextInputType.number,
                     style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
-                    decoration: InputDecoration(
-                      hintText: '0',
-                      filled: true,
-                      fillColor: theme.cardColor,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 16,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: theme.dividerColor.withOpacity(0.2),
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: colorScheme.secondary,
-                          width: 2,
-                        ),
-                      ),
-                    ),
+                    decoration: _inputDecoration(theme, hint: '0'),
                   ),
                 ],
               ),
@@ -507,11 +495,11 @@ class _BuyStockPageState extends State<BuyStockPage> {
                 children: [
                   Text(
                     "Price",
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   TextField(
                     controller: _limitPriceController,
                     keyboardType: const TextInputType.numberWithOptions(
@@ -524,33 +512,12 @@ class _BuyStockPageState extends State<BuyStockPage> {
                           ? colorScheme.onSurface
                           : theme.disabledColor,
                     ),
-                    decoration: InputDecoration(
-                      hintText: '0.00',
-                      filled: true,
+                    decoration: _inputDecoration(
+                      theme,
+                      hint: '0.00',
                       fillColor: isLimit
                           ? theme.cardColor
                           : theme.dividerColor.withOpacity(0.05),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 16,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: theme.dividerColor.withOpacity(0.2),
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: colorScheme.secondary,
-                          width: 2,
-                        ),
-                      ),
-                      disabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide.none,
-                      ),
                     ),
                   ),
                 ],
@@ -558,71 +525,32 @@ class _BuyStockPageState extends State<BuyStockPage> {
             ),
           ],
         ),
-        const SizedBox(height: 24),
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          decoration: BoxDecoration(
-            color: colorScheme.secondary.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.account_balance_wallet_outlined,
-                size: 20,
-                color: colorScheme.secondary,
-              ),
-              const SizedBox(width: 10),
-              Text(
-                'Available Funds',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.secondary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const Spacer(),
-              if (_isLoadingFunds)
-                SizedBox(
-                  height: 16,
-                  width: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: colorScheme.secondary,
-                  ),
-                )
-              else
-                Text(
-                  _priceFormatter.format(_availableFunds),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: colorScheme.secondary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-        Text(
-          "Preferences",
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 12),
-        _buildSegmentedControl(
-          context: context,
-          options: ['Delivery', 'Intraday'],
-          selectedValue: _selectedProductType,
-          onChanged: (value) => setState(() => _selectedProductType = value),
-        ),
-        const SizedBox(height: 12),
-        _buildSegmentedControl(
-          context: context,
-          options: ['NSE', 'BSE'],
-          selectedValue: _selectedExchange,
-          onChanged: (value) => setState(() => _selectedExchange = value),
-        ),
       ],
+    );
+  }
+
+  InputDecoration _inputDecoration(
+    ThemeData theme, {
+    required String hint,
+    Color? fillColor,
+  }) {
+    return InputDecoration(
+      hintText: hint,
+      filled: true,
+      fillColor: fillColor ?? theme.cardColor,
+      contentPadding: const EdgeInsets.all(16),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: theme.dividerColor.withOpacity(0.2)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: theme.colorScheme.secondary, width: 2),
+      ),
+      disabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide.none,
+      ),
     );
   }
 
@@ -637,6 +565,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
 
     return Container(
       height: 48,
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(14),
@@ -653,7 +582,6 @@ class _BuyStockPageState extends State<BuyStockPage> {
               },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                margin: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? colorScheme.secondary
@@ -717,15 +645,6 @@ class _BuyStockPageState extends State<BuyStockPage> {
             _selectedOrderType == 'Market'
                 ? 'Market'
                 : formatter.format(_price),
-          ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Divider(height: 1),
-          ),
-          _buildSummaryRow(
-            context,
-            'Subtotal',
-            formatter.format(_quantity * _price),
           ),
           _buildChargesRow(context, formatter),
           const Padding(
@@ -825,7 +744,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
     bool isEnabled = _quantity > 0 && _price > 0 && !_isPlacingOrder;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: theme.scaffoldBackgroundColor,
         boxShadow: [
@@ -862,7 +781,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
                   ),
                 )
               : const Text(
-                  "Swipe to Buy", // Assuming tap, but styled like swipe
+                  "Swipe to Buy",
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -1093,7 +1012,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
               child: const Text('Add Funds'),
               onPressed: () {
                 Navigator.of(context).pop();
-                // Navigate to Add Funds
+                // Navigate to Add Funds if needed
               },
             ),
           ],
