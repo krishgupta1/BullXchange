@@ -660,7 +660,7 @@ class PortfolioSummaryCard extends StatelessWidget {
 
     return Consumer<InstrumentProvider>(
       builder: (context, provider, child) {
-        double currentValue = 0, investedValue = 0, dayReturns = 0;
+        double currentValue = 0, investedValue = 0;
         final holdingSymbols = holdings!.map((h) => h.stockSymbol).toSet();
         final liveInstruments = provider.allNSEStocks
             .where(
@@ -681,35 +681,29 @@ class PortfolioSummaryCard extends StatelessWidget {
           final ltp =
               (liveInstrument?.liveData['ltp'] as num?)?.toDouble() ??
               holding.transactionPrice;
-          final netChange =
-              (liveInstrument?.liveData['netChange'] as num?)?.toDouble() ??
-              0.0;
 
+          // Calculate values
           currentValue += ltp * holding.quantity;
           investedValue += holding.transactionPrice * holding.quantity;
-          dayReturns += netChange * holding.quantity;
         }
 
+        // --- CALCULATE TOTAL RETURNS ---
         final totalReturns = currentValue - investedValue;
         final totalReturnPercent = investedValue > 0
             ? (totalReturns / investedValue) * 100
-            : 0;
-        final dayReturnPercent = investedValue > 0
-            ? (dayReturns / investedValue) * 100
             : 0.0;
 
         // Determine Colors based on Brightness
         final cardBackground = isDark
-            ? colorScheme
-                  .surfaceContainer // Dark surface
-            : Colors.white; // White surface
+            ? colorScheme.surfaceContainer
+            : Colors.white;
 
         final borderColor = isDark
             ? Colors.white.withOpacity(0.1)
             : Colors.grey.withOpacity(0.2);
 
         final List<BoxShadow> shadow = isDark
-            ? <BoxShadow>[] // No shadow in dark mode
+            ? <BoxShadow>[]
             : <BoxShadow>[
                 BoxShadow(
                   color: Colors.black.withOpacity(0.05),
@@ -748,7 +742,7 @@ class PortfolioSummaryCard extends StatelessWidget {
                       Text(
                         "₹${currentValue.toStringAsFixed(2)}",
                         style: TextStyle(
-                          fontSize: 26,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: colorScheme.onSurface,
                           letterSpacing: -0.5,
@@ -756,7 +750,7 @@ class PortfolioSummaryCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  // Total Returns Pill
+                  // Top Right Pill (Also showing Total Return %)
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
@@ -799,20 +793,23 @@ class PortfolioSummaryCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  // Bottom Left: Invested
                   _buildCompactMetric(
                     context,
                     "Invested Value",
                     "₹${investedValue.toStringAsFixed(2)}",
                   ),
+
+                  // Bottom Right: Total Returns (CHANGED)
                   _buildCompactMetric(
                     context,
-                    "Day's Returns",
-                    "₹${dayReturns.abs().toStringAsFixed(2)}",
-                    valueColor: dayReturns >= 0
+                    "Total Returns",
+                    "₹${totalReturns.abs().toStringAsFixed(2)}",
+                    valueColor: totalReturns >= 0
                         ? (isDark ? const Color(0xFF66BB6A) : Colors.green)
                         : (isDark ? const Color(0xFFEF5350) : Colors.red),
                     isPnl: true,
-                    percent: dayReturnPercent,
+                    percent: totalReturnPercent, // Using Total % here
                   ),
                 ],
               ),
@@ -859,7 +856,7 @@ class PortfolioSummaryCard extends StatelessWidget {
             Text(
               value,
               style: TextStyle(
-                fontSize: 15,
+                fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: valueColor ?? theme.colorScheme.onSurface,
               ),
