@@ -1,5 +1,4 @@
 import 'package:bullxchange/features/auth/screens/onboarding_page_1.2.dart';
-
 import 'package:bullxchange/features/auth/screens/login_page.dart';
 import 'package:bullxchange/features/auth/screens/setup_pin_screen.dart';
 import 'package:bullxchange/features/auth/navigation/route_transitions.dart';
@@ -29,8 +28,6 @@ class _SignupPageState extends State<SignupPage> {
   bool _obscurePassword = true;
   bool _agreedToTerms = false;
   bool _isSubmitting = false;
-
-  // --- ⭐️ Hardcoded colors hata diye ---
 
   @override
   void dispose() {
@@ -67,14 +64,12 @@ class _SignupPageState extends State<SignupPage> {
   Future<void> _showErrorDialog(String message) async {
     if (!mounted) return;
 
-    // --- ⭐️ Theme se colors lo ---
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        // --- ⭐️ MODIFIED: Theme colors ---
         backgroundColor: colorScheme.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Text(
@@ -104,13 +99,14 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 
-  // ✅ Signup flow (Unchanged)
+  // ✅ Signup flow
   Future<void> _signUp() async {
     final fullName = _fullNameController.text.trim();
     final email = _emailController.text.trim();
     final mobileNo = _mobileController.text.trim();
     final password = _passwordController.text.trim();
 
+    // 1. Basic Client-Side Validation
     if (fullName.isEmpty ||
         email.isEmpty ||
         mobileNo.isEmpty ||
@@ -129,22 +125,37 @@ class _SignupPageState extends State<SignupPage> {
       return;
     }
 
-    setState(() => _isSubmitting = true);
-
-    final isRealEmail = await validateEmailWithAPI(email);
-    if (!isRealEmail) {
-      setState(() => _isSubmitting = false);
-      _showErrorDialog('Please enter a valid, real email address.');
-      return;
-    }
-
     if (password.length < 6) {
-      setState(() => _isSubmitting = false);
       _showErrorDialog('Password must be at least 6 characters.');
       return;
     }
 
+    setState(() => _isSubmitting = true);
+
     try {
+      // 2. ⭐️ CHECK MOBILE UNIQUENESS (New Logic)
+      // We check this BEFORE the email API to save API credits and time.
+      final bool mobileExists = await _usersService.isMobileNumberRegistered(
+        mobileNo,
+      );
+
+      if (mobileExists) {
+        setState(() => _isSubmitting = false);
+        await _showErrorDialog(
+          'This mobile number is already registered with another account.',
+        );
+        return; // Stop execution here
+      }
+
+      // 3. Validate Email with API
+      final isRealEmail = await validateEmailWithAPI(email);
+      if (!isRealEmail) {
+        setState(() => _isSubmitting = false);
+        _showErrorDialog('Please enter a valid, real email address.');
+        return;
+      }
+
+      // 4. Create Auth User
       final credential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
@@ -152,6 +163,7 @@ class _SignupPageState extends State<SignupPage> {
 
       final user = credential.user;
       if (user != null) {
+        // 5. Add user details to Firestore
         await _usersService.addUserProfile(
           uid: user.uid,
           name: fullName,
@@ -191,13 +203,11 @@ class _SignupPageState extends State<SignupPage> {
 
   @override
   Widget build(BuildContext context) {
-    // --- ⭐️ Theme se colors lo ---
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
 
     return Scaffold(
-      // --- ⭐️ MODIFIED: Theme background color ---
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
@@ -207,7 +217,6 @@ class _SignupPageState extends State<SignupPage> {
             children: [
               const SizedBox(height: 20),
 
-              // --- ⭐️ MODIFIED: Standard BackButton (theme-aware) ---
               IconButton(
                 icon: Icon(
                   Icons.arrow_back_ios_new,
@@ -226,11 +235,9 @@ class _SignupPageState extends State<SignupPage> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      // --- ⭐️ MODIFIED: Theme primary color ---
                       color: colorScheme.primary,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    // --- ⭐️ MODIFIED: Theme "onPrimary" color (White) ---
                     child: Icon(
                       Icons.trending_up,
                       color: colorScheme.onPrimary,
@@ -243,7 +250,6 @@ class _SignupPageState extends State<SignupPage> {
                       fontFamily: 'EudoxusSans',
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
-                      // --- ⭐️ MODIFIED: Theme primary color ---
                       color: colorScheme.primary,
                     ),
                   ),
@@ -257,7 +263,6 @@ class _SignupPageState extends State<SignupPage> {
                   fontFamily: 'EudoxusSans',
                   fontSize: 28,
                   fontWeight: FontWeight.w700,
-                  // --- ⭐️ MODIFIED: Theme text color ---
                   color: colorScheme.onSurface,
                 ),
               ),
@@ -269,14 +274,13 @@ class _SignupPageState extends State<SignupPage> {
                   fontFamily: 'EudoxusSans',
                   fontSize: 16,
                   fontWeight: FontWeight.w400,
-                  // --- ⭐️ MODIFIED: Theme grey color ---
                   color: textTheme.bodySmall?.color,
                 ),
               ),
               const SizedBox(height: 40),
 
               _buildTextFieldWithLabel(
-                context: context, // ⭐️ Pass context
+                context: context,
                 label: 'Full Name',
                 controller: _fullNameController,
                 hintText: 'Full Name',
@@ -285,7 +289,7 @@ class _SignupPageState extends State<SignupPage> {
               const SizedBox(height: 16),
 
               _buildTextFieldWithLabel(
-                context: context, // ⭐️ Pass context
+                context: context,
                 label: 'Email Address',
                 controller: _emailController,
                 hintText: 'Email Address',
@@ -294,7 +298,7 @@ class _SignupPageState extends State<SignupPage> {
               const SizedBox(height: 16),
 
               _buildTextFieldWithLabel(
-                context: context, // ⭐️ Pass context
+                context: context,
                 label: 'Mobile Number',
                 controller: _mobileController,
                 hintText: '10-digit Mobile Number',
@@ -303,7 +307,7 @@ class _SignupPageState extends State<SignupPage> {
               const SizedBox(height: 16),
 
               _buildTextFieldWithLabel(
-                context: context, // ⭐️ Pass context
+                context: context,
                 label: 'Password',
                 controller: _passwordController,
                 hintText: 'Password',
@@ -316,7 +320,6 @@ class _SignupPageState extends State<SignupPage> {
                     _obscurePassword
                         ? Icons.visibility_off_outlined
                         : Icons.visibility_outlined,
-                    // --- ⭐️ MODIFIED: Theme grey color ---
                     color: textTheme.bodySmall?.color,
                   ),
                 ),
@@ -329,9 +332,7 @@ class _SignupPageState extends State<SignupPage> {
                     value: _agreedToTerms,
                     onChanged: (val) =>
                         setState(() => _agreedToTerms = val ?? false),
-                    // --- ⭐️ MODIFIED: Theme primary color ---
                     activeColor: colorScheme.primary,
-                    // --- ⭐️ MODIFIED: Theme border color ---
                     side: BorderSide(color: textTheme.bodySmall!.color!),
                   ),
                   Expanded(
@@ -340,7 +341,6 @@ class _SignupPageState extends State<SignupPage> {
                         style: TextStyle(
                           fontFamily: 'EudoxusSans',
                           fontSize: 14,
-                          // --- ⭐️ MODIFIED: Theme grey color ---
                           color: textTheme.bodySmall?.color,
                         ),
                         children: [
@@ -348,7 +348,6 @@ class _SignupPageState extends State<SignupPage> {
                           TextSpan(
                             text: 'Terms of Service',
                             style: TextStyle(
-                              // --- ⭐️ MODIFIED: Theme primary color ---
                               color: colorScheme.primary,
                               fontWeight: FontWeight.bold,
                             ),
@@ -358,7 +357,6 @@ class _SignupPageState extends State<SignupPage> {
                           TextSpan(
                             text: 'Privacy Policy',
                             style: TextStyle(
-                              // --- ⭐️ MODIFIED: Theme primary color ---
                               color: colorScheme.primary,
                               fontWeight: FontWeight.bold,
                             ),
@@ -378,7 +376,6 @@ class _SignupPageState extends State<SignupPage> {
                 child: ElevatedButton(
                   onPressed: _agreedToTerms && !_isSubmitting ? _signUp : null,
                   style: ElevatedButton.styleFrom(
-                    // --- ⭐️ MODIFIED: Theme button colors ---
                     backgroundColor: colorScheme.primary,
                     foregroundColor: colorScheme.onPrimary,
                     shape: RoundedRectangleBorder(
@@ -396,7 +393,6 @@ class _SignupPageState extends State<SignupPage> {
                             fontFamily: 'EudoxusSans',
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
-                            // --- ⭐️ MODIFIED: Theme text color ---
                             color: colorScheme.onPrimary,
                           ),
                         ),
@@ -411,7 +407,6 @@ class _SignupPageState extends State<SignupPage> {
                       fontFamily: 'EudoxusSans',
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      // --- ⭐️ MODIFIED: Theme grey color ---
                       color: textTheme.bodySmall?.color,
                     ),
                     children: [
@@ -419,7 +414,6 @@ class _SignupPageState extends State<SignupPage> {
                       TextSpan(
                         text: 'Sign in',
                         style: TextStyle(
-                          // --- ⭐️ MODIFIED: Theme primary color ---
                           color: colorScheme.primary,
                           fontWeight: FontWeight.w700,
                         ),
@@ -444,7 +438,7 @@ class _SignupPageState extends State<SignupPage> {
   }
 
   Widget _buildTextFieldWithLabel({
-    required BuildContext context, // ⭐️ Added context
+    required BuildContext context,
     required String label,
     required TextEditingController controller,
     required String hintText,
@@ -452,7 +446,6 @@ class _SignupPageState extends State<SignupPage> {
     bool obscureText = false,
     Widget? suffixIcon,
   }) {
-    // --- ⭐️ Theme se colors lo ---
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
@@ -462,7 +455,6 @@ class _SignupPageState extends State<SignupPage> {
       children: [
         Text(
           label,
-          // --- ⭐️ MODIFIED: Theme text color ---
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
@@ -474,26 +466,21 @@ class _SignupPageState extends State<SignupPage> {
           controller: controller,
           keyboardType: keyboardType,
           obscureText: obscureText,
-          // --- ⭐️ MODIFIED: Theme text color ---
           style: TextStyle(color: colorScheme.onSurface),
           decoration: InputDecoration(
             hintText: hintText,
-            // --- ⭐️ MODIFIED: Theme hint color ---
             hintStyle: TextStyle(color: textTheme.bodySmall?.color),
-            // --- ⭐️ MODIFIED: Theme surface color ---
             filled: true,
             fillColor: colorScheme.surface,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              // --- ⭐️ MODIFIED: Theme divider color ---
               borderSide: BorderSide(
                 color: theme.dividerColor.withOpacity(0.5),
               ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              // --- ⭐️ MODIFIED: Theme primary color ---
               borderSide: BorderSide(color: colorScheme.primary),
             ),
             suffixIcon: suffixIcon,

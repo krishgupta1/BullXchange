@@ -12,7 +12,12 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:bullxchange/features/auth/navigation/auth_wrapper.dart';
 
-// --- main() function (Unchanged) ---
+// --- ⭐️ NEW IMPORTS NEEDED FOR THE FIX ---
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:bullxchange/services/firebase/user_service.dart';
+import 'package:bullxchange/models/user_profile_data_model.dart';
+
+// --- main() function ---
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -27,13 +32,26 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => LoginProvider()),
         ChangeNotifierProvider(create: (_) => InstrumentProvider()),
         ChangeNotifierProvider(create: (_) => ThemeNotifier(prefs: prefs)),
+
+        // --- ⭐️ THIS IS THE CRITICAL FIX ⭐️ ---
+        // This stream listens to user data and handles logout gracefully
+        StreamProvider<UserProfileDataModel?>.value(
+          value: FirebaseAuth.instance.currentUser != null
+              ? UserService().streamUserProfile(
+                  FirebaseAuth.instance.currentUser!.uid,
+                )
+              : const Stream.empty(), // Return empty stream if not logged in
+          initialData: null,
+          // 🔴 IMPORTANT: This catchError prevents the "Permission Denied" crash
+          catchError: (_, __) => null,
+        ),
       ],
       child: const MainApp(),
     ),
   );
 }
 
-// --- MainApp widget (MODIFIED) ---
+// --- MainApp widget (Unchanged from your code) ---
 class MainApp extends StatefulWidget {
   const MainApp({super.key});
 
@@ -60,8 +78,7 @@ class _MainAppState extends State<MainApp> {
   Widget build(BuildContext context) {
     final themeNotifier = Provider.of<ThemeNotifier>(context);
 
-    // --- ⭐️ FIX: Determine which theme to use ---
-    // (Aapke settings mein Light/Dark hai, System nahi, isliye yeh safe hai)
+    // --- ⭐️ Determine which theme to use ---
     final ThemeData currentTheme = themeNotifier.themeMode == ThemeMode.dark
         ? AppTheme.darkTheme
         : AppTheme.lightTheme;
@@ -70,19 +87,15 @@ class _MainAppState extends State<MainApp> {
       title: 'BullXchange',
       debugShowCheckedModeBanner: false,
 
-      // --- ⭐️ MODIFIED: Sirf 'theme' property use karenge ---
-      // Isse AnimatedTheme ko pata chalta hai ki kab change karna hai
+      // --- ⭐️ Sirf 'theme' property use karenge ---
       theme: currentTheme,
 
-      // 'darkTheme' aur 'themeMode' ki zaroorat nahi
       routes: {'/home': (_) => const HomePage()},
 
-      // --- ⭐️⭐️ FIX: 'builder' add kiya smooth animation ke liye ⭐️⭐️ ---
+      // --- ⭐️⭐️ Builder for smooth animation ⭐️⭐️ ---
       builder: (context, child) {
         return AnimatedTheme(
-          // 'data' mein Theme.of(context) pass karein
-          data: Theme.of(context),
-          // Animation ka time (e.g., 300 milliseconds)
+          data: Theme.of(context), // Uses the theme calculated above
           duration: const Duration(milliseconds: 300),
           child: child!,
         );

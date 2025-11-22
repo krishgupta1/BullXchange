@@ -52,6 +52,22 @@ class UserService {
         });
   }
 
+  // --- Check Mobile Number Uniqueness ---
+  Future<bool> isMobileNumberRegistered(String mobileNo) async {
+    try {
+      final QuerySnapshot result = await usersRef
+          .where('mobileNo', isEqualTo: mobileNo)
+          .limit(1)
+          .get();
+      return result.docs.isNotEmpty;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error checking mobile number: $e');
+      }
+      return false;
+    }
+  }
+
   // --- Profile Management ---
   Future<void> addUserProfile({
     required String uid,
