@@ -4,6 +4,7 @@ import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:provider/provider.dart';
 import 'view_all_page.dart';
+import 'package:bullxchange/features/tools/charges_calculator_tool.dart';
 import 'package:flutter/material.dart';
 
 class ExplorePage extends StatelessWidget {
@@ -273,7 +274,12 @@ Widget _buildToolItem(
 
   return InkWell(
     borderRadius: BorderRadius.circular(12),
-    onTap: () {}, // Preserving UI structure, logic not provided
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const CalculatorScreen()),
+      );
+    },
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
