@@ -53,7 +53,62 @@ class AngelOneOptionChainService {
   }
 
   // ---------------------------------------------------------------------------
-  // 2. MAIN FETCH
+  // 2. FETCH MARKET OVERVIEW (New Method for Overview Tab)
+  // ---------------------------------------------------------------------------
+  Future<Map<String, dynamic>> fetchMarketOverview(
+    String symbol, {
+    String exchange = 'NSE',
+  }) async {
+    try {
+      final List<Instrument> allInstruments = await _getOrLoadScripMaster();
+      final config = _getSymbolConfig(symbol);
+      String spotToken = config['spotToken']!;
+      final String optionName = config['optionName']!;
+
+      // Determine segment for Spot (Indices usually NSE/BSE, not NFO/BFO)
+      String spotExchange = (config['segment'] == "BFO") ? "BSE" : "NSE";
+
+      // 1. Resolve Spot Token if missing
+      if (spotToken.isEmpty) {
+        try {
+          final underlying = allInstruments.firstWhere(
+            (i) =>
+                (i.name == optionName || i.symbol == "$optionName-EQ") &&
+                i.symbol.endsWith("-EQ"),
+          );
+          spotToken = underlying.token;
+          spotExchange =
+              underlying.exchSeg; // Use exact exchange from instrument
+        } catch (_) {
+          AppLog.w("⚠️ Could not resolve spot token for overview: $symbol");
+          return {};
+        }
+      }
+
+      // 2. Fetch Full Market Data
+      // Note: Ensure your _apiService.fetchLiveMarketData requests "FULL" mode
+      // or returns 52-week high/low data.
+      final data = await _fetchMarketData(spotToken, spotExchange);
+
+      if (data != null) {
+        // Fix 0 prices on weekends by using 'close'
+        double ltp = double.tryParse(data['ltp']?.toString() ?? "0") ?? 0;
+        double close = double.tryParse(data['close']?.toString() ?? "0") ?? 0;
+        if (ltp == 0 && close > 0) {
+          data['ltp'] = close; // Polyfill LTP
+          data['change'] = 0.0; // No change on weekend
+          data['pChange'] = 0.0;
+        }
+        return data;
+      }
+    } catch (e) {
+      AppLog.e("Error fetching market overview: $e");
+    }
+    return {};
+  }
+
+  // ---------------------------------------------------------------------------
+  // 3. FETCH OPTION CHAIN (Your Existing Logic)
   // ---------------------------------------------------------------------------
   Future<Map<String, dynamic>> fetchOptionChainData(
     String symbol, {
@@ -173,7 +228,7 @@ class AngelOneOptionChainService {
   }
 
   // ---------------------------------------------------------------------------
-  // 3. HELPERS
+  // 4. HELPERS
   // ---------------------------------------------------------------------------
   Map<String, dynamic> _buildOptionChainResponse(
     List<Instrument> instruments,
