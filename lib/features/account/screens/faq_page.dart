@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:bullxchange/widgets/custom_back_button.dart';
 
 // --- ⭐️ FIX: Class ka naam file se match kiya ---
 class FaqPage extends StatefulWidget {
@@ -21,17 +22,11 @@ class _FaqPageState extends State<FaqPage> {
       // --- ⭐️ MODIFIED: Theme background color ---
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        // --- ⭐️ MODIFIED: Theme app bar color ---
-        backgroundColor: theme.appBarTheme.backgroundColor,
-        elevation: theme.appBarTheme.elevation,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: colorScheme.secondary),
-          onPressed: () {
-            if (Navigator.canPop(context)) {
-              Navigator.pop(context);
-            }
-          },
-        ),
+        leading: const CustomBackButton(),
+        centerTitle: true,
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
+        scrolledUnderElevation: 0,
       ),
       body: SingleChildScrollView(
         child: Padding(

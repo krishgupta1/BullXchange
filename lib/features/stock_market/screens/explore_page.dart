@@ -94,6 +94,7 @@ class ExplorePage extends StatelessWidget {
 Widget _buildSectionHeader(BuildContext context, String title) {
   final theme = Theme.of(context);
   final colorScheme = theme.colorScheme;
+  final isDark = theme.brightness == Brightness.dark;
 
   final stockCategories = [
     "Top Gainers",
@@ -115,33 +116,49 @@ Widget _buildSectionHeader(BuildContext context, String title) {
         ),
       ),
       if (stockCategories.contains(title))
-        TextButton(
-          onPressed: () => Navigator.push(
+        InkWell(
+          onTap: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const ViewAllPage()),
           ),
-          style: TextButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            minimumSize: Size.zero,
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          ),
-          child: Row(
-            children: [
-              Text(
-                "View all",
-                style: TextStyle(
-                  color: colorScheme.primary,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              // Adaptive Background:
+              // Dark Mode: slightly lighter than background (surface-like)
+              // Light Mode: very faint primary color or gray
+              color: isDark
+                  ? Colors.white.withOpacity(0.1)
+                  : colorScheme.primary.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "View all",
+                  style: TextStyle(
+                    // Adaptive Text Color:
+                    // Dark Mode: White/Light Grey for contrast
+                    // Light Mode: Primary color (Branding)
+                    color: isDark
+                        ? Colors.white.withOpacity(0.9)
+                        : colorScheme.primary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 4),
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 10,
-                color: colorScheme.primary,
-              ),
-            ],
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 10,
+                  color: isDark
+                      ? Colors.white.withOpacity(0.7)
+                      : colorScheme.primary,
+                ),
+              ],
+            ),
           ),
         ),
     ],

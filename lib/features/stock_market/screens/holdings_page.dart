@@ -9,6 +9,7 @@ import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
 import 'package:bullxchange/features/stock_market/screens/buy_stock_page.dart';
 import 'package:bullxchange/features/stock_market/screens/sell_stock_page.dart';
+import 'package:bullxchange/widgets/trade_action_buttons.dart';
 
 // ---------------------------------------------------------------------------
 // 1. MAIN HOLDINGS PAGE
@@ -118,7 +119,11 @@ class _HoldingsPageState extends State<HoldingsPage> {
                         Icon(
                           Icons.filter_list_rounded,
                           size: 20,
-                          color: theme.hintColor,
+                          color:
+                              theme.textTheme.bodySmall?.color?.withOpacity(
+                                0.8,
+                              ) ??
+                              colorScheme.onSurface.withOpacity(0.6),
                         ),
                       ],
                     ),
@@ -553,7 +558,11 @@ class PortfolioStockItemDetailsSheet extends StatelessWidget {
                           holding.stockSymbol,
                           style: TextStyle(
                             fontSize: 13,
-                            color: theme.hintColor,
+                            color:
+                                theme.textTheme.bodySmall?.color?.withOpacity(
+                                  0.8,
+                                ) ??
+                                colorScheme.onSurface.withOpacity(0.6),
                           ),
                         ),
                       ],
@@ -599,48 +608,12 @@ class PortfolioStockItemDetailsSheet extends StatelessWidget {
 
               const SizedBox(height: 32),
 
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () async => await _handleSell(context),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: sellColor, width: 1.5),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        "SELL",
-                        style: TextStyle(
-                          color: sellColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => _handleBuy(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        "BUY MORE",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+              TradeActionButtons(
+                onSell: () async => await _handleSell(context),
+                onBuy: () => _handleBuy(context),
+                sellLabel: 'SELL',
+                buyLabel: 'BUY MORE',
+                height: 56.0,
               ),
             ],
           ),
@@ -917,7 +890,12 @@ class HoldingsEmptyState extends StatelessWidget {
             color: theme.disabledColor.withOpacity(0.3),
           ),
           const SizedBox(height: 16),
-          Text("No holdings found", style: TextStyle(color: theme.hintColor)),
+          Text(
+            "No holdings found",
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: theme.textTheme.bodySmall?.color?.withOpacity(0.8),
+            ),
+          ),
         ],
       ),
     );
@@ -948,7 +926,7 @@ class HoldingsListSkeleton extends StatelessWidget {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: isDark ? Colors.grey[700]! : Colors.white,
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
@@ -957,18 +935,34 @@ class HoldingsListSkeleton extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(height: 12, width: 100, color: Colors.white),
+                        Container(
+                          height: 12,
+                          width: 100,
+                          color: isDark ? Colors.grey[700]! : Colors.white,
+                        ),
                         const SizedBox(height: 8),
-                        Container(height: 10, width: 60, color: Colors.white),
+                        Container(
+                          height: 10,
+                          width: 60,
+                          color: isDark ? Colors.grey[700]! : Colors.white,
+                        ),
                       ],
                     ),
                   ),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Container(height: 12, width: 80, color: Colors.white),
+                      Container(
+                        height: 12,
+                        width: 80,
+                        color: isDark ? Colors.grey[700]! : Colors.white,
+                      ),
                       const SizedBox(height: 8),
-                      Container(height: 10, width: 50, color: Colors.white),
+                      Container(
+                        height: 10,
+                        width: 50,
+                        color: isDark ? Colors.grey[700]! : Colors.white,
+                      ),
                     ],
                   ),
                 ],

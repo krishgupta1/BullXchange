@@ -35,10 +35,12 @@ class TransactionSuccessPage extends StatelessWidget {
       // --- ⭐️ MODIFIED: Theme background color ---
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        // --- ⭐️ MODIFIED: Theme app bar color ---
-        backgroundColor: theme.appBarTheme.backgroundColor,
+        // Keep the original intent of removing back navigation where used
+        automaticallyImplyLeading: false,
+        centerTitle: true,
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
-        automaticallyImplyLeading: false, // Removes back arrow
+        scrolledUnderElevation: 0,
       ),
       body: SafeArea(
         child: Padding(

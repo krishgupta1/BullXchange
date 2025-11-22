@@ -1,6 +1,7 @@
 import 'package:bullxchange/features/auth/screens/password_confirmation_screen.dart';
 import 'package:bullxchange/features/home/screens/home_page.dart';
 import 'package:flutter/material.dart';
+import 'package:bullxchange/widgets/custom_back_button.dart';
 import 'package:pinput/pinput.dart';
 import 'package:bullxchange/services/firebase/pin_storage.dart';
 import 'package:bullxchange/features/auth/screens/setup_pin_screen.dart';
@@ -119,10 +120,10 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
                     const SizedBox(height: 20),
                     if (widget.expectedPin != null)
                       SizedBox(
-                        width: 40,
-                        height: 40,
+                        width: 56,
+                        height: 56,
                         child: Center(
-                          child: IconButton(
+                          child: CustomBackButton(
                             onPressed: () {
                               Navigator.of(context).pushReplacement(
                                 MaterialPageRoute(
@@ -131,11 +132,6 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
                               );
                             },
                             padding: EdgeInsets.zero,
-                            icon: Icon(
-                              Icons.arrow_back_ios,
-                              size: 18,
-                              color: colorScheme.secondary,
-                            ),
                           ),
                         ),
                       )

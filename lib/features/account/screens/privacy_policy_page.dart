@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:bullxchange/widgets/custom_back_button.dart';
 
 class PrivacyPolicyPage extends StatelessWidget {
   const PrivacyPolicyPage({super.key});
@@ -18,24 +19,19 @@ class PrivacyPolicyPage extends StatelessWidget {
       // --- ⭐️ MODIFIED: Theme background color ---
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        // --- ⭐️ MODIFIED: Theme app bar colors ---
-        backgroundColor: theme.appBarTheme.backgroundColor,
-        elevation: 3,
-        shadowColor: colorScheme.secondary.withOpacity(0.2),
-        leading: IconButton(
-          // --- ⭐️ MODIFIED: Theme icon color ---
-          icon: Icon(Icons.arrow_back_ios_new, color: colorScheme.secondary),
-          onPressed: () => Navigator.pop(context),
-        ),
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        leading: const CustomBackButton(),
         title: Text(
           'Privacy Policy',
-          // --- ⭐️ MODIFIED: Theme title style ---
-          style: theme.appBarTheme.titleTextStyle?.copyWith(
-            fontSize: 22,
-            fontWeight: FontWeight.w800,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: colorScheme.onSurface,
           ),
         ),
-        centerTitle: true,
       ),
       body: Container(
         // --- ⭐️ MODIFIED: Remove hardcoded gradient ---

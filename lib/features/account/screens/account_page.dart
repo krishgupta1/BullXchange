@@ -3,29 +3,81 @@ import 'package:bullxchange/features/account/screens/edit_profile_page.dart';
 import 'package:bullxchange/features/account/screens/faq_page.dart';
 import 'package:bullxchange/features/account/screens/referralcodepage.dart';
 import 'package:bullxchange/features/account/screens/settings_page.dart';
+import 'package:bullxchange/features/auth/screens/login_page.dart'; // ⭐️ Import Login Page
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // For StreamBuilder
-import 'package:firebase_auth/firebase_auth.dart'; // To get the current user
-// import 'package:intl/intl.dart'; // Uncomment for advanced currency formatting
-
-// ⭐️ IMPORT THE EDIT PROFILE PAGE
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AccountScreen extends StatelessWidget {
   const AccountScreen({super.key});
 
+  // --- ⭐️ LOGOUT FUNCTION ---
+  Future<void> _handleLogout(BuildContext context) async {
+    try {
+      // 1. Show confirmation dialog
+      final bool? confirm = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          title: Text(
+            "Log Out",
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+          ),
+          content: Text(
+            "Are you sure you want to log out?",
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(
+                "Cancel",
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(
+                "Log Out",
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ),
+          ],
+        ),
+      );
+
+      if (confirm != true) return;
+
+      // 2. Sign out from Firebase
+      await FirebaseAuth.instance.signOut();
+
+      // 3. Navigate to Login Page & Clear Stack (User can't go back)
+      if (context.mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+          (Route<dynamic> route) => false,
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Error logging out: $e")));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // --- ⭐️ Theme se colors lo ---
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    // Get the current user's ID
     final String? userId = FirebaseAuth.instance.currentUser?.uid;
 
-    // Handle case where user is not logged in
     if (userId == null) {
       return Scaffold(
-        // --- ⭐️ MODIFIED: Theme background aur text color ---
         backgroundColor: theme.scaffoldBackgroundColor,
         body: Center(
           child: Text(
@@ -37,27 +89,23 @@ class AccountScreen extends StatelessWidget {
     }
 
     return Scaffold(
-      // --- ⭐️ MODIFIED: Theme background color ---
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(70.0),
         child: _buildAppBar(context, userId),
       ),
-      // --- Use StreamBuilder to listen for live data ---
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
             .collection('users')
             .doc(userId)
             .snapshots(),
         builder: (context, snapshot) {
-          // --- 1. Handle Loading State ---
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(
               child: CircularProgressIndicator(color: colorScheme.primary),
             );
           }
 
-          // --- 2. Handle Error State ---
           if (snapshot.hasError) {
             return Center(
               child: Text(
@@ -67,7 +115,6 @@ class AccountScreen extends StatelessWidget {
             );
           }
 
-          // --- 3. Handle No Data State ---
           if (!snapshot.hasData || !snapshot.data!.exists) {
             return Center(
               child: Text(
@@ -77,13 +124,11 @@ class AccountScreen extends StatelessWidget {
             );
           }
 
-          // --- 4. We have data! ---
           var userData = snapshot.data!.data() as Map<String, dynamic>;
           String name = userData['name'] ?? 'No Name';
           String email = userData['emailId'] ?? 'No Email';
           double balance = (userData['availableFunds'] ?? 0.0).toDouble();
 
-          // Build the UI with the fetched data
           return SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             child: Padding(
@@ -91,30 +136,31 @@ class AccountScreen extends StatelessWidget {
               child: Column(
                 children: [
                   const SizedBox(height: 20),
-                  // --- ⭐️ MODIFIED: Pass context ---
                   _buildProfileHeader(context, name, email),
                   const SizedBox(height: 24),
-                  // --- ⭐️ MODIFIED: Pass context ---
                   _buildWalletCard(context, balance),
                   const SizedBox(height: 16),
                   GestureDetector(
-                    onTap: () => {
+                    onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => ReferralCodePage(),
                         ),
-                      ),
+                      );
                     },
-                    // --- ⭐️ MODIFIED: Pass context ---
                     child: _buildReferralCard(context),
                   ),
                   const SizedBox(height: 24),
                   _buildOptionList(context),
                   const SizedBox(height: 24),
-                  // --- ⭐️ MODIFIED: Pass context ---
                   _buildFeedbackCard(context),
                   const SizedBox(height: 20),
+
+                  // --- ⭐️ NEW LOGOUT BUTTON ---
+                  _buildLogoutButton(context),
+
+                  const SizedBox(height: 40), // Extra space at bottom
                 ],
               ),
             ),
@@ -124,15 +170,16 @@ class AccountScreen extends StatelessWidget {
     );
   }
 
-  /// Builds the custom AppBar (Profile title and Edit button)
+  // ... (Keep _buildAppBar, _buildProfileHeader, _buildWalletCard, _buildReferralCard as they were) ...
+  // Paste your previous helper widgets here or keep them if they are in the file.
+
+  // --- Re-pasting helper widgets for completeness ---
+
   Widget _buildAppBar(BuildContext context, String userId) {
-    // --- ⭐️ Theme se colors lo ---
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
     return SafeArea(
       child: Container(
-        // --- ⭐️ MODIFIED: Theme background color ---
         color: theme.scaffoldBackgroundColor,
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
         child: Row(
@@ -143,7 +190,6 @@ class AccountScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
-                // --- ⭐️ MODIFIED: Theme text color ---
                 color: colorScheme.onSurface,
               ),
             ),
@@ -159,7 +205,6 @@ class AccountScreen extends StatelessWidget {
               child: Text(
                 'Edit Profile',
                 style: TextStyle(
-                  // --- ⭐️ MODIFIED: Theme accent color ---
                   color: colorScheme.secondary,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -172,9 +217,7 @@ class AccountScreen extends StatelessWidget {
     );
   }
 
-  /// Builds the user avatar, name, and email section
   Widget _buildProfileHeader(BuildContext context, String name, String email) {
-    // --- ⭐️ Theme se colors lo ---
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
@@ -194,14 +237,12 @@ class AccountScreen extends StatelessWidget {
       children: [
         CircleAvatar(
           radius: 35,
-          // --- ⭐️ MODIFIED: Theme color ---
           backgroundColor: colorScheme.primary.withOpacity(0.1),
           child: Text(
             getInitials(name),
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
-              // --- ⭐️ MODIFIED: Theme color ---
               color: colorScheme.primary,
             ),
           ),
@@ -215,14 +256,12 @@ class AccountScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                // --- ⭐️ MODIFIED: Theme text color ---
                 color: colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 4),
             Text(
               email,
-              // --- ⭐️ MODIFIED: Theme grey color ---
               style: TextStyle(fontSize: 14, color: textTheme.bodySmall?.color),
             ),
           ],
@@ -231,37 +270,28 @@ class AccountScreen extends StatelessWidget {
     );
   }
 
-  /// Builds the Wallet Balance card
-  /// Builds the Wallet Balance card
   Widget _buildWalletCard(BuildContext context, double balance) {
-    // --- ⭐️ Theme se colors lo ---
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
     String formattedBalance = '₹${balance.toStringAsFixed(2)}';
 
     return Container(
-      padding: const EdgeInsets.all(
-        20,
-      ), // Increased padding slightly for better look
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        // --- ⭐️ MODIFIED: Theme color ---
         color: colorScheme.primary.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: colorScheme.primary.withOpacity(0.2),
           width: 1,
-        ), // Optional: Adds a subtle border
+        ),
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 22,
-            // --- ⭐️ MODIFIED: Theme color ---
             backgroundColor: colorScheme.primary,
             child: Icon(
               Icons.account_balance_wallet,
-              // --- ⭐️ MODIFIED: Theme color ---
               color: colorScheme.onPrimary,
               size: 22,
             ),
@@ -275,7 +305,6 @@ class AccountScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  // --- ⭐️ MODIFIED: Theme text color (Greyish) ---
                   color: colorScheme.onSurface.withOpacity(0.7),
                 ),
               ),
@@ -283,10 +312,8 @@ class AccountScreen extends StatelessWidget {
               Text(
                 formattedBalance,
                 style: TextStyle(
-                  fontSize: 18, // ⭐️ INCREASED FONT SIZE (Was 16)
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  // --- ⭐️ FIX: CHANGED FROM 'primary' TO 'onSurface' ---
-                  // This makes it Black in Light Mode and White in Dark Mode
                   color: colorScheme.onSurface,
                 ),
               ),
@@ -301,12 +328,9 @@ class AccountScreen extends StatelessWidget {
               );
             },
             style: ElevatedButton.styleFrom(
-              // --- ⭐️ MODIFIED: Theme color ---
               backgroundColor: colorScheme.primary,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(
-                  12,
-                ), // Slightly squarer modern button
+                borderRadius: BorderRadius.circular(12),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               elevation: 0,
@@ -316,7 +340,6 @@ class AccountScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                // --- ⭐️ MODIFIED: Theme color ---
                 color: colorScheme.onPrimary,
               ),
             ),
@@ -326,16 +349,13 @@ class AccountScreen extends StatelessWidget {
     );
   }
 
-  /// Builds the Referral Code card
   Widget _buildReferralCard(BuildContext context) {
-    // --- ⭐️ Theme se colors lo ---
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        // --- ⭐️ MODIFIED: Theme-aware green ---
         color: Colors.green.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
       ),
@@ -343,11 +363,9 @@ class AccountScreen extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 20,
-            // --- ⭐️ MODIFIED: Theme color ---
             backgroundColor: colorScheme.secondary,
             child: Icon(
               Icons.card_giftcard,
-              // --- ⭐️ MODIFIED: Theme color ---
               color: colorScheme.onSecondary,
               size: 20,
             ),
@@ -362,14 +380,12 @@ class AccountScreen extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    // --- ⭐️ MODIFIED: Theme text color ---
                     color: colorScheme.onSurface.withOpacity(0.8),
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   'Share your friend get \$20 of free stocks',
-                  // --- ⭐️ MODIFIED: Theme grey color ---
                   style: TextStyle(
                     fontSize: 13,
                     color: textTheme.bodySmall?.color,
@@ -384,40 +400,34 @@ class AccountScreen extends StatelessWidget {
     );
   }
 
-  /// Builds the list of options (Billing, Settings, FAQ)
   Widget _buildOptionList(BuildContext context) {
-    // --- ⭐️ Theme se colors lo ---
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        // --- ⭐️ MODIFIED: Theme surface color ---
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         children: [
           _buildOptionItem(
-            context, // ⭐️ Pass context
+            context,
             icon: Icons.payment,
-            // --- ⭐️ MODIFIED: Theme color ---
-            color: colorScheme.secondary, // Pink/Red
+            color: colorScheme.secondary,
             text: 'Billing/Payment',
             onTap: () {},
           ),
-          // --- ⭐️ MODIFIED: Theme divider color ---
           Divider(
             height: 24,
             thickness: 1,
             color: theme.dividerColor.withOpacity(0.1),
           ),
           _buildOptionItem(
-            context, // ⭐️ Pass context
+            context,
             icon: Icons.settings,
-            // --- ⭐️ MODIFIED: Theme color ---
-            color: colorScheme.primary, // Blue
+            color: colorScheme.primary,
             text: 'Settings',
             onTap: () {
               Navigator.push(
@@ -426,17 +436,15 @@ class AccountScreen extends StatelessWidget {
               );
             },
           ),
-          // --- ⭐️ MODIFIED: Theme divider color ---
           Divider(
             height: 24,
             thickness: 1,
             color: theme.dividerColor.withOpacity(0.1),
           ),
           _buildOptionItem(
-            context, // ⭐️ Pass context
+            context,
             icon: Icons.quiz,
-            // --- ⭐️ MODIFIED: Accent color ---
-            color: Colors.orange, // Orange
+            color: Colors.orange,
             text: 'FAQ',
             onTap: () {
               Navigator.push(
@@ -450,16 +458,13 @@ class AccountScreen extends StatelessWidget {
     );
   }
 
-  /// Reusable widget for a single item in the options list
-  /// Reusable widget for a single item in the options list
   Widget _buildOptionItem(
-    BuildContext context, { // --- ⭐️ FIX: 'context' yahaan add kiya ---
+    BuildContext context, {
     required IconData icon,
     required Color color,
     required String text,
     VoidCallback? onTap,
   }) {
-    // --- ⭐️ Theme se colors lo ---
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -480,12 +485,10 @@ class AccountScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                // --- ⭐️ MODIFIED: Theme text color ---
                 color: colorScheme.onSurface,
               ),
             ),
             const Spacer(),
-            // --- ⭐️ MODIFIED: Theme icon color ---
             Icon(
               Icons.arrow_forward_ios,
               color: textTheme.bodySmall?.color,
@@ -497,15 +500,12 @@ class AccountScreen extends StatelessWidget {
     );
   }
 
-  /// Builds the "We'd love to hear" feedback card
   Widget _buildFeedbackCard(BuildContext context) {
-    // --- ⭐️ Theme se colors lo ---
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        // --- ⭐️ MODIFIED: Theme color ---
         color: colorScheme.primary,
         borderRadius: BorderRadius.circular(16),
       ),
@@ -513,14 +513,8 @@ class AccountScreen extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 20,
-            // --- ⭐️ MODIFIED: Theme color ---
             backgroundColor: colorScheme.onPrimary,
-            child: Icon(
-              Icons.headphones,
-              // --- ⭐️ MODIFIED: Theme color ---
-              color: colorScheme.primary,
-              size: 20,
-            ),
+            child: Icon(Icons.headphones, color: colorScheme.primary, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -529,14 +523,52 @@ class AccountScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                // --- ⭐️ MODIFIED: Theme color ---
                 color: colorScheme.onPrimary,
               ),
             ),
           ),
-          // --- ⭐️ MODIFIED: Theme color ---
           Icon(Icons.arrow_forward_ios, color: colorScheme.onPrimary, size: 16),
         ],
+      ),
+    );
+  }
+
+  // --- ⭐️ 6. NEW LOGOUT BUTTON WIDGET ---
+  Widget _buildLogoutButton(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return GestureDetector(
+      onTap: () => _handleLogout(context),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          // Use Error color with low opacity for background
+          color: colorScheme.error.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: colorScheme.error.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.logout_rounded,
+              color: colorScheme.error, // ⭐️ Adaptive Red
+            ),
+            const SizedBox(width: 8),
+            Text(
+              "Log Out",
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: colorScheme.error, // ⭐️ Adaptive Red
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

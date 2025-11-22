@@ -1,5 +1,6 @@
 import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:flutter/material.dart';
+import 'package:bullxchange/widgets/custom_back_button.dart';
 import 'package:bullxchange/models/user_profile_data_model.dart';
 // import 'package:firebase_auth/firebase_auth.dart';
 
@@ -138,20 +139,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
       // --- ⭐️ MODIFIED: Theme background color ---
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        // --- ⭐️ MODIFIED: Theme app bar color ---
-        backgroundColor: theme.appBarTheme.backgroundColor,
-        elevation: theme.appBarTheme.elevation,
-        leading: IconButton(
-          // --- ⭐️ MODIFIED: Theme icon color (pink) ---
-          icon: Icon(Icons.arrow_back_ios_new, color: colorScheme.secondary),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+        leading: const CustomBackButton(),
         title: Text(
           'Edit Profile',
-          // --- ⭐️ MODIFIED: Theme app bar title style ---
-          style: theme.appBarTheme.titleTextStyle,
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(color: colorScheme.onSurface),
         ),
         centerTitle: true,
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
+        scrolledUnderElevation: 0,
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator(color: colorScheme.primary))

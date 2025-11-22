@@ -7,6 +7,7 @@ import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:bullxchange/widgets/custom_back_button.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class SignupPage extends StatefulWidget {
@@ -217,14 +218,15 @@ class _SignupPageState extends State<SignupPage> {
             children: [
               const SizedBox(height: 20),
 
-              IconButton(
-                icon: Icon(
-                  Icons.arrow_back_ios_new,
-                  color: colorScheme.secondary,
-                ),
-                onPressed: () => Navigator.pushReplacement(
-                  context,
-                  slideLeftToRight(const OnboardingPage12()),
+              SizedBox(
+                width: 56,
+                height: 56,
+                child: CustomBackButton(
+                  onPressed: () => Navigator.pushReplacement(
+                    context,
+                    slideLeftToRight(const OnboardingPage12()),
+                  ),
+                  padding: EdgeInsets.zero,
                 ),
               ),
               const SizedBox(height: 30),

@@ -1,4 +1,3 @@
-import 'package:bullxchange/provider/theme_provider.dart';
 import 'package:bullxchange/features/stock_market/screens/buy_stock_page.dart';
 import 'package:bullxchange/features/stock_market/screens/sell_stock_page.dart';
 import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
@@ -13,6 +12,8 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:bullxchange/widgets/custom_back_button.dart';
+import 'package:bullxchange/widgets/trade_action_buttons.dart';
 
 class StockDetailPage extends StatefulWidget {
   final Instrument instrument;
@@ -36,8 +37,6 @@ class _StockDetailPageState extends State<StockDetailPage> {
     }
 
     try {
-      // This triggers a Firestore update.
-      // Since the StreamBuilder is now scoped to the Icon, only the Icon rebuilds.
       await _userService.toggleWatchlistStock(uid!, widget.instrument.token);
     } catch (e) {
       ScaffoldMessenger.of(
@@ -63,44 +62,21 @@ class _StockDetailPageState extends State<StockDetailPage> {
         : colorScheme.secondary;
     final priceParts = ltp.toStringAsFixed(2).split('.');
 
-    // ⭐️ FIX: Scaffold is the top-level widget now.
-    // The StreamBuilder has been moved inside the AppBar actions.
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: theme.scaffoldBackgroundColor,
-        elevation: 0,
-        centerTitle: true,
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Container(
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: theme.shadowColor.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: IconButton(
-              icon: Icon(
-                Icons.arrow_back_ios_new_rounded,
-                color: colorScheme.onSurface,
-                size: 18,
-              ),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ),
-        ),
+        leading: const CustomBackButton(),
         title: Text(
           widget.instrument.symbol.replaceAll('-EQ', ''),
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
           ),
         ),
+        centerTitle: true,
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
@@ -117,8 +93,6 @@ class _StockDetailPageState extends State<StockDetailPage> {
                   ),
                 ],
               ),
-              // ⭐️ FIX: STREAM BUILDER IS HERE
-              // Only this specific button listens to Firestore changes
               child: StreamBuilder<UserProfileDataModel?>(
                 stream: (uid != null)
                     ? _userService.streamUserProfile(uid!)
@@ -187,7 +161,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
             ),
 
             // --- Chart Section (Card Style) ---
-            // Because Scaffold doesn't rebuild, this Widget state is preserved
+            // ⭐️ FIX: Added GlobalKey or keep state logic robust in child widget
             Container(
               height: 420,
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -288,17 +262,80 @@ class _StockDetailPageState extends State<StockDetailPage> {
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
-            child: SizedBox(
-              height: 56.0,
-              child: _buildBottomButtons(context, ltp, widget.instrument),
+            child: TradeActionButtons(
+              onSell: () async {
+                HapticFeedback.lightImpact();
+                final uid = FirebaseAuth.instance.currentUser?.uid;
+                if (uid == null) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Please log in to sell stocks."),
+                      ),
+                    );
+                  }
+                  return;
+                }
+                final userProfile = await _bottomButtonUserService
+                    .readUserProfile(uid);
+                if (userProfile == null || userProfile.stocks.isEmpty) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("You do not own this stock."),
+                      ),
+                    );
+                  }
+                  return;
+                }
+                StockHoldingModel? holdingToSell;
+                try {
+                  final symbolToFind = widget.instrument.symbol.replaceAll(
+                    '-EQ',
+                    '',
+                  );
+                  holdingToSell = userProfile.stocks.firstWhere(
+                    (holding) => holding.stockSymbol == symbolToFind,
+                  );
+                } catch (e) {
+                  holdingToSell = null;
+                }
+                if (context.mounted) {
+                  if (holdingToSell != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SellStockPage(
+                          instrument: widget.instrument,
+                          userHolding: holdingToSell!,
+                        ),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("You do not own this stock."),
+                      ),
+                    );
+                  }
+                }
+              },
+              onBuy: () {
+                HapticFeedback.lightImpact();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        BuyStockPage(instrument: widget.instrument),
+                  ),
+                );
+              },
             ),
           ),
         ),
       ),
     );
   }
-
-  // --- Refactored Widgets (No Changes Needed Here) ---
 
   Widget _buildCompanyHeader(BuildContext context, Instrument instrument) {
     final textTheme = Theme.of(context).textTheme;
@@ -505,126 +542,9 @@ class _StockDetailPageState extends State<StockDetailPage> {
       ),
     );
   }
-
-  Widget _buildBottomButtons(
-    BuildContext context,
-    double ltp,
-    Instrument instrument,
-  ) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Row(
-      children: [
-        Expanded(
-          child: ElevatedButton(
-            onPressed: () async {
-              HapticFeedback.lightImpact();
-              final uid = FirebaseAuth.instance.currentUser?.uid;
-              if (uid == null) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Please log in to sell stocks."),
-                    ),
-                  );
-                }
-                return;
-              }
-              final userProfile = await _bottomButtonUserService
-                  .readUserProfile(uid);
-              if (userProfile == null || userProfile.stocks.isEmpty) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("You do not own this stock.")),
-                  );
-                }
-                return;
-              }
-              StockHoldingModel? holdingToSell;
-              try {
-                final symbolToFind = instrument.symbol.replaceAll('-EQ', '');
-                holdingToSell = userProfile.stocks.firstWhere(
-                  (holding) => holding.stockSymbol == symbolToFind,
-                );
-              } catch (e) {
-                holdingToSell = null;
-              }
-              if (context.mounted) {
-                if (holdingToSell != null) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => SellStockPage(
-                        instrument: instrument,
-                        userHolding: holdingToSell!,
-                      ),
-                    ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("You do not own this stock.")),
-                  );
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: colorScheme.primary,
-              foregroundColor: Colors.white,
-              shadowColor: colorScheme.primary.withOpacity(0.4),
-              elevation: 4,
-              padding: const EdgeInsets.symmetric(vertical: 0),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-            child: const Text(
-              "Sell",
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: ElevatedButton(
-            onPressed: () {
-              HapticFeedback.lightImpact();
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => BuyStockPage(instrument: instrument),
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: colorScheme.secondary,
-              foregroundColor: Colors.white,
-              shadowColor: colorScheme.secondary.withOpacity(0.4),
-              elevation: 4,
-              padding: const EdgeInsets.symmetric(vertical: 0),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-            child: const Text(
-              "Buy",
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 }
 
+// ⭐️ FIXED TRADINGVIEW CHART WIDGET
 class TradingViewChart extends StatefulWidget {
   final Instrument instrument;
   const TradingViewChart({super.key, required this.instrument});
@@ -635,48 +555,40 @@ class TradingViewChart extends StatefulWidget {
 
 class _TradingViewChartState extends State<TradingViewChart> {
   late final WebViewController _controller;
-  bool _isControllerInitialized = false;
+  String _currentAppliedTheme = ""; // Track current theme
 
   @override
   void initState() {
     super.initState();
+    // Initialize controller once
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(const Color(0x00000000));
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    if (!_isControllerInitialized) {
-      final themeMode = Provider.of<ThemeNotifier>(
-        context,
-        listen: false,
-      ).themeMode;
+    // Get current brightness from Theme
+    final brightness = Theme.of(context).brightness;
 
-      final brightness =
-          MediaQuery.maybeOf(context)?.platformBrightness ?? Brightness.light;
+    String chartTheme;
+    String toolbarBg;
 
-      String chartTheme;
-      String toolbarBg;
+    // Set params based on brightness
+    if (brightness == Brightness.dark) {
+      chartTheme = "dark";
+      toolbarBg = "#1E1E1E";
+    } else {
+      chartTheme = "light";
+      toolbarBg = "#f1f3f6";
+    }
 
-      if (themeMode == ThemeMode.dark) {
-        chartTheme = "dark";
-        toolbarBg = "#1E1E1E";
-      } else if (themeMode == ThemeMode.light) {
-        chartTheme = "light";
-        toolbarBg = "#f1f3f6";
-      } else {
-        chartTheme = (brightness == Brightness.dark) ? "dark" : "light";
-        toolbarBg = (brightness == Brightness.dark) ? "#1E1E1E" : "#f1f3f6";
-      }
-
-      _controller = WebViewController()
-        ..setJavaScriptMode(JavaScriptMode.unrestricted)
-        ..setBackgroundColor(const Color(0x00000000))
-        ..loadHtmlString(_buildTradingViewHtml(chartTheme, toolbarBg));
-
-      setState(() {
-        _isControllerInitialized = true;
-      });
+    // Reload only if theme has changed
+    if (_currentAppliedTheme != chartTheme) {
+      _currentAppliedTheme = chartTheme;
+      _controller.loadHtmlString(_buildTradingViewHtml(chartTheme, toolbarBg));
     }
   }
 
@@ -702,7 +614,7 @@ class _TradingViewChartState extends State<TradingViewChart> {
               "symbol": "$tradingViewSymbol", 
               "interval": "D",
               "intervals": ["1", "5", "15", "30", "60", "D", "W", "M"],
-              "timezone": "Asia/Kolata",
+              "timezone": "Asia/Kolkata",
               "theme": "$chartTheme", 
               "style": "1",
               "locale": "in",
@@ -724,14 +636,6 @@ class _TradingViewChartState extends State<TradingViewChart> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_isControllerInitialized) {
-      return Center(
-        child: CircularProgressIndicator(
-          color: Theme.of(context).colorScheme.primary,
-          strokeWidth: 3,
-        ),
-      );
-    }
     return WebViewWidget(controller: _controller);
   }
 }
