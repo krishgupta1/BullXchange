@@ -6,225 +6,157 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:intl/intl.dart';
 
 class AngelOneOptionChainService {
-  // 1. Use your working API Service
   final AngelOneApiService _apiService = AngelOneApiService();
-
-  // 2. Cache for the large JSON file
   static List<Instrument>? _cachedInstruments;
 
   // ---------------------------------------------------------------------------
-  // 🛠 CONFIG: Map UI Names to Angel API Tokens
+  // 1. CONFIGURATION
   // ---------------------------------------------------------------------------
   Map<String, String> _getSymbolConfig(String inputSymbol) {
-    final s = inputSymbol.toUpperCase().trim();
+    final s = inputSymbol.toUpperCase().replaceAll(' ', '').trim();
 
-    // 1. NIFTY 50
-    if (s == "NIFTY 50" || s == "NIFTY") {
+    // NSE Indices
+    if (s == "NIFTY" || s == "NIFTY50") {
+      return {"spotToken": "99926000", "optionName": "NIFTY", "segment": "NFO"};
+    } else if (s == "BANKNIFTY" || s == "NIFTYBANK") {
       return {
-        "spotToken": "99926000", // NSE Token for Nifty 50
-        "optionName": "NIFTY", // Name used in Option Scrip Master
+        "spotToken": "99926009",
+        "optionName": "BANKNIFTY",
+        "segment": "NFO",
+      };
+    } else if (s == "FINNIFTY" || s == "NIFTYFINSERVICE") {
+      return {
+        "spotToken": "99926037",
+        "optionName": "FINNIFTY",
+        "segment": "NFO",
+      };
+    } else if (s == "MIDCPNIFTY" || s == "MIDCAPNIFTY") {
+      return {
+        "spotToken": "99926074",
+        "optionName": "MIDCPNIFTY",
+        "segment": "NFO",
       };
     }
-    // 2. BANK NIFTY
-    else if (s == "NIFTY BANK" || s == "BANKNIFTY" || s == "BANK NIFTY") {
-      return {"spotToken": "99926009", "optionName": "BANKNIFTY"};
-    }
-    // 3. FIN NIFTY
-    else if (s == "NIFTY FIN SERVICE" || s == "FINNIFTY" || s.contains("FIN")) {
-      return {"spotToken": "99926037", "optionName": "FINNIFTY"};
+    // BSE Indices
+    else if (s == "SENSEX") {
+      return {
+        "spotToken": "99919000",
+        "optionName": "SENSEX",
+        "segment": "BFO",
+      };
+    } else if (s == "BANKEX") {
+      return {
+        "spotToken": "99919014",
+        "optionName": "BANKEX",
+        "segment": "BFO",
+      };
     }
 
-    // Fallback (Likely won't work for Indices without manual mapping)
-    return {"spotToken": "", "optionName": s};
+    return {"spotToken": "", "optionName": s, "segment": "NFO"};
   }
 
   // ---------------------------------------------------------------------------
-  // 🚀 MAIN FETCH METHOD
+  // 2. MAIN FETCH
   // ---------------------------------------------------------------------------
-  Future<Map<String, dynamic>?> fetchOptionChainData(String symbol) async {
+  Future<Map<String, dynamic>> fetchOptionChainData(
+    String symbol, {
+    required String exchange,
+  }) async {
     try {
-      AppLog.i("🚀 [OptionChain] Fetching data for: $symbol");
-
-      // 1. Get Configuration
-      final config = _getSymbolConfig(symbol);
-      final String spotToken = config['spotToken']!;
-      final String optionName = config['optionName']!;
-
-      if (spotToken.isEmpty) {
-        AppLog.e(
-          "❌ [OptionChain] Could not map symbol '$symbol' to a Spot Token.",
-        );
-        return null;
-      }
-
-      // 2. Load Master Data (Cached)
       final List<Instrument> allInstruments = await _getOrLoadScripMaster();
-      if (allInstruments.isEmpty) {
-        AppLog.e("❌ [OptionChain] Scrip Master is empty.");
-        return null;
-      }
+      if (allInstruments.isEmpty) throw "Scrip Master JSON is empty.";
 
-      // 3. FETCH SPOT PRICE (With Debugging & Fallbacks)
-      AppLog.i(
-        "📡 [OptionChain] Requesting Spot Price for Token: $spotToken (NSE)",
-      );
+      final config = _getSymbolConfig(symbol);
+      String spotToken = config['spotToken']!;
+      final String optionName = config['optionName']!;
+      final String segment = config['segment']!;
 
-      // Request data from NSE exchange
-      final List<dynamic> spotResponse = await _apiService.fetchLiveMarketData({
-        "NSE": [spotToken],
-      });
-
-      AppLog.i("🔍 [OptionChain] Raw Spot Response: $spotResponse");
-
-      double spotPrice = 0.0;
-
-      if (spotResponse.isNotEmpty && spotResponse[0] is Map) {
-        final item = spotResponse[0];
-
-        // 🛡️ ROBUST PARSING: Try 'ltp' -> 'lastPrice' -> 'closePrice'
-        final ltp = double.tryParse(item['ltp']?.toString() ?? "0") ?? 0.0;
-        final lastPrice =
-            double.tryParse(item['lastPrice']?.toString() ?? "0") ?? 0.0;
-        final closePrice =
-            double.tryParse(item['closePrice']?.toString() ?? "0") ?? 0.0;
-
-        if (ltp > 0) {
-          spotPrice = ltp;
-        } else if (lastPrice > 0) {
-          spotPrice = lastPrice;
-          AppLog.w(
-            "⚠️ [OptionChain] 'ltp' was 0, used 'lastPrice': $spotPrice",
+      // Dynamic Token Search
+      if (spotToken.isEmpty) {
+        try {
+          final underlying = allInstruments.firstWhere(
+            (i) =>
+                (i.name == optionName || i.symbol == "$optionName-EQ") &&
+                i.symbol.endsWith("-EQ"),
           );
-        } else if (closePrice > 0) {
-          spotPrice = closePrice;
-          AppLog.w(
-            "⚠️ [OptionChain] 'ltp' was 0, used 'closePrice' (Market Closed?): $spotPrice",
-          );
+          spotToken = underlying.token;
+        } catch (e) {
+          throw "Spot Token not found for $symbol";
         }
       }
 
-      if (spotPrice == 0.0) {
-        AppLog.e(
-          "❌ [OptionChain] Spot Price is 0.0. API returned valid data but no price found.",
-        );
-        return null;
-      }
-      AppLog.i("✅ [OptionChain] Final Spot Price for $optionName: $spotPrice");
+      // Fetch Spot Price
+      double referencePrice = 0.0;
+      final spotExchange = (segment == "BFO") ? "BSE" : "NSE";
+      final spotData = await _fetchMarketData(spotToken, spotExchange);
 
-      // 4. Filter Options from Master Data
+      if (spotData != null) {
+        double ltp = double.tryParse(spotData['ltp']?.toString() ?? "0") ?? 0;
+        double close =
+            double.tryParse(spotData['close']?.toString() ?? "0") ?? 0;
+        referencePrice = (ltp > 0) ? ltp : close;
+      }
+
+      // Fallback to Futures if Spot is 0
+      if (referencePrice == 0.0) {
+        referencePrice = await _fetchFuturesPrice(
+          optionName,
+          allInstruments,
+          segment,
+        );
+      }
+      if (referencePrice == 0.0) throw "Market Data Unavailable (Price is 0).";
+
+      // Filter Options
       final List<Instrument> options = allInstruments.where((i) {
         return i.name == optionName &&
-            i.instrumentType == "OPTIDX" &&
-            i.exchSeg == "NFO";
+            (i.instrumentType == "OPTIDX" || i.instrumentType == "OPTSTK") &&
+            i.exchSeg == segment;
       }).toList();
 
-      if (options.isEmpty) {
-        AppLog.e("❌ [OptionChain] No OPTIDX found for name: $optionName");
-        return null;
-      }
+      if (options.isEmpty) throw "No Options found.";
 
-      // 5. Find Nearest Expiry
-      final String? nearestExpiry = _findNearestExpiry(options);
-      if (nearestExpiry == null) {
-        AppLog.e("❌ [OptionChain] Could not find nearest expiry.");
-        return null;
-      }
-      AppLog.i("🗓️ [OptionChain] Nearest Expiry: $nearestExpiry");
-
-      // 6. Smart Filter: Range 3%
-      final double range = spotPrice * 0.03;
-      final double minStrike = spotPrice - range;
-      final double maxStrike = spotPrice + range;
-
+      final String nearestExpiry = _findNearestExpiry(options);
+      final double range = referencePrice * 0.03; // 3% Range
       final List<Instrument> targetOptions = options.where((i) {
         if (i.expiry != nearestExpiry) return false;
         double strike = double.tryParse(i.strike) ?? 0.0;
-        // Angel One strike fix (sometimes stored as 1800000 instead of 18000)
         if (strike > 100000) strike = strike / 100;
-        return strike >= minStrike && strike <= maxStrike;
+        return strike >= (referencePrice - range) &&
+            strike <= (referencePrice + range);
       }).toList();
 
-      if (targetOptions.isEmpty) {
-        AppLog.e(
-          "❌ [OptionChain] No options found within range ($minStrike - $maxStrike).",
-        );
-        return null;
-      }
-
-      // 7. Fetch Live Data for Options (Using NFO segment)
-      final List<String> tokensToFetch = targetOptions
-          .map((e) => e.token)
-          .toList();
-
-      final List<dynamic> liveDataList = await _apiService.fetchLiveMarketData({
-        "NFO": tokensToFetch,
-      });
-
-      // Convert List to Map for easy lookup
+      // Batch Fetch Live Data (50 limit)
+      final List<String> allTokens = targetOptions.map((e) => e.token).toList();
       final Map<String, dynamic> liveDataMap = {};
-      for (var item in liveDataList) {
-        if (item is Map) {
-          String t = item['symbolToken'] ?? item['token'] ?? "";
-          if (t.isNotEmpty) liveDataMap[t] = item;
-        }
+
+      for (var i = 0; i < allTokens.length; i += 50) {
+        final end = (i + 50 < allTokens.length) ? i + 50 : allTokens.length;
+        try {
+          final batchData = await _apiService.fetchLiveMarketData({
+            segment: allTokens.sublist(i, end),
+          });
+          for (var item in batchData) {
+            if (item is Map)
+              liveDataMap[item['symbolToken'] ?? item['token'] ?? ""] = item;
+          }
+        } catch (_) {}
       }
 
-      // 8. Build Response
-      return _buildOptionChainResponse(targetOptions, liveDataMap, spotPrice);
-    } catch (e, st) {
-      AppLog.e("❌ [OptionChain] Critical Error: $e\n$st");
-      return null;
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // 🛠 HELPERS
-  // ---------------------------------------------------------------------------
-
-  Future<List<Instrument>> _getOrLoadScripMaster() async {
-    if (_cachedInstruments != null && _cachedInstruments!.isNotEmpty) {
-      return _cachedInstruments!;
-    }
-    try {
-      final jsonString = await rootBundle.loadString(
-        'assets/OpenAPIScripMaster.json',
+      return _buildOptionChainResponse(
+        targetOptions,
+        liveDataMap,
+        referencePrice,
       );
-      final List<dynamic> data = jsonDecode(jsonString);
-      _cachedInstruments = data.map((e) => Instrument.fromJson(e)).toList();
-      return _cachedInstruments!;
     } catch (e) {
-      AppLog.e("❌ Error loading Scrip Master: $e");
-      return [];
+      AppLog.e("Error fetching chain: $e");
+      throw e.toString();
     }
   }
 
-  String? _findNearestExpiry(List<Instrument> options) {
-    final Set<String> uniqueExpiries = options.map((e) => e.expiry).toSet();
-    if (uniqueExpiries.isEmpty) return null;
-
-    // Angel One format is usually "ddMMMyyyy" (e.g. 28NOV2024)
-    final DateFormat angelFormat = DateFormat("ddMMMyyyy");
-    final DateTime today = DateTime.now();
-    final DateTime todayDate = DateTime(today.year, today.month, today.day);
-
-    final List<DateTime> dates = [];
-    for (var exp in uniqueExpiries) {
-      try {
-        dates.add(angelFormat.parse(exp));
-      } catch (_) {
-        // Fallback for other formats if necessary
-      }
-    }
-    dates.sort();
-
-    for (var d in dates) {
-      if (d.isAtSameMomentAs(todayDate) || d.isAfter(todayDate)) {
-        return angelFormat.format(d).toUpperCase();
-      }
-    }
-    return null;
-  }
-
+  // ---------------------------------------------------------------------------
+  // 3. HELPERS
+  // ---------------------------------------------------------------------------
   Map<String, dynamic> _buildOptionChainResponse(
     List<Instrument> instruments,
     Map<String, dynamic> liveData,
@@ -235,43 +167,110 @@ class AngelOneOptionChainService {
     for (var inst in instruments) {
       double strike = double.tryParse(inst.strike) ?? 0.0;
       if (strike > 100000) strike = strike / 100;
-
       String strikeKey = strike.toStringAsFixed(2);
       final data = liveData[inst.token];
 
-      // Map API keys to our UI keys
+      // ⭐️ EXTRACT LOT SIZE from your Instrument model
+      int lotSize = int.tryParse(inst.lotSize) ?? 1;
+
+      double ltp = double.tryParse(data?['ltp']?.toString() ?? "0") ?? 0.0;
+      if (ltp == 0)
+        ltp = double.tryParse(data?['close']?.toString() ?? "0") ?? 0.0;
+
       final Map<String, dynamic> node = {
         'openInterest': data?['opnInterest'] ?? 0,
-        'lastPrice': data?['ltp'] ?? 0.0,
-        'change': data?['netChange'] ?? 0.0,
+        'lastPrice': ltp,
         'pChange': data?['percentChange'] ?? 0.0,
-        'volume': data?['volume'] ?? data?['tradeVolume'] ?? 0,
-        'identifier': inst.symbol,
+        'lotSize': lotSize, // Passing to UI
       };
 
-      if (!rows.containsKey(strikeKey)) {
+      if (!rows.containsKey(strikeKey))
         rows[strikeKey] = {'strikePrice': strike};
-      }
-
-      if (inst.symbol.endsWith("CE")) {
+      if (inst.symbol.endsWith("CE"))
         rows[strikeKey]!['CE'] = node;
-      } else if (inst.symbol.endsWith("PE")) {
+      else
         rows[strikeKey]!['PE'] = node;
-      }
     }
 
-    final List<Map<String, dynamic>> formattedRows = rows.values.toList();
+    final formattedRows = rows.values.toList();
     formattedRows.sort(
       (a, b) =>
           (a['strikePrice'] as double).compareTo(b['strikePrice'] as double),
     );
-
     return {
-      'records': {
-        'underlyingValue': spotPrice,
-        'timestamp': DateTime.now().toIso8601String(),
-      },
+      'records': {'underlyingValue': spotPrice},
       'filtered': {'data': formattedRows},
     };
+  }
+
+  Future<Map<String, dynamic>?> _fetchMarketData(String t, String e) async {
+    try {
+      final res = await _apiService.fetchLiveMarketData({
+        e: [t],
+      });
+      if (res.isNotEmpty && res[0] is Map) return res[0];
+    } catch (_) {}
+    return null;
+  }
+
+  Future<double> _fetchFuturesPrice(
+    String n,
+    List<Instrument> i,
+    String s,
+  ) async {
+    try {
+      final futures = i
+          .where(
+            (inst) =>
+                inst.name == n &&
+                inst.instrumentType == "FUTIDX" &&
+                inst.exchSeg == s,
+          )
+          .toList();
+      if (futures.isEmpty) return 0.0;
+      final String expiry = _findNearestExpiry(futures);
+      final target = futures.firstWhere((f) => f.expiry == expiry);
+      final data = await _fetchMarketData(target.token, s);
+      if (data != null) {
+        return (data['ltp'] as num?)?.toDouble() ??
+            (data['close'] as num?)?.toDouble() ??
+            0.0;
+      }
+    } catch (_) {}
+    return 0.0;
+  }
+
+  String _findNearestExpiry(List<Instrument> o) {
+    final Set<String> exps = o.map((e) => e.expiry).toSet();
+    final DateFormat f = DateFormat("ddMMMyyyy", "en_US");
+    final DateTime now = DateTime.now().copyWith(
+      hour: 0,
+      minute: 0,
+      second: 0,
+      millisecond: 0,
+    );
+    final List<DateTime> dates = [];
+
+    for (var e in exps) {
+      try {
+        dates.add(f.parseLoose(e.trim()));
+      } catch (_) {}
+    }
+    dates.sort();
+
+    for (var d in dates) {
+      if (d.isAtSameMomentAs(now) || d.isAfter(now))
+        return f.format(d).toUpperCase();
+    }
+    if (dates.isNotEmpty) return f.format(dates.last).toUpperCase();
+    throw "No expiry found";
+  }
+
+  Future<List<Instrument>> _getOrLoadScripMaster() async {
+    if (_cachedInstruments != null) return _cachedInstruments!;
+    final s = await rootBundle.loadString('assets/OpenAPIScripMaster.json');
+    final List<dynamic> d = jsonDecode(s);
+    _cachedInstruments = d.map((e) => Instrument.fromJson(e)).toList();
+    return _cachedInstruments!;
   }
 }
