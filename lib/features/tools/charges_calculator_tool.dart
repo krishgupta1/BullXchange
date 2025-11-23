@@ -59,7 +59,6 @@ class ChargesApp extends StatelessWidget {
         ),
       ),
       darkTheme: ThemeData.dark().copyWith(
-        useMaterial3: true,
         scaffoldBackgroundColor: const Color(0xFF071022),
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF00D09C),
@@ -190,7 +189,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   final Color _bullColor = const Color(0xFF00D09C); // Modern Mint Green
   final Color _bearColor = const Color(0xFFFF5252); // Soft Red
   // Use theme-aware text color
-  Color get _textColor => Theme.of(context).colorScheme.onBackground;
+  Color get _textColor => Theme.of(context).colorScheme.onSurface;
 
   Color get _activeColor =>
       _selectedType == TradeType.buy ? _bullColor : _bearColor;
@@ -280,7 +279,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                         'Charges Estimator',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: Theme.of(context).colorScheme.onBackground,
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontWeight: FontWeight.w700,
                           fontSize: 18,
                         ),
@@ -331,7 +330,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                                   fontWeight: FontWeight.w800,
                                   color: Theme.of(
                                     context,
-                                  ).colorScheme.onBackground,
+                                  ).colorScheme.onSurface,
                                   fontFeatures: const [
                                     FontFeature.tabularFigures(),
                                   ],
@@ -648,7 +647,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
           Text(
             _formatCurrency(value),
             style: TextStyle(
-              color: Theme.of(context).colorScheme.onBackground,
+              color: Theme.of(context).colorScheme.onSurface,
               fontSize: 14,
               fontWeight: isBold ? FontWeight.w700 : FontWeight.w500,
               fontFeatures: const [FontFeature.tabularFigures()],

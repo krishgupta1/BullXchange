@@ -210,8 +210,9 @@ class AngelOneOptionChainService {
             segment: allTokens.sublist(i, end),
           });
           for (var item in batchData) {
-            if (item is Map)
+            if (item is Map) {
               liveDataMap[item['symbolToken'] ?? item['token'] ?? ""] = item;
+            }
           }
         } catch (_) {}
       }
@@ -247,8 +248,9 @@ class AngelOneOptionChainService {
 
       double ltp = double.tryParse(data?['ltp']?.toString() ?? "0") ?? 0.0;
       // ⭐️ Use Close if LTP is 0 (Fixes weekend 0 values)
-      if (ltp == 0)
+      if (ltp == 0) {
         ltp = double.tryParse(data?['close']?.toString() ?? "0") ?? 0.0;
+      }
 
       final Map<String, dynamic> node = {
         'openInterest': data?['opnInterest'] ?? 0,
@@ -257,12 +259,14 @@ class AngelOneOptionChainService {
         'lotSize': lotSize,
       };
 
-      if (!rows.containsKey(strikeKey))
+      if (!rows.containsKey(strikeKey)) {
         rows[strikeKey] = {'strikePrice': strike};
-      if (inst.symbol.endsWith("CE"))
+      }
+      if (inst.symbol.endsWith("CE")) {
         rows[strikeKey]!['CE'] = node;
-      else
+      } else {
         rows[strikeKey]!['PE'] = node;
+      }
     }
 
     final formattedRows = rows.values.toList();
@@ -332,8 +336,9 @@ class AngelOneOptionChainService {
     dates.sort();
 
     for (var d in dates) {
-      if (d.isAtSameMomentAs(now) || d.isAfter(now))
+      if (d.isAtSameMomentAs(now) || d.isAfter(now)) {
         return f.format(d).toUpperCase();
+      }
     }
     if (dates.isNotEmpty) return f.format(dates.last).toUpperCase();
     throw "No expiry found";

@@ -81,13 +81,13 @@ class _FutureOptionPageState extends State<FutureOptionPage>
               child: Column(
                 children: [
                   const SizedBox(height: 16),
-
-                  // ✨ Header with Actions Removed
                   MainPageHeader(
                     userName: _userName,
-                    defaultUserName: 'Kitsbase',
+                    defaultUserName: 'User',
                     welcomeMessage: 'Welcome to BullXchange',
-                    actions: const [], // Empty list removes the menu button
+                    onProfileTap: () {
+                      Scaffold.of(context).openDrawer();
+                    },
                   ),
                   const SizedBox(height: 30),
 

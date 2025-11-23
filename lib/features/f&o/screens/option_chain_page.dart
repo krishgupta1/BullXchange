@@ -31,8 +31,9 @@ class _OptionChainPageState extends State<OptionChainPage>
   // Helper to map UI symbol to API symbol
   String _getApiSymbol(String uiSymbol) {
     final s = uiSymbol.toUpperCase().trim();
-    if (s == "NIFTY MID SELECT" || s.contains("MIDCPNIFTY"))
+    if (s == "NIFTY MID SELECT" || s.contains("MIDCPNIFTY")) {
       return "MIDCPNIFTY";
+    }
     if (s == "BANKEX") return "BANKEX";
     if (s == "SENSEX") return "SENSEX";
     if (s == "FINNIFTY") return "FINNIFTY";
@@ -397,8 +398,9 @@ class _OptionChainBodyState extends State<_OptionChainBody> {
         Expanded(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              if (atmIndex != null)
+              if (atmIndex != null) {
                 _scrollToAtm(atmIndex, constraints.maxHeight);
+              }
               return RefreshIndicator(
                 onRefresh: () async {
                   _hasScrolledToAtm = false;

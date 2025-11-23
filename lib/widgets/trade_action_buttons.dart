@@ -8,13 +8,13 @@ class TradeActionButtons extends StatelessWidget {
   final double height;
 
   const TradeActionButtons({
-    Key? key,
+    super.key,
     required this.onSell,
     required this.onBuy,
     this.sellLabel = 'Sell',
     this.buyLabel = 'Buy',
     this.height = 56.0,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

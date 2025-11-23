@@ -227,7 +227,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
         );
       }
     } catch (e) {
-      throw e;
+      rethrow;
     }
   }
 
