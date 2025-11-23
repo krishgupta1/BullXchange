@@ -1,5 +1,8 @@
+import 'package:bullxchange/features/f&o/screens/buy_option_page.dart';
+import 'package:bullxchange/features/f&o/screens/sell_option_page.dart';
+import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/provider/option_chain_provider.dart';
-import 'package:bullxchange/widgets/custom_back_button.dart'; // Ensure this exists or remove
+import 'package:bullxchange/widgets/custom_back_button.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -46,7 +49,7 @@ class _OptionChainPageState extends State<OptionChainPage>
       create: (_) => OptionChainProvider(symbol: apiSymbol),
       child: Scaffold(
         appBar: AppBar(
-          leading: const CustomBackButton(), // Make sure this widget exists
+          leading: const CustomBackButton(),
           title: Text(
             widget.symbol,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -155,6 +158,152 @@ class _OptionChainBodyState extends State<_OptionChainBody> {
     });
   }
 
+  // ⭐️ HANDLE TAP & NAVIGATION
+  void _onOptionTap(BuildContext context, dynamic rowData, bool isCall) {
+    final provider = context.read<OptionChainProvider>();
+    final Map<String, dynamic>? data = isCall ? rowData.ce : rowData.pe;
+
+    if (data == null || data['lastPrice'] == 0) return;
+
+    final double strike = rowData.strikePrice;
+    final String type = isCall ? "CE" : "PE";
+    final double ltp = double.tryParse(data['lastPrice'].toString()) ?? 0.0;
+
+    // ⭐️ FIX: Removed 'tickSize' and 'liveData' which caused the error
+    // We pass 'ltp' explicitly to the Buy/Sell pages, so we don't need it inside Instrument here.
+    final instrument = Instrument(
+      token: "",
+      symbol: provider.symbol,
+      name: provider.symbol,
+      exchSeg: "NFO",
+      expiry: "",
+      strike: strike.toString(),
+      instrumentType: "OPTIDX",
+      lotSize: data['lotSize']?.toString() ?? "25",
+      outstandingShares: 0,
+      avgVolume: 0,
+    );
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1E1E1E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          height: 250,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "${provider.symbol} $strike $type",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    "₹$ltp",
+                    style: TextStyle(
+                      color: isCall ? Colors.greenAccent : Colors.redAccent,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const Divider(color: Colors.grey),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 50,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => BuyOptionPage(
+                                instrument: instrument,
+                                symbol: provider.symbol,
+                                optionType: type,
+                                strikePrice: strike,
+                                ltp: ltp,
+                              ),
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          "BUY",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 15),
+                  Expanded(
+                    child: SizedBox(
+                      height: 50,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => SellOptionPage(
+                                instrument: instrument,
+                                symbol: provider.symbol,
+                                optionType: type,
+                                strikePrice: strike,
+                                ltp: ltp,
+                              ),
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          "SELL",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<OptionChainProvider>();
@@ -250,7 +399,6 @@ class _OptionChainBodyState extends State<_OptionChainBody> {
             builder: (context, constraints) {
               if (atmIndex != null)
                 _scrollToAtm(atmIndex, constraints.maxHeight);
-
               return RefreshIndicator(
                 onRefresh: () async {
                   _hasScrolledToAtm = false;
@@ -277,53 +425,102 @@ class _OptionChainBodyState extends State<_OptionChainBody> {
                   itemBuilder: (ctx, i) {
                     final row = rows[i];
                     final isAtm = atmIndex == i;
+
                     return Container(
                       color: Colors.black,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
                       child: Row(
                         children: [
-                          _cell(
-                            top: _formatOI(
-                              row.ce?['openInterest'],
-                              row.ce?['lotSize'],
-                            ),
-                            sub: "",
-                            txt: txtColor,
-                          ),
-                          _cell(
-                            top: _formatPrice(row.ce?['lastPrice']),
-                            sub: _formatChange(row.ce?['pChange']),
-                            txt: txtColor,
-                            subColor: _getChangeColor(row.ce?['pChange']),
-                          ),
+                          // CLICKABLE CALL SIDE
                           Expanded(
-                            flex: 2,
-                            child: Center(
-                              child: Text(
-                                row.strikePrice.toStringAsFixed(0),
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                  color: isAtm
-                                      ? Colors.white
-                                      : Colors.grey.shade400,
+                            flex: 4,
+                            child: InkWell(
+                              onTap: () => _onOptionTap(context, row, true),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                                child: Row(
+                                  children: [
+                                    _cell(
+                                      top: _formatOI(
+                                        row.ce?['openInterest'],
+                                        row.ce?['lotSize'],
+                                      ),
+                                      sub: "",
+                                      txt: txtColor,
+                                    ),
+                                    _cell(
+                                      top: _formatPrice(row.ce?['lastPrice']),
+                                      sub: _formatChange(row.ce?['pChange']),
+                                      txt: txtColor,
+                                      subColor: _getChangeColor(
+                                        row.ce?['pChange'],
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
                           ),
-                          _cell(
-                            top: _formatPrice(row.pe?['lastPrice']),
-                            sub: _formatChange(row.pe?['pChange']),
-                            txt: txtColor,
-                            subColor: _getChangeColor(row.pe?['pChange']),
-                          ),
-                          _cell(
-                            top: _formatOI(
-                              row.pe?['openInterest'],
-                              row.pe?['lotSize'],
+                          // CENTER STRIKE (Not Clickable)
+                          Expanded(
+                            flex: 2,
+                            child: Center(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: isAtm
+                                    ? BoxDecoration(
+                                        color: Colors.white24,
+                                        borderRadius: BorderRadius.circular(4),
+                                      )
+                                    : null,
+                                child: Text(
+                                  row.strikePrice.toStringAsFixed(0),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    color: isAtm
+                                        ? Colors.white
+                                        : Colors.grey.shade400,
+                                  ),
+                                ),
+                              ),
                             ),
-                            sub: "",
-                            txt: txtColor,
+                          ),
+                          // CLICKABLE PUT SIDE
+                          Expanded(
+                            flex: 4,
+                            child: InkWell(
+                              onTap: () => _onOptionTap(context, row, false),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                                child: Row(
+                                  children: [
+                                    _cell(
+                                      top: _formatPrice(row.pe?['lastPrice']),
+                                      sub: _formatChange(row.pe?['pChange']),
+                                      txt: txtColor,
+                                      subColor: _getChangeColor(
+                                        row.pe?['pChange'],
+                                      ),
+                                    ),
+                                    _cell(
+                                      top: _formatOI(
+                                        row.pe?['openInterest'],
+                                        row.pe?['lotSize'],
+                                      ),
+                                      sub: "",
+                                      txt: txtColor,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -373,7 +570,7 @@ class _OptionChainBodyState extends State<_OptionChainBody> {
     Color? subColor,
   }) {
     return Expanded(
-      flex: 2,
+      flex: 1,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -561,7 +758,7 @@ class OverviewTab extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// 4. OVERVIEW HELPERS (Sliders, Labels)
+// 4. OVERVIEW HELPERS
 // ---------------------------------------------------------------------------
 
 class _RangeLabels extends StatelessWidget {

@@ -11,8 +11,6 @@ import 'package:bullxchange/firebase_options.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:bullxchange/features/auth/navigation/auth_wrapper.dart';
-
-// --- ⭐️ NEW IMPORTS NEEDED FOR THE FIX ---
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:bullxchange/models/user_profile_data_model.dart';

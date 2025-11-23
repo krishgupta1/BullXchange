@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class TransactionModel {
   final String? id;
   final String userId;
-  final String stockSymbol; // Dart variable name
+  final String stockSymbol;
   final String companyName;
   final String transactionType;
   final int quantity;
@@ -11,10 +11,16 @@ class TransactionModel {
   final double charges;
   final double totalAmount;
   final String orderStatus;
-  final DateTime transactionTime; // Dart variable name
+  final DateTime transactionTime;
   final String exchange;
   final String productType;
   final String orderType;
+
+  // ⭐️ NEW FIELDS FOR OPTIONS
+  final int? lotSize;
+  final String? optionType;
+  final String? expiryDate;
+  final double? strikePrice;
 
   TransactionModel({
     this.id,
@@ -31,13 +37,15 @@ class TransactionModel {
     required this.exchange,
     required this.productType,
     required this.orderType,
+    this.lotSize,
+    this.optionType,
+    this.expiryDate,
+    this.strikePrice,
   });
 
-  /// Converts the model to a Map for Firestore.
   Map<String, dynamic> toJson() {
     return {
       'userId': userId,
-      // 🛠️ FIX 1: Save as 'symbol' to match your existing Database
       'symbol': stockSymbol,
       'companyName': companyName,
       'transactionType': transactionType,
@@ -46,26 +54,25 @@ class TransactionModel {
       'charges': charges,
       'totalAmount': totalAmount,
       'orderStatus': orderStatus,
-      // 🛠️ FIX 2: Save as 'executedAt' so the Query works
       'executedAt': Timestamp.fromDate(transactionTime),
       'exchange': exchange,
       'productType': productType,
       'orderType': orderType,
+      // ⭐️ SAVE NEW FIELDS
+      'lotSize': lotSize,
+      'optionType': optionType,
+      'expiryDate': expiryDate,
+      'strikePrice': strikePrice,
     };
   }
 
-  /// Creates a TransactionModel from a Firestore document snapshot.
   factory TransactionModel.fromSnapshot(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-
-    // Handle Timestamp conversion safely
-    // It looks for 'executedAt' (DB name) first.
     Timestamp? timeStamp = data['executedAt'] ?? data['transactionTime'];
 
     return TransactionModel(
       id: doc.id,
       userId: data['userId'] ?? '',
-      // Read 'symbol' from DB, map to 'stockSymbol' in Dart
       stockSymbol: data['symbol'] ?? data['stockSymbol'] ?? '',
       companyName: data['companyName'] ?? '',
       transactionType: data['transactionType'] ?? 'BUY',
@@ -78,6 +85,11 @@ class TransactionModel {
       exchange: data['exchange'] ?? 'NSE',
       productType: data['productType'] ?? 'Delivery',
       orderType: data['orderType'] ?? 'Market',
+      // ⭐️ LOAD NEW FIELDS
+      lotSize: data['lotSize'],
+      optionType: data['optionType'],
+      expiryDate: data['expiryDate'],
+      strikePrice: (data['strikePrice'] as num?)?.toDouble(),
     );
   }
 }

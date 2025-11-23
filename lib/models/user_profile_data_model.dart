@@ -1,4 +1,5 @@
 import 'package:bullxchange/models/stock_holding_model.dart';
+import 'package:bullxchange/models/option_holding_model.dart'; // Import new model
 
 class UserProfileDataModel {
   final String uid;
@@ -8,9 +9,12 @@ class UserProfileDataModel {
   final DateTime accountCreationTime;
   final double availableFunds;
 
-  final List<StockHoldingModel> stocks; // These are your 'Holdings'
-  final List<StockHoldingModel> positions; // These are for 'Intraday'
-  final List<String> watchlist; // These are for bookmarked stock tokens
+  final List<StockHoldingModel> stocks;
+  final List<StockHoldingModel> positions;
+  final List<String> watchlist;
+
+  // ⭐️ NEW LIST
+  final List<OptionHoldingModel> optionHoldings;
 
   UserProfileDataModel({
     required this.uid,
@@ -21,7 +25,8 @@ class UserProfileDataModel {
     required this.availableFunds,
     required this.stocks,
     required this.positions,
-    required this.watchlist, // <-- ADDED
+    required this.watchlist,
+    required this.optionHoldings,
   });
 
   Map<String, dynamic> toJson() => {
@@ -33,22 +38,29 @@ class UserProfileDataModel {
     'availableFunds': availableFunds,
     'stocks': stocks.map((stock) => stock.toJson()).toList(),
     'positions': positions.map((pos) => pos.toJson()).toList(),
-    'watchlist': watchlist, // <-- ADDED
+    'watchlist': watchlist,
+    // ⭐️ SAVE OPTIONS
+    'optionHoldings': optionHoldings.map((o) => o.toJson()).toList(),
   };
 
   factory UserProfileDataModel.fromJson(String uid, Map<String, dynamic> json) {
-    // Helper to safely parse lists of StockHoldingModel
-    List<StockHoldingModel> parseHoldings(String key) {
+    List<StockHoldingModel> parseStocks(String key) {
       if (json[key] != null && json[key] is List) {
-        final List<dynamic> jsonData = json[key] as List;
-        return jsonData
-            .map(
-              (item) =>
-                  StockHoldingModel.fromJson(item as Map<String, dynamic>),
-            )
+        return (json[key] as List)
+            .map((item) => StockHoldingModel.fromJson(item))
             .toList();
       }
-      return []; // Return empty list if null or not a list
+      return [];
+    }
+
+    // ⭐️ PARSE OPTIONS
+    List<OptionHoldingModel> parseOptions(String key) {
+      if (json[key] != null && json[key] is List) {
+        return (json[key] as List)
+            .map((item) => OptionHoldingModel.fromJson(item))
+            .toList();
+      }
+      return [];
     }
 
     return UserProfileDataModel(
@@ -56,17 +68,14 @@ class UserProfileDataModel {
       name: json['name'] as String,
       emailId: json['emailId'] as String,
       mobileNo: json['mobileNo'] as String,
-      accountCreationTime: DateTime.parse(
-        json['accountCreationTime'] as String,
-      ),
+      accountCreationTime:
+          DateTime.tryParse(json['accountCreationTime'] ?? '') ??
+          DateTime.now(),
       availableFunds: (json['availableFunds'] as num).toDouble(),
-
-      // Use the safe helper
-      stocks: parseHoldings('stocks'),
-      positions: parseHoldings('positions'),
-
-      // Helper to safely parse list of String
-      watchlist: List<String>.from(json['watchlist'] ?? []), // <-- ADDED
+      stocks: parseStocks('stocks'),
+      positions: parseStocks('positions'),
+      watchlist: List<String>.from(json['watchlist'] ?? []),
+      optionHoldings: parseOptions('optionHoldings'),
     );
   }
 }
