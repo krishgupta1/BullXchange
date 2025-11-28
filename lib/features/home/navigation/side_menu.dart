@@ -1,3 +1,4 @@
+import 'dart:math'; // Import math for min function
 import 'package:bullxchange/features/auth/screens/onboarding_page_1.1.dart';
 import 'package:bullxchange/features/account/screens/faq_page.dart';
 import 'package:bullxchange/features/account/screens/referralcodepage.dart';
@@ -20,14 +21,11 @@ class _SideMenuState extends State<SideMenu> {
   String _selectedMenuTitle = "Home";
 
   void onMenuPress(BuildContext context, String title) {
-    // 1. ⭐️ SPECIAL CASE FOR LOGOUT ⭐️
-    // Don't close the drawer or wait. Show the dialog immediately.
     if (title == "Logout") {
       _showLogoutDialog(context);
       return;
     }
 
-    // 2. For other items, close the drawer first
     Navigator.pop(context);
 
     if (title == "Home") {
@@ -37,9 +35,7 @@ class _SideMenuState extends State<SideMenu> {
       return;
     }
 
-    // 3. Navigate after drawer animation
     Future.delayed(const Duration(milliseconds: 200), () {
-      // Safety Check: Ensure context is valid
       if (!context.mounted) return;
 
       switch (title) {
@@ -115,17 +111,9 @@ class _SideMenuState extends State<SideMenu> {
             ),
             child: const Text('Logout'),
             onPressed: () async {
-              // 1. Capture the Navigator BEFORE async operations to prevent "null" errors
-              // We use rootNavigator: true to ensure we control the entire app stack
               final navigator = Navigator.of(context, rootNavigator: true);
-
-              // 2. Close the Alert Dialog
               Navigator.of(ctx).pop();
-
-              // 3. Sign out from Firebase
               await FirebaseAuth.instance.signOut();
-
-              // 4. Navigate to Onboarding using the captured navigator
               navigator.pushAndRemoveUntil(
                 MaterialPageRoute(builder: (_) => const OnboardingPage()),
                 (route) => false,
@@ -142,10 +130,15 @@ class _SideMenuState extends State<SideMenu> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final userProfile = Provider.of<UserProfileDataModel?>(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // RESPONSIVE CALCULATION
+    // Take 75% of screen width, but cap it at 320px max so it doesn't look huge on tablets
+    final double drawerWidth = min(screenWidth * 0.75, 320);
 
     return Container(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
-      constraints: const BoxConstraints(maxWidth: 288),
+      width: drawerWidth, // Apply dynamic width
+      height: double.infinity,
       decoration: BoxDecoration(
         color: theme.scaffoldBackgroundColor,
         borderRadius: const BorderRadius.only(
@@ -164,59 +157,90 @@ class _SideMenuState extends State<SideMenu> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- Modern Header ---
+            // --- Responsive User Card Header ---
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 40, 24, 32),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(3),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: colorScheme.primary.withOpacity(0.2),
-                        width: 2,
+              padding: const EdgeInsets.fromLTRB(
+                16,
+                40,
+                16,
+                24,
+              ), // Reduced side padding for more text space
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: theme.dividerColor.withOpacity(0.08),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    // Avatar
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: colorScheme.primary.withOpacity(0.1),
+                          width: 2,
+                        ),
+                      ),
+                      child: CircleAvatar(
+                        radius: 22, // Slightly smaller for better proportions
+                        backgroundColor: colorScheme.primary.withOpacity(0.1),
+                        child: Icon(
+                          Icons.person_rounded,
+                          size: 24,
+                          color: colorScheme.primary,
+                        ),
                       ),
                     ),
-                    child: CircleAvatar(
-                      radius: 26,
-                      backgroundColor: colorScheme.primary.withOpacity(0.1),
-                      child: Icon(
-                        Icons.person_rounded,
-                        size: 30,
-                        color: colorScheme.primary,
+                    const SizedBox(width: 12),
+
+                    // Text Details
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            userProfile?.name ?? "Guest User",
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                          const SizedBox(height: 3),
+                          // Responsive Full Email
+                          Text(
+                            userProfile?.emailId ?? "Welcome back",
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.textTheme.bodySmall?.color
+                                  ?.withOpacity(0.8),
+                              // Dynamic font size logic: slightly smaller on very small screens
+                              fontSize: drawerWidth < 280 ? 10 : 11,
+                              height: 1.2,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            softWrap: true,
+                            maxLines: 3, // Allow up to 3 lines
+                            overflow: TextOverflow.visible,
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          userProfile?.name ?? "Guest User",
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          userProfile?.emailId ?? "Welcome back",
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.disabledColor,
-                            fontSize: 12,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
 
@@ -235,6 +259,7 @@ class _SideMenuState extends State<SideMenu> {
                   children: [
                     MenuButtonSection(
                       title: "BROWSE",
+                      drawerWidth: drawerWidth, // Pass width down
                       selectedTitle: _selectedMenuTitle,
                       onMenuPress: (title) => onMenuPress(context, title),
                       menuItems: const [
@@ -250,6 +275,7 @@ class _SideMenuState extends State<SideMenu> {
                     ),
                     MenuButtonSection(
                       title: "HELP & SETTINGS",
+                      drawerWidth: drawerWidth, // Pass width down
                       selectedTitle: _selectedMenuTitle,
                       onMenuPress: (title) => onMenuPress(context, title),
                       menuItems: const [
@@ -261,16 +287,16 @@ class _SideMenuState extends State<SideMenu> {
                       ],
                     ),
 
-                    // --- Enhanced Theme Switcher ---
+                    // --- Theme Switcher ---
                     Padding(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
+                        horizontal: 16,
                         vertical: 8,
                       ),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
+                          horizontal: 12,
+                          vertical: 8,
                         ),
                         decoration: BoxDecoration(
                           color: theme.cardColor,
@@ -303,17 +329,18 @@ class _SideMenuState extends State<SideMenu> {
                                     size: 20,
                                   ),
                                 ),
-                                const SizedBox(width: 14),
+                                const SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
                                     isDarkMode ? "Dark Mode" : "Light Mode",
                                     style: theme.textTheme.bodyMedium?.copyWith(
                                       fontWeight: FontWeight.w600,
+                                      fontSize: 14,
                                     ),
                                   ),
                                 ),
                                 Transform.scale(
-                                  scale: 0.8,
+                                  scale: 0.75,
                                   child: CupertinoSwitch(
                                     value: isDarkMode,
                                     activeTrackColor: colorScheme.primary,
@@ -335,6 +362,7 @@ class _SideMenuState extends State<SideMenu> {
 
                     MenuButtonSection(
                       title: "ACCOUNT",
+                      drawerWidth: drawerWidth,
                       selectedTitle: _selectedMenuTitle,
                       onMenuPress: (title) => onMenuPress(context, title),
                       menuItems: const [
@@ -357,12 +385,14 @@ class MenuButtonSection extends StatelessWidget {
     super.key,
     required this.title,
     required this.menuItems,
+    required this.drawerWidth,
     this.selectedTitle = "Home",
     this.onMenuPress,
   });
 
   final String title;
   final String selectedTitle;
+  final double drawerWidth; // Receive dynamic width
   final List<Map<String, dynamic>> menuItems;
   final Function(String title)? onMenuPress;
 
@@ -375,7 +405,7 @@ class MenuButtonSection extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.only(
-            left: 32,
+            left: 24, // Adjusted padding
             right: 24,
             top: 24,
             bottom: 12,
@@ -398,6 +428,7 @@ class MenuButtonSection extends StatelessWidget {
                   title: item['title']!,
                   icon: item['icon']!,
                   isSelected: selectedTitle == item['title'],
+                  drawerWidth: drawerWidth, // Pass it down to row
                   onMenuPress: () => onMenuPress!(item['title']!),
                 ),
                 const SizedBox(height: 4),
@@ -416,12 +447,14 @@ class MenuRow extends StatelessWidget {
     required this.title,
     required this.icon,
     required this.isSelected,
+    required this.drawerWidth,
     required this.onMenuPress,
   });
 
   final String title;
   final IconData icon;
   final bool isSelected;
+  final double drawerWidth;
   final VoidCallback onMenuPress;
 
   @override
@@ -429,15 +462,19 @@ class MenuRow extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
 
+    // Calculate exact width for the active highlight
+    // DrawerWidth - Margin Left(16) - Margin Right(16) = Available Width
+    final double availableWidth = drawerWidth - 32;
+
     return Stack(
       children: [
-        // Background Animation
+        // Dynamic Background Animation
         AnimatedPositioned(
           duration: const Duration(milliseconds: 300),
           curve: Curves.fastOutSlowIn,
           height: 56,
-          // Dynamically sized to fit parent margins (288 width - 32 margin = 256 approx)
-          width: isSelected ? 256 : 0,
+          // Use dynamic width here
+          width: isSelected ? availableWidth : 0,
           left: 0,
           child: Container(
             decoration: BoxDecoration(
@@ -470,18 +507,23 @@ class MenuRow extends StatelessWidget {
                         ? Colors.white
                         : theme.iconTheme.color?.withOpacity(0.7),
                   ),
-                  const SizedBox(width: 16),
-                  Text(
-                    title,
-                    style: TextStyle(
-                      color: isSelected
-                          ? Colors.white
-                          : theme.textTheme.bodyMedium?.color,
-                      fontSize: 16,
-                      fontFamily: "Inter",
-                      fontWeight: isSelected
-                          ? FontWeight.w600
-                          : FontWeight.w500,
+                  const SizedBox(width: 14),
+                  // Flexible text to prevent overflow
+                  Flexible(
+                    child: Text(
+                      title,
+                      style: TextStyle(
+                        color: isSelected
+                            ? Colors.white
+                            : theme.textTheme.bodyMedium?.color,
+                        fontSize: 15,
+                        fontFamily: "Inter",
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],

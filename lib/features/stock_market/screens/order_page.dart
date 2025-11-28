@@ -1,18 +1,17 @@
+import 'package:bullxchange/features/stock_market/screens/order_details_page.dart';
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/models/order_model.dart';
+import 'package:bullxchange/models/transaction_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-// --- ⭐️ 1. IMPORT FIREBASE AND USER SERVICE ---
 import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class OrderPage extends StatelessWidget {
   const OrderPage({super.key});
 
-  // --- ⭐️ 2. NEW METHOD TO HANDLE CANCELLATION ---
   void _handleCancelAll(BuildContext context) async {
     final String? uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
@@ -22,7 +21,6 @@ class OrderPage extends StatelessWidget {
       return;
     }
 
-    // --- Step 1: Show Confirmation Dialog ---
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -46,9 +44,8 @@ class OrderPage extends StatelessWidget {
       ),
     );
 
-    if (confirm != true) return; // User pressed "No"
+    if (confirm != true) return;
 
-    // --- Step 2: Show Loading Dialog ---
     if (context.mounted) {
       showDialog(
         context: context,
@@ -57,13 +54,12 @@ class OrderPage extends StatelessWidget {
       );
     }
 
-    // --- Step 3: Call Service ---
     try {
       final UserService userService = UserService();
       await userService.cancelAllOrders(uid);
 
       if (context.mounted) {
-        Navigator.pop(context); // Close loading dialog
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('All pending orders have been cancelled.'),
@@ -73,7 +69,7 @@ class OrderPage extends StatelessWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        Navigator.pop(context); // Close loading dialog
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error cancelling orders: ${e.toString()}'),
@@ -86,21 +82,17 @@ class OrderPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // --- ⭐️ ADDED AUTH CHECK ---
     final auth = FirebaseAuth.instance;
     if (auth.currentUser?.uid == null) {
-      // Changed "holdings" to "orders" to match the page
       return const Center(child: Text("Please log in to see your orders."));
     }
 
     return Consumer2<List<OrderModel>, InstrumentProvider>(
       builder: (context, openOrders, provider, child) {
         if (openOrders.isEmpty) {
-          // --- ⭐️ 3. WRAP EMPTY STATE IN A CENTER ---
           return const Center(child: _EmptyState());
         }
 
-        // --- ⭐️ 4. RETURN A COLUMN, NOT A LISTVIEW ---
         return Column(
           children: [
             Padding(
@@ -117,7 +109,7 @@ class OrderPage extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const Icon(Icons.keyboard_arrow_up),
+                      // ⭐️ REMOVED: Icon(Icons.keyboard_arrow_up)
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -146,15 +138,16 @@ class OrderPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-
-            // --- ⭐️ 5. SPREAD THE LIST OF WIDGETS DIRECTLY ---
-            // This Column will be scrolled by its parent (SingleChildScrollView)
             ...openOrders.map((order) {
               final instrument = provider.getInstrumentByToken(
                 order.instrumentToken,
               );
 
-              return _buildOrderItem(instrument: instrument, order: order);
+              return _buildOrderItem(
+                context: context, // Passed context for navigation
+                instrument: instrument,
+                order: order,
+              );
             }),
           ],
         );
@@ -163,14 +156,12 @@ class OrderPage extends StatelessWidget {
   }
 }
 
-// --- Reusable Widgets (UNCHANGED) ---
-
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
   @override
   Widget build(BuildContext context) {
     return const Column(
-      mainAxisAlignment: MainAxisAlignment.center, // Center vertically
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         SizedBox(height: 20),
         Icon(Icons.receipt_long_outlined, size: 48, color: Colors.grey),
@@ -191,11 +182,11 @@ class _EmptyState extends StatelessWidget {
 }
 
 Widget _buildOrderItem({
+  required BuildContext context,
   required Instrument? instrument,
   required OrderModel order,
 }) {
   final ltp = (instrument?.liveData['ltp'] as num?)?.toDouble() ?? 0.0;
-
   final orderType = order.transactionType;
   final quantity = order.quantity;
 
@@ -206,70 +197,105 @@ Widget _buildOrderItem({
     priceText = "Market";
   }
 
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-    child: Row(
-      children: [
-        instrument != null
-            ? SmartLogo(instrument: instrument, radius: 20)
-            : _buildLogoContainer(order.companyName, radius: 20),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text.rich(
-                TextSpan(
-                  children: [
-                    TextSpan(
-                      text: "$orderType ",
-                      style: TextStyle(
-                        color: orderType == 'BUY' ? Colors.green : Colors.red,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+  // ⭐️ ADDED: InkWell for navigation
+  return InkWell(
+    onTap: () {
+      // Map OrderModel to TransactionModel for the details page
+      // Since it's a pending order, we use current values or placeholders for realized amounts
+      final transactionData = TransactionModel(
+        userId: order.userId,
+        companyName: order.companyName,
+        transactionType: order.transactionType,
+        quantity: order.quantity,
+        price: order.limitPrice > 0 ? order.limitPrice : ltp,
+        charges: 0.0, // Estimated or 0 for pending
+        totalAmount:
+            (order.limitPrice > 0 ? order.limitPrice : ltp) * order.quantity,
+        exchange: order.exchange,
+        productType: order.productType,
+        orderType: order.orderType,
+        stockSymbol: order.symbol,
+        transactionTime: order.createdAt,
+      );
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => OrderDetailsPage(
+            transaction: transactionData,
+            transactionId: "PENDING", // Or use order.id if available
+          ),
+        ),
+      );
+    },
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      child: Row(
+        children: [
+          instrument != null
+              ? SmartLogo(instrument: instrument, radius: 20)
+              : _buildLogoContainer(order.companyName, radius: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: "$orderType ",
+                        style: TextStyle(
+                          color: orderType == 'BUY' ? Colors.green : Colors.red,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                const SizedBox(height: 2),
+                Text(
+                  order.symbol,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  "Mkt ₹${ltp == 0.0 ? '--' : ltp.toStringAsFixed(2)}",
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                order.productType,
+                style: TextStyle(color: Colors.grey[600], fontSize: 12),
               ),
               const SizedBox(height: 2),
               Text(
-                order.symbol,
+                "$quantity",
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
                 ),
-                overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 2),
               Text(
-                "Mkt ₹${ltp == 0.0 ? '--' : ltp.toStringAsFixed(2)}",
+                priceText,
                 style: TextStyle(color: Colors.grey[600], fontSize: 12),
               ),
             ],
           ),
-        ),
-        const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              order.productType,
-              style: TextStyle(color: Colors.grey[600], fontSize: 12),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              "$quantity",
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              priceText,
-              style: TextStyle(color: Colors.grey[600], fontSize: 12),
-            ),
-          ],
-        ),
-      ],
+        ],
+      ),
     ),
   );
 }

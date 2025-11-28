@@ -8,8 +8,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-// Ideally, import your Instrument model to use it in Selector types
-// import 'package:bullxchange/models/instrument_model.dart';
+// Added Sort Types
+enum SortType {
+  priceLowToHigh,
+  priceHighToLow,
+  alphabeticalAZ,
+  alphabeticalZA,
+  percentLowToHigh,
+  percentHighToLow,
+}
 
 class WatchListPage extends StatefulWidget {
   const WatchListPage({super.key});
@@ -25,6 +32,9 @@ class _WatchListPageState extends State<WatchListPage> {
   bool _isEditMode = false;
   final Set<String> _selectedTokens = {};
   UserProfileDataModel? _lastProfile;
+
+  // Added Sort State
+  SortType _currentSort = SortType.priceLowToHigh;
 
   void _toggleEditMode() {
     setState(() {
@@ -107,10 +117,6 @@ class _WatchListPageState extends State<WatchListPage> {
       );
     }
 
-    // We limit StreamBuilder scope to just the header/count and the list area so
-    // that frequent user-profile updates (e.g. watchlist changes) do not rebuild
-    // unrelated parts of the page. This ensures we only reload data, not the whole UI.
-
     final provider = Provider.of<InstrumentProvider>(context, listen: false);
 
     return Column(
@@ -121,7 +127,6 @@ class _WatchListPageState extends State<WatchListPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Small StreamBuilder only for header count and edit/delete state
               StreamBuilder<UserProfileDataModel?>(
                 stream: _userService.streamUserProfile(uid!),
                 builder: (context, snapshot) {
@@ -130,7 +135,6 @@ class _WatchListPageState extends State<WatchListPage> {
                       : 0;
 
                   return Column(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
                       _buildWatchlistHeader(
                         count,
@@ -141,7 +145,7 @@ class _WatchListPageState extends State<WatchListPage> {
                         _selectedTokens.isNotEmpty,
                       ),
                       const SizedBox(height: 16),
-                      _buildSortHeader(context),
+                      _buildSortHeader(context), // Updated
                     ],
                   );
                 },
@@ -155,14 +159,10 @@ class _WatchListPageState extends State<WatchListPage> {
           color: theme.dividerColor.withOpacity(0.1),
         ),
 
-        // List area StreamBuilder: only this subtree rebuilds on profile updates
         StreamBuilder<UserProfileDataModel?>(
           stream: _userService.streamUserProfile(uid!),
           builder: (context, snapshot) {
-            // Keep the last known profile so brief disconnects or reconnects
-            // do not force a full-page loading state.
             if (snapshot.hasError) {
-              // Show a small inline error but attempt to use cached data below
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -183,17 +183,38 @@ class _WatchListPageState extends State<WatchListPage> {
             final userProfile = snapshot.data ?? _lastProfile;
 
             if (userProfile == null) {
-              // If we have no data at all, show an empty-state rather than a
-              // fullscreen spinner to avoid the feeling of a page reload.
               return const Center(child: _EmptyState());
             }
 
             final userWatchlistTokens = userProfile.watchlist;
 
-            // Filter the stocks once based on user's list
             final watchlistStocks = provider.allNSEStocks
                 .where((stock) => userWatchlistTokens.contains(stock.token))
                 .toList();
+
+            // ---------------------- SORTING LOGIC ADDED ----------------------
+            watchlistStocks.sort((a, b) {
+              final aPrice = (a.liveData['ltp'] ?? 0).toDouble();
+              final bPrice = (b.liveData['ltp'] ?? 0).toDouble();
+              final aPct = (a.liveData['percentChange'] ?? 0).toDouble();
+              final bPct = (b.liveData['percentChange'] ?? 0).toDouble();
+
+              switch (_currentSort) {
+                case SortType.priceLowToHigh:
+                  return aPrice.compareTo(bPrice);
+                case SortType.priceHighToLow:
+                  return bPrice.compareTo(aPrice);
+                case SortType.alphabeticalAZ:
+                  return a.name.compareTo(b.name);
+                case SortType.alphabeticalZA:
+                  return b.name.compareTo(a.name);
+                case SortType.percentLowToHigh:
+                  return aPct.compareTo(bPct);
+                case SortType.percentHighToLow:
+                  return bPct.compareTo(aPct);
+              }
+            });
+            // ----------------------------------------------------------------
 
             if (watchlistStocks.isEmpty && !_isEditMode) {
               return const Center(child: _EmptyState());
@@ -203,18 +224,17 @@ class _WatchListPageState extends State<WatchListPage> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: watchlistStocks.length,
-              addAutomaticKeepAlives: false,
               itemBuilder: (context, index) {
-                final instrumentToken = watchlistStocks[index].token;
-                final isSelected = _selectedTokens.contains(instrumentToken);
+                final inst = watchlistStocks[index];
+                final isSelected = _selectedTokens.contains(inst.token);
 
                 return InkWell(
                   onTap: () {
                     if (_isEditMode) {
-                      _toggleSelection(instrumentToken);
+                      _toggleSelection(inst.token);
                     } else {
                       final instrument = provider.getInstrumentByToken(
-                        instrumentToken,
+                        inst.token,
                       );
                       if (instrument != null) {
                         Navigator.push(
@@ -228,8 +248,8 @@ class _WatchListPageState extends State<WatchListPage> {
                     }
                   },
                   child: _WatchlistStockItem(
-                    key: ValueKey(instrumentToken),
-                    token: instrumentToken,
+                    key: ValueKey(inst.token),
+                    token: inst.token,
                     isEditMode: _isEditMode,
                     isSelected: isSelected,
                   ),
@@ -338,13 +358,44 @@ Widget _buildSortHeader(BuildContext context) {
 
   return Row(
     children: [
-      TextButton.icon(
-        icon: Icon(Icons.sort, color: textTheme.bodySmall?.color, size: 18),
-        label: Text(
-          "Sort",
-          style: TextStyle(color: textTheme.bodySmall?.color),
+      PopupMenuButton<SortType>(
+        onSelected: (value) {
+          final state = context.findAncestorStateOfType<_WatchListPageState>();
+          state?.setState(() => state._currentSort = value);
+        },
+        child: Row(
+          children: [
+            Icon(Icons.sort, color: textTheme.bodySmall?.color, size: 18),
+            const SizedBox(width: 4),
+            Text("Sort", style: TextStyle(color: textTheme.bodySmall?.color)),
+          ],
         ),
-        onPressed: () {},
+        itemBuilder: (context) => const [
+          PopupMenuItem(
+            value: SortType.priceLowToHigh,
+            child: Text("Price: Low → High"),
+          ),
+          PopupMenuItem(
+            value: SortType.priceHighToLow,
+            child: Text("Price: High → Low"),
+          ),
+          PopupMenuItem(
+            value: SortType.alphabeticalAZ,
+            child: Text("Alphabetical: A → Z"),
+          ),
+          PopupMenuItem(
+            value: SortType.alphabeticalZA,
+            child: Text("Alphabetical: Z → A"),
+          ),
+          PopupMenuItem(
+            value: SortType.percentLowToHigh,
+            child: Text("% Change: Low → High"),
+          ),
+          PopupMenuItem(
+            value: SortType.percentHighToLow,
+            child: Text("% Change: High → Low"),
+          ),
+        ],
       ),
       const Spacer(),
       Text(
@@ -359,7 +410,6 @@ Widget _buildSortHeader(BuildContext context) {
   );
 }
 
-// --- OPTIMIZED WIDGET: Uses Selector instead of Consumer ---
 class _WatchlistStockItem extends StatelessWidget {
   final String token;
   final bool isEditMode;
@@ -374,19 +424,9 @@ class _WatchlistStockItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Selector ensures this widget ONLY rebuilds if THIS SPECIFIC token's data changes.
-    // Replace 'Instrument' with your actual model class name if different.
     return Selector<InstrumentProvider, dynamic>(
-      // Changed to dynamic to avoid type errors if I don't know your exact model class, change to Instrument?
       selector: (context, provider) => provider.getInstrumentByToken(token),
-      shouldRebuild: (previous, next) {
-        // If your provider returns a NEW object instance every update, standard equality is fine:
-        return previous != next;
-
-        // If your provider updates properties inside the SAME object, use this instead:
-        // return previous?.lastPrice != next?.lastPrice || previous?.changePercent != next?.changePercent;
-      },
-      builder: (context, instrument, child) {
+      builder: (context, instrument, _) {
         if (instrument == null) {
           return Container(
             height: 60,
@@ -401,8 +441,8 @@ class _WatchlistStockItem extends StatelessWidget {
           );
         }
 
-        final colorScheme = Theme.of(context).colorScheme;
         final theme = Theme.of(context);
+        final colorScheme = theme.colorScheme;
 
         return Container(
           color: isSelected
@@ -416,17 +456,15 @@ class _WatchlistStockItem extends StatelessWidget {
                   child: IgnorePointer(
                     child: Checkbox(
                       value: isSelected,
-                      onChanged: (val) {},
-                      activeColor: colorScheme.primary,
+                      onChanged: (_) {},
                       side: BorderSide(color: theme.dividerColor),
                     ),
                   ),
                 ),
               Expanded(
-                // StockCard is now isolated and won't rebuild unnecessarily
                 child: StockCard(
                   instrument: instrument,
-                  onTap: null, // Handled by parent InkWell
+                  onTap: null,
                   fontSize: 12,
                 ),
               ),

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:math';
 
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/models/stock_holding_model.dart';
@@ -27,7 +28,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
   final _limitPriceController = TextEditingController();
 
   String _selectedProductType = 'Delivery';
-  final String _selectedExchange = 'NSE'; // Default to NSE, UI toggle removed
+  final String _selectedExchange = 'NSE';
   String _selectedOrderType = 'Market';
 
   Map<String, double> _chargesBreakdown = {};
@@ -339,10 +340,11 @@ class _BuyStockPageState extends State<BuyStockPage> {
     );
   }
 
+  // ... (Header and Input sections remain same, skipping to Button)
+
   Widget _buildStockHeader(BuildContext context, NumberFormat formatter) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -436,7 +438,6 @@ class _BuyStockPageState extends State<BuyStockPage> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     bool isLimit = _selectedOrderType == 'Limit';
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -562,7 +563,6 @@ class _BuyStockPageState extends State<BuyStockPage> {
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
     return Container(
       height: 48,
       padding: const EdgeInsets.all(4),
@@ -610,7 +610,6 @@ class _BuyStockPageState extends State<BuyStockPage> {
   Widget _buildOrderSummary(BuildContext context, NumberFormat formatter) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -664,7 +663,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
                 formatter.format(_totalAmount),
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: colorScheme.primary,
+                  color: colorScheme.onSurface,
                 ),
               ),
             ],
@@ -677,7 +676,6 @@ class _BuyStockPageState extends State<BuyStockPage> {
   Widget _buildChargesRow(BuildContext context, NumberFormat formatter) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
@@ -696,8 +694,8 @@ class _BuyStockPageState extends State<BuyStockPage> {
                 onTap: () => _showChargeDetailsBottomSheet(context),
                 child: Icon(
                   Icons.info_outline_rounded,
-                  color: colorScheme.primary,
-                  size: 16,
+                  color: colorScheme.onSurface,
+                  size: 18,
                 ),
               ),
             ],
@@ -715,7 +713,6 @@ class _BuyStockPageState extends State<BuyStockPage> {
 
   Widget _buildSummaryRow(BuildContext context, String label, String value) {
     final theme = Theme.of(context);
-
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
@@ -755,48 +752,47 @@ class _BuyStockPageState extends State<BuyStockPage> {
           ),
         ],
       ),
-      child: SizedBox(
-        width: double.infinity,
-        height: 56,
-        child: ElevatedButton(
-          onPressed: isEnabled ? _handleBuy : null,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: colorScheme.secondary,
-            foregroundColor: Colors.white,
-            elevation: isEnabled ? 4 : 0,
-            shadowColor: colorScheme.secondary.withOpacity(0.4),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            disabledBackgroundColor: theme.disabledColor.withOpacity(0.1),
-            disabledForegroundColor: theme.disabledColor,
-          ),
-          child: _isPlacingOrder
-              ? SizedBox(
-                  height: 24,
-                  width: 24,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2.5,
-                  ),
-                )
-              : const Text(
-                  "Swipe to Buy",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
+      child: isEnabled
+          ? SwipeToConfirmButton(
+              onConfirmed: _handleBuy,
+              label: "Swipe to Buy",
+              color: colorScheme.secondary,
+              icon: Icons.double_arrow_rounded,
+            )
+          : SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.disabledColor.withOpacity(0.1),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
                   ),
                 ),
-        ),
-      ),
+                child: _isPlacingOrder
+                    ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(
+                        "Swipe to Buy",
+                        style: TextStyle(
+                          color: theme.disabledColor,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+              ),
+            ),
     );
   }
 
   void _showChargeDetailsBottomSheet(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -918,9 +914,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
   ) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
     final double shortAmount = required - available;
-
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -1012,7 +1006,6 @@ class _BuyStockPageState extends State<BuyStockPage> {
               child: const Text('Add Funds'),
               onPressed: () {
                 Navigator.of(context).pop();
-                // Navigate to Add Funds if needed
               },
             ),
           ],
@@ -1029,7 +1022,6 @@ class _BuyStockPageState extends State<BuyStockPage> {
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -1042,6 +1034,142 @@ class _BuyStockPageState extends State<BuyStockPage> {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// ----------------- CUSTOM SWIPE TO CONFIRM WIDGET --------------------------
+// ---------------------------------------------------------------------------
+
+class SwipeToConfirmButton extends StatefulWidget {
+  final VoidCallback onConfirmed;
+  final String label;
+  final Color color;
+  final IconData icon;
+
+  const SwipeToConfirmButton({
+    super.key,
+    required this.onConfirmed,
+    required this.label,
+    required this.color,
+    required this.icon,
+  });
+
+  @override
+  State<SwipeToConfirmButton> createState() => _SwipeToConfirmButtonState();
+}
+
+class _SwipeToConfirmButtonState extends State<SwipeToConfirmButton> {
+  double _position = 0.0;
+  bool _isConfirmed = false;
+  final double _height = 56.0;
+  final double _padding = 4.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double maxWidth = constraints.maxWidth;
+        final double maxDrag = maxWidth - _height; // Width minus knob size
+
+        return Container(
+          height: _height,
+          width: maxWidth,
+          decoration: BoxDecoration(
+            color: widget.color.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(30),
+          ),
+          child: Stack(
+            alignment: Alignment.centerLeft,
+            children: [
+              // 1. Text Background
+              Center(
+                child: Opacity(
+                  opacity: (1 - (_position / maxDrag)).clamp(0.0, 1.0),
+                  child: Text(
+                    widget.label,
+                    style: TextStyle(
+                      color: widget.color,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ),
+
+              // 2. Active Track Fill
+              Container(
+                width: _position + _height,
+                height: _height,
+                decoration: BoxDecoration(
+                  color: Colors.transparent, // Or a fill color if desired
+                  borderRadius: BorderRadius.circular(30),
+                ),
+              ),
+
+              // 3. Sliding Knob
+              Positioned(
+                left: _position,
+                child: GestureDetector(
+                  onHorizontalDragUpdate: (details) {
+                    if (_isConfirmed) return;
+                    setState(() {
+                      _position += details.delta.dx;
+                      // Clamp position
+                      if (_position < 0) _position = 0;
+                      if (_position > maxDrag) _position = maxDrag;
+                    });
+                  },
+                  onHorizontalDragEnd: (details) {
+                    if (_isConfirmed) return;
+                    // Threshold check (e.g., 70% of width)
+                    if (_position > maxDrag * 0.7) {
+                      setState(() {
+                        _position = maxDrag;
+                        _isConfirmed = true;
+                      });
+                      widget.onConfirmed();
+                      // Optional: Reset after delay if validation fails externally
+                      Future.delayed(const Duration(seconds: 1), () {
+                        if (mounted) {
+                          setState(() {
+                            _isConfirmed = false;
+                            _position = 0;
+                          });
+                        }
+                      });
+                    } else {
+                      // Snap back
+                      setState(() {
+                        _position = 0;
+                      });
+                    }
+                  },
+                  child: Container(
+                    height: _height - (_padding * 2),
+                    width: _height - (_padding * 2),
+                    margin: EdgeInsets.only(left: _padding),
+                    decoration: BoxDecoration(
+                      color: widget.color,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: widget.color.withOpacity(0.4),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Icon(widget.icon, color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

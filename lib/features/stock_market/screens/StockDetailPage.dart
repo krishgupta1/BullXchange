@@ -35,7 +35,6 @@ class _StockDetailPageState extends State<StockDetailPage> {
       ).showSnackBar(const SnackBar(content: Text('You must be logged in.')));
       return;
     }
-
     try {
       await _userService.toggleWatchlistStock(uid!, widget.instrument.token);
     } catch (e) {
@@ -49,14 +48,12 @@ class _StockDetailPageState extends State<StockDetailPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
     final ltp = (widget.instrument.liveData['ltp'] as num?)?.toDouble() ?? 0.0;
     final netChange =
         (widget.instrument.liveData['netChange'] as num?)?.toDouble() ?? 0.0;
     final percentChange =
         (widget.instrument.liveData['percentChange'] as num?)?.toDouble() ??
         0.0;
-
     final changeColor = netChange >= 0
         ? const Color(0xFF1EAB58)
         : colorScheme.secondary;
@@ -104,7 +101,6 @@ class _StockDetailPageState extends State<StockDetailPage> {
                       widget.instrument.token,
                     );
                   }
-
                   return IconButton(
                     icon: Icon(
                       isInWatchlist
@@ -130,7 +126,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
           children: [
             // --- Header Section (Card Style) ---
             Container(
-              margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              margin: const EdgeInsets.fromLTRB(16, 8, 16, 12),
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: theme.cardColor,
@@ -146,9 +142,9 @@ class _StockDetailPageState extends State<StockDetailPage> {
               child: Column(
                 children: [
                   _buildCompanyHeader(context, widget.instrument),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
                   const Divider(height: 1, thickness: 0.5),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
                   _buildPriceDetails(
                     context,
                     priceParts,
@@ -159,11 +155,9 @@ class _StockDetailPageState extends State<StockDetailPage> {
                 ],
               ),
             ),
-
-            // --- Chart Section (Card Style) ---
-            // ⭐️ FIX: Added GlobalKey or keep state logic robust in child widget
+            // --- Chart Section ---
             Container(
-              height: 420,
+              height: 400, // Slightly reduced height
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
                 color: theme.cardColor,
@@ -181,9 +175,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
                 child: TradingViewChart(instrument: widget.instrument),
               ),
             ),
-
-            const SizedBox(height: 24),
-
+            const SizedBox(height: 20),
             // --- Statistics Section ---
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -195,56 +187,35 @@ class _StockDetailPageState extends State<StockDetailPage> {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
-
+            const SizedBox(height: 12),
             Consumer<InstrumentProvider>(
               builder: (context, prov, child) {
                 final matched =
                     prov.getInstrumentByToken(widget.instrument.token) ??
                     widget.instrument;
-                final apiOpen =
-                    (matched.liveData['open'] as num?)?.toDouble() ?? 0.0;
-                final apiHigh =
-                    (matched.liveData['high'] as num?)?.toDouble() ?? 0.0;
-                final apiLow =
-                    (matched.liveData['low'] as num?)?.toDouble() ?? 0.0;
-                final apiVolume =
-                    (matched.liveData['tradeVolume'] as num?)?.toInt() ?? 0;
-                final apiAvgPrice =
-                    (matched.liveData['avgPrice'] as num?)?.toDouble() ?? 0.0;
-                final apiUpperCircuit =
-                    (matched.liveData['upperCircuit'] as num?)?.toDouble() ??
-                    0.0;
-                final apiLowerCircuit =
-                    (matched.liveData['lowerCircuit'] as num?)?.toDouble() ??
-                    0.0;
-                final api52WkHigh =
-                    (matched.liveData['52WeekHigh'] as num?)?.toDouble() ?? 0.0;
-                final api52WkLow =
-                    (matched.liveData['52WeekLow'] as num?)?.toDouble() ?? 0.0;
-
-                final double outstandingShares = matched.outstandingShares;
-                final int avgVolume = matched.avgVolume;
-                final double marketCap = ltp * outstandingShares;
-
+                final live = matched.liveData;
                 return _buildStatisticsCard(
                   context: context,
-                  open: apiOpen,
-                  high: apiHigh,
-                  low: apiLow,
-                  volume: apiVolume,
-                  avgPrice: apiAvgPrice,
-                  upperCircuit: apiUpperCircuit,
-                  lowerCircuit: apiLowerCircuit,
-                  fiftyTwoWeekHigh: api52WkHigh,
-                  fiftyTwoWeekLow: api52WkLow,
-                  marketCap: marketCap,
-                  avgVolume: avgVolume.toDouble(),
-                  outstandingShares: outstandingShares,
+                  open: (live['open'] as num?)?.toDouble() ?? 0.0,
+                  high: (live['high'] as num?)?.toDouble() ?? 0.0,
+                  low: (live['low'] as num?)?.toDouble() ?? 0.0,
+                  volume: (live['tradeVolume'] as num?)?.toInt() ?? 0,
+                  avgPrice: (live['avgPrice'] as num?)?.toDouble() ?? 0.0,
+                  upperCircuit:
+                      (live['upperCircuit'] as num?)?.toDouble() ?? 0.0,
+                  lowerCircuit:
+                      (live['lowerCircuit'] as num?)?.toDouble() ?? 0.0,
+                  fiftyTwoWeekHigh:
+                      (live['52WeekHigh'] as num?)?.toDouble() ?? 0.0,
+                  fiftyTwoWeekLow:
+                      (live['52WeekLow'] as num?)?.toDouble() ?? 0.0,
+                  marketCap: ltp * matched.outstandingShares,
+                  avgVolume: matched.avgVolume.toDouble(),
+                  outstandingShares: matched.outstandingShares,
                 );
               },
             ),
-            const SizedBox(height: 100),
+            const SizedBox(height: 100), // Space for bottom bar
           ],
         ),
       ),
@@ -265,7 +236,6 @@ class _StockDetailPageState extends State<StockDetailPage> {
             child: TradeActionButtons(
               onSell: () async {
                 HapticFeedback.lightImpact();
-                final uid = FirebaseAuth.instance.currentUser?.uid;
                 if (uid == null) {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -277,7 +247,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
                   return;
                 }
                 final userProfile = await _bottomButtonUserService
-                    .readUserProfile(uid);
+                    .readUserProfile(uid!);
                 if (userProfile == null || userProfile.stocks.isEmpty) {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -340,7 +310,6 @@ class _StockDetailPageState extends State<StockDetailPage> {
   Widget _buildCompanyHeader(BuildContext context, Instrument instrument) {
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
-
     return Row(
       children: [
         Container(
@@ -392,7 +361,6 @@ class _StockDetailPageState extends State<StockDetailPage> {
     Color changeColor,
   ) {
     final textTheme = Theme.of(context).textTheme;
-
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -476,7 +444,6 @@ class _StockDetailPageState extends State<StockDetailPage> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final volumeFormatter = NumberFormat.compact();
-
     final List<Map<String, String>> stats = [
       {"label": "Open", "value": "₹${open.toStringAsFixed(2)}"},
       {"label": "High", "value": "₹${high.toStringAsFixed(2)}"},
@@ -544,7 +511,6 @@ class _StockDetailPageState extends State<StockDetailPage> {
   }
 }
 
-// ⭐️ FIXED TRADINGVIEW CHART WIDGET
 class TradingViewChart extends StatefulWidget {
   final Instrument instrument;
   const TradingViewChart({super.key, required this.instrument});
@@ -555,12 +521,11 @@ class TradingViewChart extends StatefulWidget {
 
 class _TradingViewChartState extends State<TradingViewChart> {
   late final WebViewController _controller;
-  String _currentAppliedTheme = ""; // Track current theme
+  String _currentAppliedTheme = "";
 
   @override
   void initState() {
     super.initState();
-    // Initialize controller once
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0x00000000));
@@ -569,23 +534,10 @@ class _TradingViewChartState extends State<TradingViewChart> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
-    // Get current brightness from Theme
     final brightness = Theme.of(context).brightness;
+    String chartTheme = (brightness == Brightness.dark) ? "dark" : "light";
+    String toolbarBg = (brightness == Brightness.dark) ? "#1E1E1E" : "#f1f3f6";
 
-    String chartTheme;
-    String toolbarBg;
-
-    // Set params based on brightness
-    if (brightness == Brightness.dark) {
-      chartTheme = "dark";
-      toolbarBg = "#1E1E1E";
-    } else {
-      chartTheme = "light";
-      toolbarBg = "#f1f3f6";
-    }
-
-    // Reload only if theme has changed
     if (_currentAppliedTheme != chartTheme) {
       _currentAppliedTheme = chartTheme;
       _controller.loadHtmlString(_buildTradingViewHtml(chartTheme, toolbarBg));
@@ -594,8 +546,7 @@ class _TradingViewChartState extends State<TradingViewChart> {
 
   String _buildTradingViewHtml(String chartTheme, String toolbarBg) {
     final sanitizedSymbol = widget.instrument.symbol.replaceAll('-EQ', '');
-    final exchange = 'BSE';
-    final tradingViewSymbol = '$exchange:$sanitizedSymbol';
+    final tradingViewSymbol = 'BSE:$sanitizedSymbol';
 
     return '''
       <!DOCTYPE html>
