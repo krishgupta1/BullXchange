@@ -8,7 +8,6 @@ import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:bullxchange/widgets/custom_back_button.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 class SellOptionPage extends StatefulWidget {
@@ -33,6 +32,10 @@ class SellOptionPage extends StatefulWidget {
 
 class _SellOptionPageState extends State<SellOptionPage> {
   final _lotsController = TextEditingController(text: "1");
+  // 1. Add Controllers
+  final _targetController = TextEditingController();
+  final _slController = TextEditingController();
+
   final UserService _userService = UserService();
   final ChargeCalculatorService _calculator = ChargeCalculatorService();
 
@@ -59,6 +62,9 @@ class _SellOptionPageState extends State<SellOptionPage> {
   void dispose() {
     _lotsController.removeListener(_calculate);
     _lotsController.dispose();
+    // 2. Dispose
+    _targetController.dispose();
+    _slController.dispose();
     super.dispose();
   }
 
@@ -85,6 +91,10 @@ class _SellOptionPageState extends State<SellOptionPage> {
     final contractSymbol =
         "${widget.symbol} ${widget.strikePrice.toInt()} ${widget.optionType}";
 
+    // 3. Parse Inputs
+    double? targetPrice = double.tryParse(_targetController.text);
+    double? slPrice = double.tryParse(_slController.text);
+
     final transaction = TransactionModel(
       userId: uid,
       stockSymbol: contractSymbol,
@@ -94,7 +104,7 @@ class _SellOptionPageState extends State<SellOptionPage> {
       price: widget.ltp,
       charges: _charges,
       totalAmount: _totalAmount,
-      exchange: 'NFO',
+      exchange: 'F&O',
       productType: _productType,
       orderType: 'Market',
       transactionTime: DateTime.now(),
@@ -102,6 +112,9 @@ class _SellOptionPageState extends State<SellOptionPage> {
       optionType: widget.optionType,
       strikePrice: widget.strikePrice,
       expiryDate: widget.instrument.expiry,
+      // 4. Add to Transaction
+      target: targetPrice,
+      stopLoss: slPrice,
     );
 
     // Negative Qty indicates reducing/closing position
@@ -117,7 +130,10 @@ class _SellOptionPageState extends State<SellOptionPage> {
       investedAmount: _totalAmount,
       currentLtp: widget.ltp,
       transactionType: _productType,
-      exchange: 'NFO',
+      exchange: 'F&O',
+      // 5. Add to Holding
+      target: targetPrice,
+      stopLoss: slPrice,
     );
 
     try {
@@ -192,6 +208,9 @@ class _SellOptionPageState extends State<SellOptionPage> {
                     const SizedBox(height: 24),
                     _buildInputSection(context),
                     const SizedBox(height: 24),
+                    // 6. Add UI Section
+                    _buildTargetSLSection(context),
+                    const SizedBox(height: 24),
                     _buildOrderSummary(context),
                   ],
                 ),
@@ -204,6 +223,101 @@ class _SellOptionPageState extends State<SellOptionPage> {
     );
   }
 
+  // 7. New UI Widget
+  Widget _buildTargetSLSection(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Stop Loss",
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.error,
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _slController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+                decoration: InputDecoration(
+                  hintText: "Optional",
+                  filled: true,
+                  fillColor: theme.cardColor,
+                  contentPadding: const EdgeInsets.all(16),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(
+                      color: theme.dividerColor.withOpacity(0.2),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: colorScheme.error, width: 2),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Take Profit",
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green,
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _targetController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+                decoration: InputDecoration(
+                  hintText: "Optional",
+                  filled: true,
+                  fillColor: theme.cardColor,
+                  contentPadding: const EdgeInsets.all(16),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(
+                      color: theme.dividerColor.withOpacity(0.2),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: Colors.green, width: 2),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ... Existing methods (_buildHeader, _buildInputSection, _buildOrderSummary, etc) ...
+
+  // Copying _buildHeader for completeness
   Widget _buildHeader(BuildContext context, String title) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:bullxchange/features/f&o/screens/buy_option_page.dart';
 import 'package:bullxchange/features/f&o/screens/sell_option_page.dart';
 import 'package:bullxchange/models/instrument_model.dart';
@@ -7,9 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
-// ---------------------------------------------------------------------------
-// 1. MAIN PAGE (SCAFFOLD & TABS)
-// ---------------------------------------------------------------------------
 class OptionChainPage extends StatefulWidget {
   final String symbol;
   const OptionChainPage({super.key, required this.symbol});
@@ -28,7 +26,6 @@ class _OptionChainPageState extends State<OptionChainPage>
     _tabController = TabController(length: 3, vsync: this);
   }
 
-  // Helper to map UI symbol to API symbol
   String _getApiSymbol(String uiSymbol) {
     final s = uiSymbol.toUpperCase().trim();
     if (s == "NIFTY MID SELECT" || s.contains("MIDCPNIFTY")) {
@@ -45,25 +42,27 @@ class _OptionChainPageState extends State<OptionChainPage>
   @override
   Widget build(BuildContext context) {
     final apiSymbol = _getApiSymbol(widget.symbol);
-
     return ChangeNotifierProvider(
       create: (_) => OptionChainProvider(symbol: apiSymbol),
       child: Scaffold(
+        backgroundColor: Colors.black,
         appBar: AppBar(
           leading: const CustomBackButton(),
           title: Text(
             widget.symbol,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onSurface,
+              color: Colors.white,
             ),
           ),
           centerTitle: true,
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          backgroundColor: Colors.black,
           elevation: 0,
-          scrolledUnderElevation: 0,
           bottom: TabBar(
             controller: _tabController,
+            labelColor: Colors.blueAccent,
+            unselectedLabelColor: Colors.grey,
+            indicatorColor: Colors.blueAccent,
             tabs: const [
               Tab(text: 'Option Chain'),
               Tab(text: 'Overview'),
@@ -74,14 +73,11 @@ class _OptionChainPageState extends State<OptionChainPage>
         body: TabBarView(
           controller: _tabController,
           children: [
-            // Tab 1: Option Chain Table
             const _OptionChainBody(),
-
-            // Tab 2: Overview (Performance/Ranges)
             const OverviewTab(),
-
-            // Tab 3: Charts (Placeholder)
-            const Center(child: Text("Charts")),
+            const Center(
+              child: Text("Charts", style: TextStyle(color: Colors.white)),
+            ),
           ],
         ),
       ),
@@ -89,68 +85,89 @@ class _OptionChainPageState extends State<OptionChainPage>
   }
 }
 
-// ---------------------------------------------------------------------------
-// 2. OPTION CHAIN BODY (THE TABLE)
-// ---------------------------------------------------------------------------
 class _OptionChainBody extends StatefulWidget {
   const _OptionChainBody();
-
   @override
   State<_OptionChainBody> createState() => _OptionChainBodyState();
 }
 
-class _OptionChainBodyState extends State<_OptionChainBody> {
+class _OptionChainBodyState extends State<_OptionChainBody>
+    with WidgetsBindingObserver {
   final ScrollController _scrollController = ScrollController();
   bool _hasScrolledToAtm = false;
   final double _estimatedRowHeight = 58.0;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchData();
+      _startAutoRefresh();
+    });
+  }
 
   @override
   void dispose() {
+    _stopAutoRefresh();
+    WidgetsBinding.instance.removeObserver(this);
     _scrollController.dispose();
     super.dispose();
   }
 
-  String _formatPrice(dynamic v) {
-    if (v == null) return "-";
-    final p = double.tryParse(v.toString()) ?? 0.0;
-    if (p == 0) return "-";
-    return p.toStringAsFixed(2);
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _fetchData();
+      _startAutoRefresh();
+    } else if (state == AppLifecycleState.paused) {
+      _stopAutoRefresh();
+    }
   }
 
-  String _formatChange(dynamic v) {
-    if (v == null) return "";
-    final p = double.tryParse(v.toString()) ?? 0.0;
-    if (p == 0) return "-";
-    return "${p > 0 ? '+' : ''}${p.toStringAsFixed(2)}%";
+  void _startAutoRefresh() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 4), (_) => _fetchData());
+  }
+
+  void _stopAutoRefresh() => _timer?.cancel();
+
+  Future<void> _fetchData() async {
+    if (mounted) context.read<OptionChainProvider>().fetchOptionChain();
+  }
+
+  // --- FORMATTING HELPERS ---
+  String _fmtP(dynamic v) => (double.tryParse(v?.toString() ?? "0") ?? 0) == 0
+      ? "-"
+      : (double.tryParse(v?.toString() ?? "0") ?? 0).toStringAsFixed(2);
+  String _fmtC(dynamic v) {
+    final d = double.tryParse(v?.toString() ?? "0") ?? 0;
+    return d == 0 ? "-" : "${d > 0 ? '+' : ''}${d.toStringAsFixed(2)}%";
   }
 
   String _formatOI(dynamic oiVal, dynamic lotSizeVal) {
     if (oiVal == null) return "-";
     double oi = double.tryParse(oiVal.toString()) ?? 0.0;
     if (oi == 0) return "-";
-
-    int lotSize = int.tryParse(lotSizeVal.toString()) ?? 1;
+    int lotSize = int.tryParse(lotSizeVal?.toString() ?? "1") ?? 1;
     double lots = oi / lotSize;
-    final f = NumberFormat("#,##0", "en_US");
-    return f.format(lots);
+    return NumberFormat("#,##0", "en_US").format(lots);
   }
 
-  Color _getChangeColor(dynamic v) {
-    final p = double.tryParse(v.toString()) ?? 0.0;
-    if (p > 0) return Colors.greenAccent;
-    if (p < 0) return Colors.redAccent;
-    return Colors.grey;
+  Color _col(dynamic v) {
+    final d = double.tryParse(v?.toString() ?? "0") ?? 0.0;
+    return d > 0
+        ? Colors.greenAccent
+        : (d < 0 ? Colors.redAccent : Colors.grey);
   }
 
-  void _scrollToAtm(int atmIndex, double viewportHeight) {
+  void _scrollToAtm(int idx, double h) {
     if (_hasScrolledToAtm) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
-        final double targetY = atmIndex * _estimatedRowHeight;
-        final double offset =
-            targetY - (viewportHeight / 2) + (_estimatedRowHeight / 2);
         _scrollController.animateTo(
-          offset,
+          (idx * _estimatedRowHeight) - (h / 2) + (_estimatedRowHeight / 2),
           duration: const Duration(milliseconds: 600),
           curve: Curves.easeOutCubic,
         );
@@ -159,200 +176,271 @@ class _OptionChainBodyState extends State<_OptionChainBody> {
     });
   }
 
-  // ⭐️ HANDLE TAP & NAVIGATION
-  void _onOptionTap(BuildContext context, dynamic rowData, bool isCall) {
+  void _onOptionTap(BuildContext context, dynamic row, bool isCall) {
     final provider = context.read<OptionChainProvider>();
-    final Map<String, dynamic>? data = isCall ? rowData.ce : rowData.pe;
+    final Map<String, dynamic>? data = isCall ? row.ce : row.pe;
+    if (data == null ||
+        (double.tryParse(data['lastPrice']?.toString() ?? "0") ?? 0) == 0) {
+      return;
+    }
 
-    if (data == null || data['lastPrice'] == 0) return;
-
-    final double strike = rowData.strikePrice;
-    final String type = isCall ? "CE" : "PE";
     final double ltp = double.tryParse(data['lastPrice'].toString()) ?? 0.0;
-
-    // ⭐️ FIX: Removed 'tickSize' and 'liveData' which caused the error
-    // We pass 'ltp' explicitly to the Buy/Sell pages, so we don't need it inside Instrument here.
     final instrument = Instrument(
       token: "",
       symbol: provider.symbol,
       name: provider.symbol,
-      exchSeg: "NFO",
-      expiry: "",
-      strike: strike.toString(),
+      exchSeg: "F&O",
+      expiry: row.expiryDate,
+      strike: row.strikePrice.toString(),
       instrumentType: "OPTIDX",
       lotSize: data['lotSize']?.toString() ?? "25",
       outstandingShares: 0,
       avgVolume: 0,
     );
-
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF1E1E1E),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (ctx) {
-        return Container(
-          padding: const EdgeInsets.all(20),
-          height: 250,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      builder: (ctx) => _buildBottomSheet(
+        ctx,
+        context,
+        provider.symbol,
+        row.strikePrice,
+        isCall ? "CE" : "PE",
+        ltp,
+        instrument,
+      ),
+    );
+  }
+
+  Widget _buildBottomSheet(
+    BuildContext ctx,
+    BuildContext context,
+    String sym,
+    double strike,
+    String type,
+    double ltp,
+    Instrument inst,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      height: 250,
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "${provider.symbol} $strike $type",
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    "₹$ltp",
-                    style: TextStyle(
-                      color: isCall ? Colors.greenAccent : Colors.redAccent,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+              Text(
+                "$sym $strike $type",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              const Divider(color: Colors.grey),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: SizedBox(
-                      height: 50,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        onPressed: () {
-                          Navigator.pop(ctx);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => BuyOptionPage(
-                                instrument: instrument,
-                                symbol: provider.symbol,
-                                optionType: type,
-                                strikePrice: strike,
-                                ltp: ltp,
-                              ),
-                            ),
-                          );
-                        },
-                        child: const Text(
-                          "BUY",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 15),
-                  Expanded(
-                    child: SizedBox(
-                      height: 50,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        onPressed: () {
-                          Navigator.pop(ctx);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => SellOptionPage(
-                                instrument: instrument,
-                                symbol: provider.symbol,
-                                optionType: type,
-                                strikePrice: strike,
-                                ltp: ltp,
-                              ),
-                            ),
-                          );
-                        },
-                        child: const Text(
-                          "SELL",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+              Text(
+                "₹$ltp",
+                style: TextStyle(
+                  color: type == "CE" ? Colors.greenAccent : Colors.redAccent,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
-        );
-      },
+          const Divider(color: Colors.grey),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 50,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                    ),
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => BuyOptionPage(
+                            instrument: inst,
+                            symbol: sym,
+                            optionType: type,
+                            strikePrice: strike,
+                            ltp: ltp,
+                          ),
+                        ),
+                      );
+                    },
+                    child: const Text(
+                      "BUY",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 15),
+              Expanded(
+                child: SizedBox(
+                  height: 50,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                    ),
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => SellOptionPage(
+                            instrument: inst,
+                            symbol: sym,
+                            optionType: type,
+                            strikePrice: strike,
+                            ltp: ltp,
+                          ),
+                        ),
+                      );
+                    },
+                    child: const Text(
+                      "SELL",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showExpiryPicker(BuildContext context, OptionChainProvider provider) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1E1E1E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              "Select Expiry",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Expanded(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: provider.expiryDates.length,
+                itemBuilder: (ctx, i) {
+                  final date = provider.expiryDates[i];
+                  final isSel = date == provider.selectedExpiry;
+                  return ListTile(
+                    title: Text(
+                      date,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: isSel ? Colors.blueAccent : Colors.white,
+                        fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                    onTap: () {
+                      _hasScrolledToAtm = false;
+                      provider.selectExpiry(date);
+                      Navigator.pop(ctx);
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<OptionChainProvider>();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final txtColor = isDark ? Colors.white : Colors.black87;
-
-    if (provider.isLoading && provider.rows.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (!provider.isLoading && provider.rows.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 40, color: Colors.grey),
-            const SizedBox(height: 10),
-            Text(
-              "No data found for ${provider.symbol}",
-              style: const TextStyle(color: Colors.grey, fontSize: 16),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () => provider.fetchOptionChain(),
-              child: const Text("Retry"),
-            ),
-          ],
-        ),
-      );
-    }
-
-    final rows = provider.rows;
-    final atmIndex = provider.atmIndex;
-    final spotPrice = provider.underlyingLtp ?? 0.0;
-
     return Column(
       children: [
+        // 1. HEADER (Call | Expiry Dropdown | Put)
+        Consumer<OptionChainProvider>(
+          builder: (context, provider, _) {
+            final expiryText = provider.selectedExpiry.isEmpty
+                ? "Current"
+                : provider.selectedExpiry;
+            return Container(
+              color: Colors.black,
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Call price",
+                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                  ),
+                  GestureDetector(
+                    onTap: () => _showExpiryPicker(context, provider),
+                    child: Row(
+                      children: [
+                        Text(
+                          expiryText,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.keyboard_arrow_down,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Text(
+                    "Put price",
+                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+
+        // 2. COLUMNS HEADER
         Container(
           color: const Color(0xFF1E1E1E),
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          child: Row(
-            children: const [
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: const Row(
+            children: [
               Expanded(
                 flex: 2,
                 child: Center(
                   child: Text(
-                    "Call OI",
-                    style: TextStyle(fontSize: 11, color: Colors.grey),
+                    "OI",
+                    style: TextStyle(fontSize: 10, color: Colors.grey),
                   ),
                 ),
               ),
@@ -360,8 +448,8 @@ class _OptionChainBodyState extends State<_OptionChainBody> {
                 flex: 2,
                 child: Center(
                   child: Text(
-                    "Call LTP",
-                    style: TextStyle(fontSize: 11, color: Colors.grey),
+                    "LTP",
+                    style: TextStyle(fontSize: 10, color: Colors.grey),
                   ),
                 ),
               ),
@@ -370,7 +458,7 @@ class _OptionChainBodyState extends State<_OptionChainBody> {
                 child: Center(
                   child: Text(
                     "Strike",
-                    style: TextStyle(fontSize: 11, color: Colors.grey),
+                    style: TextStyle(fontSize: 10, color: Colors.grey),
                   ),
                 ),
               ),
@@ -378,8 +466,8 @@ class _OptionChainBodyState extends State<_OptionChainBody> {
                 flex: 2,
                 child: Center(
                   child: Text(
-                    "Put LTP",
-                    style: TextStyle(fontSize: 11, color: Colors.grey),
+                    "LTP",
+                    style: TextStyle(fontSize: 10, color: Colors.grey),
                   ),
                 ),
               ),
@@ -387,148 +475,107 @@ class _OptionChainBodyState extends State<_OptionChainBody> {
                 flex: 2,
                 child: Center(
                   child: Text(
-                    "Put OI",
-                    style: TextStyle(fontSize: 11, color: Colors.grey),
+                    "OI",
+                    style: TextStyle(fontSize: 10, color: Colors.grey),
                   ),
                 ),
               ),
             ],
           ),
         ),
-        Expanded(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              if (atmIndex != null) {
-                _scrollToAtm(atmIndex, constraints.maxHeight);
-              }
-              return RefreshIndicator(
-                onRefresh: () async {
-                  _hasScrolledToAtm = false;
-                  await provider.fetchOptionChain();
-                },
-                child: ListView.separated(
-                  controller: _scrollController,
-                  itemCount: rows.length,
-                  separatorBuilder: (ctx, i) {
-                    final currentStrike = rows[i].strikePrice;
-                    if (i + 1 < rows.length) {
-                      final nextStrike = rows[i + 1].strikePrice;
-                      if (spotPrice >= currentStrike &&
-                          spotPrice < nextStrike) {
-                        return _buildSpotIndicator(spotPrice);
-                      }
-                    }
-                    return Divider(
-                      height: 1,
-                      thickness: 0.5,
-                      color: Colors.grey.withOpacity(0.2),
-                    );
-                  },
-                  itemBuilder: (ctx, i) {
-                    final row = rows[i];
-                    final isAtm = atmIndex == i;
 
-                    return Container(
-                      color: Colors.black,
-                      child: Row(
-                        children: [
-                          // CLICKABLE CALL SIDE
-                          Expanded(
-                            flex: 4,
-                            child: InkWell(
-                              onTap: () => _onOptionTap(context, row, true),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
-                                child: Row(
-                                  children: [
-                                    _cell(
-                                      top: _formatOI(
-                                        row.ce?['openInterest'],
-                                        row.ce?['lotSize'],
-                                      ),
-                                      sub: "",
-                                      txt: txtColor,
+        // 3. LIST
+        Expanded(
+          child: Consumer<OptionChainProvider>(
+            builder: (context, provider, _) {
+              if (provider.isLoading && provider.rows.isEmpty) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (provider.rows.isEmpty) {
+                return Center(
+                  child: ElevatedButton(
+                    onPressed: _fetchData,
+                    child: const Text("Retry"),
+                  ),
+                );
+              }
+
+              final rows = provider.rows;
+              return LayoutBuilder(
+                builder: (ctx, c) {
+                  if (provider.atmIndex != null) {
+                    _scrollToAtm(provider.atmIndex!, c.maxHeight);
+                  }
+                  return RefreshIndicator(
+                    onRefresh: () async {
+                      _hasScrolledToAtm = false;
+                      _stopAutoRefresh();
+                      await provider.fetchOptionChain();
+                      _startAutoRefresh();
+                    },
+                    child: ListView.separated(
+                      controller: _scrollController,
+                      itemCount: rows.length,
+                      separatorBuilder: (ctx, i) {
+                        final strike = rows[i].strikePrice;
+                        final spot = provider.underlyingLtp ?? 0.0;
+                        if (i + 1 < rows.length &&
+                            spot >= strike &&
+                            spot < rows[i + 1].strikePrice) {
+                          return _buildSpot(spot);
+                        }
+                        return Divider(
+                          height: 1,
+                          thickness: 0.5,
+                          color: Colors.grey.withOpacity(0.2),
+                        );
+                      },
+                      itemBuilder: (ctx, i) {
+                        final row = rows[i];
+                        final isAtm = provider.atmIndex == i;
+                        return Container(
+                          key: ValueKey("${row.strikePrice}_${row.expiryDate}"),
+                          color: Colors.black,
+                          child: Row(
+                            children: [
+                              _buildSide(context, row, true),
+                              Expanded(
+                                flex: 2,
+                                child: Center(
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
                                     ),
-                                    _cell(
-                                      top: _formatPrice(row.ce?['lastPrice']),
-                                      sub: _formatChange(row.ce?['pChange']),
-                                      txt: txtColor,
-                                      subColor: _getChangeColor(
-                                        row.ce?['pChange'],
+                                    decoration: isAtm
+                                        ? BoxDecoration(
+                                            color: Colors.white24,
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
+                                          )
+                                        : null,
+                                    child: Text(
+                                      row.strikePrice.toStringAsFixed(0),
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                        color: isAtm
+                                            ? Colors.white
+                                            : Colors.grey.shade400,
                                       ),
                                     ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          // CENTER STRIKE (Not Clickable)
-                          Expanded(
-                            flex: 2,
-                            child: Center(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: isAtm
-                                    ? BoxDecoration(
-                                        color: Colors.white24,
-                                        borderRadius: BorderRadius.circular(4),
-                                      )
-                                    : null,
-                                child: Text(
-                                  row.strikePrice.toStringAsFixed(0),
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                    color: isAtm
-                                        ? Colors.white
-                                        : Colors.grey.shade400,
                                   ),
                                 ),
                               ),
-                            ),
+                              _buildSide(context, row, false),
+                            ],
                           ),
-                          // CLICKABLE PUT SIDE
-                          Expanded(
-                            flex: 4,
-                            child: InkWell(
-                              onTap: () => _onOptionTap(context, row, false),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
-                                child: Row(
-                                  children: [
-                                    _cell(
-                                      top: _formatPrice(row.pe?['lastPrice']),
-                                      sub: _formatChange(row.pe?['pChange']),
-                                      txt: txtColor,
-                                      subColor: _getChangeColor(
-                                        row.pe?['pChange'],
-                                      ),
-                                    ),
-                                    _cell(
-                                      top: _formatOI(
-                                        row.pe?['openInterest'],
-                                        row.pe?['lotSize'],
-                                      ),
-                                      sub: "",
-                                      txt: txtColor,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
+                        );
+                      },
+                    ),
+                  );
+                },
               );
             },
           ),
@@ -537,116 +584,118 @@ class _OptionChainBodyState extends State<_OptionChainBody> {
     );
   }
 
-  Widget _buildSpotIndicator(double price) {
-    return Container(
-      color: Colors.black,
-      height: 30,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          const Divider(color: Colors.white, thickness: 1, height: 1),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              price.toStringAsFixed(2),
-              style: const TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
+  Widget _buildSide(BuildContext context, dynamic row, bool isCall) {
+    final Map<String, dynamic>? data = isCall ? row.ce : row.pe;
+    final price = _fmtP(data?['lastPrice']);
+    final chg = _fmtC(data?['pChange']);
+    final oi = _formatOI(data?['openInterest'], data?['lotSize']);
+    // Layout: Call = OI | Price+Change. Put = Price+Change | OI.
+    return Expanded(
+      flex: 4,
+      child: InkWell(
+        onTap: () => _onOptionTap(context, row, isCall),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Row(
+            children: [
+              _cell(
+                isCall ? oi : price,
+                isCall ? "" : chg,
+                isCall ? null : _col(data?['pChange']),
               ),
-            ),
+              _cell(
+                isCall ? price : oi,
+                isCall ? chg : "",
+                isCall ? _col(data?['pChange']) : null,
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _cell({
-    required String top,
-    required String sub,
-    required Color txt,
-    Color? subColor,
-  }) {
-    return Expanded(
-      flex: 1,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            top,
+  Widget _cell(String t, String s, Color? c) => Expanded(
+    flex: 1,
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: Text(
+            t,
+            key: ValueKey(t),
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w500,
-              color: txt,
+              color: c ?? Colors.white,
             ),
           ),
-          if (sub.isNotEmpty && sub != "-")
-            Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Text(sub, style: TextStyle(fontSize: 10, color: subColor)),
+        ),
+        if (s.isNotEmpty)
+          Text(s, style: TextStyle(fontSize: 10, color: c ?? Colors.grey)),
+      ],
+    ),
+  );
+
+  Widget _buildSpot(double p) => Container(
+    color: Colors.black,
+    height: 30,
+    child: Stack(
+      alignment: Alignment.center,
+      children: [
+        const Divider(color: Colors.white, thickness: 1),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            p.toStringAsFixed(2),
+            style: const TextStyle(
+              color: Colors.black,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
             ),
-        ],
-      ),
-    );
-  }
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 // ---------------------------------------------------------------------------
-// 3. OVERVIEW TAB (NEW WIDGET FOR OVERVIEW)
+// 3. OVERVIEW TAB
 // ---------------------------------------------------------------------------
 class OverviewTab extends StatelessWidget {
   const OverviewTab({super.key});
 
-  String _formatNum(double? val) {
-    if (val == null || val == 0) return "-";
-    return NumberFormat("#,##0.00", "en_US").format(val);
-  }
+  String _fmt(double? v) =>
+      v == null || v == 0 ? "-" : NumberFormat("#,##0.00", "en_US").format(v);
 
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<OptionChainProvider>();
     final data = provider.overviewData;
 
-    // Fallback loading check
     if (provider.isOverviewLoading && data == null) {
       return const Center(child: CircularProgressIndicator());
     }
-
-    // Fallback Empty check
     if (data == null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              "No Overview Data",
-              style: TextStyle(color: Colors.grey),
-            ),
-            TextButton(
-              onPressed: () => provider.fetchMarketOverview(),
-              child: const Text("Retry"),
-            ),
-          ],
-        ),
+      return const Center(
+        child: Text("No Overview Data", style: TextStyle(color: Colors.grey)),
       );
     }
 
-    final isNegative = data.priceChange < 0;
-    final color = isNegative ? Colors.redAccent : Colors.greenAccent;
-
+    final isNeg = data.priceChange < 0;
     return RefreshIndicator(
       onRefresh: () async => await provider.fetchMarketOverview(),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
-        physics: const AlwaysScrollableScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
             Text(
               provider.symbol,
               style: const TextStyle(
@@ -657,11 +706,9 @@ class OverviewTab extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
               children: [
                 Text(
-                  _formatNum(data.currentPrice),
+                  _fmt(data.currentPrice),
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -670,40 +717,30 @@ class OverviewTab extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  "${isNegative ? '' : '+'}${_formatNum(data.priceChange)} (${data.percentChange.toStringAsFixed(2)}%)",
+                  "${isNeg ? '' : '+'}${_fmt(data.priceChange)} (${data.percentChange.toStringAsFixed(2)}%)",
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: color,
+                    color: isNeg ? Colors.redAccent : Colors.greenAccent,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 24),
-
-            // Performance
-            Row(
-              children: [
-                const Text(
-                  "Performance",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Icon(Icons.info_outline, size: 18, color: Colors.grey[600]),
-              ],
+            const Text(
+              "Performance",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
             const SizedBox(height: 20),
-
-            // Today Range
             _RangeLabels(
-              labelLow: "Today's Low",
-              labelHigh: "Today's High",
-              valLow: data.dayLow,
-              valHigh: data.dayHigh,
+              "Today's Low",
+              "Today's High",
+              data.dayLow,
+              data.dayHigh,
             ),
             const SizedBox(height: 8),
             MarketRangeSlider(
@@ -712,13 +749,11 @@ class OverviewTab extends StatelessWidget {
               current: data.currentPrice,
             ),
             const SizedBox(height: 24),
-
-            // 52 Week Range
             _RangeLabels(
-              labelLow: "52 Week Low",
-              labelHigh: "52 Week High",
-              valLow: data.yearLow,
-              valHigh: data.yearHigh,
+              "52 Week Low",
+              "52 Week High",
+              data.yearLow,
+              data.yearHigh,
             ),
             const SizedBox(height: 8),
             MarketRangeSlider(
@@ -726,32 +761,21 @@ class OverviewTab extends StatelessWidget {
               high: data.yearHigh,
               current: data.currentPrice,
             ),
-            const SizedBox(height: 24),
-
+            const SizedBox(height: 16),
             const Divider(color: Colors.grey, thickness: 0.2),
             const SizedBox(height: 16),
-
-            // OHLC Grid
             Row(
               children: [
-                Expanded(
-                  child: _StatItem(label: "Open", value: _formatNum(data.open)),
-                ),
+                Expanded(child: _StatItem("Open", _fmt(data.open))),
                 Expanded(
                   child: _StatItem(
-                    label: "Prev. Close",
-                    value: _formatNum(data.prevClose),
+                    "Prev. Close",
+                    _fmt(data.prevClose),
                     alignEnd: true,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            const Divider(color: Colors.grey, thickness: 0.2),
-
-            // Lists
-            _ListRow(title: "${provider.symbol} Companies"),
-            _ListRow(title: "${provider.symbol} ETFs"),
           ],
         ),
       ),
@@ -759,20 +783,10 @@ class OverviewTab extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// 4. OVERVIEW HELPERS
-// ---------------------------------------------------------------------------
-
 class _RangeLabels extends StatelessWidget {
-  final String labelLow, labelHigh;
-  final double valLow, valHigh;
-  const _RangeLabels({
-    required this.labelLow,
-    required this.labelHigh,
-    required this.valLow,
-    required this.valHigh,
-  });
-
+  final String l, h;
+  final double lv, hv;
+  const _RangeLabels(this.l, this.h, this.lv, this.hv);
   @override
   Widget build(BuildContext context) {
     final f = NumberFormat("#,##0.00", "en_US");
@@ -782,13 +796,9 @@ class _RangeLabels extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text(l, style: TextStyle(color: Colors.grey[500], fontSize: 12)),
             Text(
-              labelLow,
-              style: TextStyle(color: Colors.grey[500], fontSize: 12),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              valLow == 0 ? "-" : f.format(valLow),
+              lv == 0 ? "-" : f.format(lv),
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
@@ -799,13 +809,9 @@ class _RangeLabels extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
+            Text(h, style: TextStyle(color: Colors.grey[500], fontSize: 12)),
             Text(
-              labelHigh,
-              style: TextStyle(color: Colors.grey[500], fontSize: 12),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              valHigh == 0 ? "-" : f.format(valHigh),
+              hv == 0 ? "-" : f.format(hv),
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
@@ -819,14 +825,9 @@ class _RangeLabels extends StatelessWidget {
 }
 
 class _StatItem extends StatelessWidget {
-  final String label, value;
+  final String l, v;
   final bool alignEnd;
-  const _StatItem({
-    required this.label,
-    required this.value,
-    this.alignEnd = false,
-  });
-
+  const _StatItem(this.l, this.v, {this.alignEnd = false});
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -834,10 +835,10 @@ class _StatItem extends StatelessWidget {
           ? CrossAxisAlignment.end
           : CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(color: Colors.grey[500], fontSize: 13)),
+        Text(l, style: TextStyle(color: Colors.grey[500], fontSize: 13)),
         const SizedBox(height: 4),
         Text(
-          value,
+          v,
           style: const TextStyle(
             color: Colors.white,
             fontSize: 15,
@@ -849,92 +850,44 @@ class _StatItem extends StatelessWidget {
   }
 }
 
-class _ListRow extends StatelessWidget {
-  final String title;
-  const _ListRow({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const Icon(Icons.keyboard_arrow_down, color: Colors.white),
-            ],
-          ),
-        ),
-        Divider(color: Colors.grey.withOpacity(0.2), height: 1),
-      ],
-    );
-  }
-}
-
 class MarketRangeSlider extends StatelessWidget {
-  final double low;
-  final double high;
-  final double current;
-
+  final double low, high, current;
   const MarketRangeSlider({
     super.key,
     required this.low,
     required this.high,
     required this.current,
   });
-
   @override
   Widget build(BuildContext context) {
-    if (low == 0 || high == 0 || current == 0) {
-      return Container(
-        height: 4,
-        decoration: BoxDecoration(
-          color: Colors.grey[800],
-          borderRadius: BorderRadius.circular(2),
-        ),
-      );
+    if (low == 0 || high == 0) {
+      return Container(height: 4, color: Colors.grey[800]);
     }
-    double percentage = (current - low) / (high - low);
-    percentage = percentage.clamp(0.0, 1.0);
-
+    double pct = ((current - low) / (high - low)).clamp(0.0, 1.0);
     return SizedBox(
       height: 20,
       child: LayoutBuilder(
-        builder: (context, constraints) {
-          final double leftPos = (constraints.maxWidth * percentage) - 6;
-          final double safeLeft = leftPos.clamp(0.0, constraints.maxWidth - 12);
-
-          return Stack(
-            alignment: Alignment.centerLeft,
-            children: [
-              Container(
-                height: 4,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.grey[800],
-                  borderRadius: BorderRadius.circular(2),
-                ),
+        builder: (ctx, c) => Stack(
+          alignment: Alignment.centerLeft,
+          children: [
+            Container(
+              height: 4,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.grey[800],
+                borderRadius: BorderRadius.circular(2),
               ),
-              Positioned(
-                left: safeLeft,
-                child: const Icon(
-                  Icons.arrow_drop_up,
-                  color: Colors.white,
-                  size: 20,
-                ),
+            ),
+            Positioned(
+              left: (c.maxWidth * pct).clamp(0.0, c.maxWidth - 12),
+              child: const Icon(
+                Icons.arrow_drop_up,
+                color: Colors.white,
+                size: 20,
               ),
-            ],
-          );
-        },
+            ),
+          ],
+        ),
       ),
     );
   }

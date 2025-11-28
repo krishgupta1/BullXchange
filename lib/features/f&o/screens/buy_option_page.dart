@@ -34,6 +34,10 @@ class BuyOptionPage extends StatefulWidget {
 
 class _BuyOptionPageState extends State<BuyOptionPage> {
   final _lotsController = TextEditingController(text: "1");
+  // 1. Add Controllers for T/SL
+  final _targetController = TextEditingController();
+  final _slController = TextEditingController();
+
   final UserService _userService = UserService();
   final ChargeCalculatorService _calculator = ChargeCalculatorService();
 
@@ -64,6 +68,9 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
   void dispose() {
     _lotsController.removeListener(_calculate);
     _lotsController.dispose();
+    // 2. Dispose new controllers
+    _targetController.dispose();
+    _slController.dispose();
     super.dispose();
   }
 
@@ -111,6 +118,10 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
     final contractSymbol =
         "${widget.symbol} ${widget.strikePrice.toInt()} ${widget.optionType}";
 
+    // 3. Parse T/SL inputs
+    double? targetPrice = double.tryParse(_targetController.text);
+    double? slPrice = double.tryParse(_slController.text);
+
     final transaction = TransactionModel(
       userId: uid,
       stockSymbol: contractSymbol,
@@ -120,7 +131,7 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
       price: widget.ltp,
       charges: _charges,
       totalAmount: _totalAmount,
-      exchange: 'NFO',
+      exchange: 'F&O',
       productType: _productType,
       orderType: 'Market',
       transactionTime: DateTime.now(),
@@ -128,6 +139,9 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
       optionType: widget.optionType,
       strikePrice: widget.strikePrice,
       expiryDate: widget.instrument.expiry,
+      // 4. Pass to Transaction Model
+      target: targetPrice,
+      stopLoss: slPrice,
     );
 
     final optionHolding = OptionHoldingModel(
@@ -142,7 +156,10 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
       investedAmount: _totalAmount,
       currentLtp: widget.ltp,
       transactionType: _productType,
-      exchange: 'NFO',
+      exchange: 'F&O',
+      // 5. Pass to Holding Model
+      target: targetPrice,
+      stopLoss: slPrice,
     );
 
     try {
@@ -217,6 +234,9 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
                     const SizedBox(height: 24),
                     _buildInputSection(context),
                     const SizedBox(height: 24),
+                    // 6. Add T/SL UI Section
+                    _buildTargetSLSection(context),
+                    const SizedBox(height: 24),
                     _buildOrderSummary(context),
                   ],
                 ),
@@ -229,90 +249,7 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, String title) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: theme.shadowColor.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: colorScheme.outline.withOpacity(0.1),
-                    ),
-                  ),
-                  child: SmartLogo(instrument: widget.instrument, radius: 24),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _formatter.format(widget.ltp),
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text("Available", style: theme.textTheme.bodySmall),
-              const SizedBox(height: 2),
-              _isLoadingFunds
-                  ? const SizedBox(
-                      width: 12,
-                      height: 12,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(
-                      _formatter.format(_availableFunds),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.secondary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+  // ... _buildHeader remains same ...
 
   Widget _buildInputSection(BuildContext context) {
     final theme = Theme.of(context);
@@ -399,7 +336,103 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
     );
   }
 
+  // 7. New Widget for Target and SL inputs
+  Widget _buildTargetSLSection(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Stop Loss",
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.error,
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _slController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+                decoration: InputDecoration(
+                  hintText: "Optional",
+                  filled: true,
+                  fillColor: theme.cardColor,
+                  contentPadding: const EdgeInsets.all(16),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(
+                      color: theme.dividerColor.withOpacity(0.2),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: colorScheme.error, width: 2),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Take Profit",
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green,
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _targetController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+                decoration: InputDecoration(
+                  hintText: "Optional",
+                  filled: true,
+                  fillColor: theme.cardColor,
+                  contentPadding: const EdgeInsets.all(16),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(
+                      color: theme.dividerColor.withOpacity(0.2),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: Colors.green, width: 2),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ... Rest of the file (OrderSummary, BottomButton, Dialogs) remains same ...
+
   Widget _buildOrderSummary(BuildContext context) {
+    // ... Copy existing code from your file ...
+    // I'm abbreviating here to save space, but ensure you keep the original _buildOrderSummary code
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -454,7 +487,7 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
                 _formatter.format(_totalAmount),
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: colorScheme.primary,
+                  color: Colors.white,
                 ),
               ),
             ],
@@ -464,6 +497,7 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
     );
   }
 
+  // ... Copy helper methods (_buildChargesRow, _buildSummaryRow, _buildBottomButton, etc) ...
   Widget _buildChargesRow(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -571,11 +605,81 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
     );
   }
 
+  void _showChargeDetailsBottomSheet(BuildContext context) {
+    final theme = Theme.of(context);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: theme.dividerColor.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Charges Breakdown',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ..._chargesBreakdown.entries
+                .where((e) => e.key != 'total')
+                .map(
+                  (e) => _buildSummaryRow(
+                    context,
+                    e.key.toUpperCase(),
+                    _formatter.format(e.value),
+                  ),
+                ),
+            const Divider(height: 32),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Total Charges',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  _formatter.format(_charges),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showInsufficientFundsDialog(
     BuildContext context,
     double available,
     double required,
   ) {
+    // ... Keep existing logic ...
+    // (Included for completeness if you copy-paste the whole file, otherwise use existing)
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final double shortAmount = required - available;
@@ -671,70 +775,88 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
     );
   }
 
-  void _showChargeDetailsBottomSheet(BuildContext context) {
+  // ... buildHeader remains same ...
+  Widget _buildHeader(BuildContext context, String title) {
     final theme = Theme.of(context);
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: theme.scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: theme.dividerColor.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Charges Breakdown',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 24),
-            ..._chargesBreakdown.entries
-                .where((e) => e.key != 'total')
-                .map(
-                  (e) => _buildSummaryRow(
-                    context,
-                    e.key.toUpperCase(),
-                    _formatter.format(e.value),
-                  ),
-                ),
-            const Divider(height: 32),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: theme.shadowColor.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Row(
               children: [
-                Text(
-                  'Total Charges',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+                Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: colorScheme.outline.withOpacity(0.1),
+                    ),
                   ),
+                  child: SmartLogo(instrument: widget.instrument, radius: 24),
                 ),
-                Text(
-                  _formatter.format(_charges),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.primary,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _formatter.format(widget.ltp),
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text("Available", style: theme.textTheme.bodySmall),
+              const SizedBox(height: 2),
+              _isLoadingFunds
+                  ? const SizedBox(
+                      width: 12,
+                      height: 12,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(
+                      _formatter.format(_availableFunds),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.secondary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+            ],
+          ),
+        ],
       ),
     );
   }
