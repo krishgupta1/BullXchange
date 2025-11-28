@@ -285,7 +285,7 @@ Widget _buildToolItem(
       } else {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const ChargesPage()),
+          MaterialPageRoute(builder: (_) => const ChargesApp()),
         );
       }
     },

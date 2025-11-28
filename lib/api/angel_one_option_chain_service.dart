@@ -48,12 +48,11 @@ class AngelOneOptionChainService {
         "segment": "BFO",
       };
     }
-
     return {"spotToken": "", "optionName": s, "segment": "NFO"};
   }
 
   // ---------------------------------------------------------------------------
-  // 2. FETCH MARKET OVERVIEW (New Method for Overview Tab)
+  // 2. FETCH MARKET OVERVIEW
   // ---------------------------------------------------------------------------
   Future<Map<String, dynamic>> fetchMarketOverview(
     String symbol, {
@@ -64,11 +63,8 @@ class AngelOneOptionChainService {
       final config = _getSymbolConfig(symbol);
       String spotToken = config['spotToken']!;
       final String optionName = config['optionName']!;
-
-      // Determine segment for Spot (Indices usually NSE/BSE, not NFO/BFO)
       String spotExchange = (config['segment'] == "BFO") ? "BSE" : "NSE";
 
-      // 1. Resolve Spot Token if missing
       if (spotToken.isEmpty) {
         try {
           final underlying = allInstruments.firstWhere(
@@ -77,26 +73,20 @@ class AngelOneOptionChainService {
                 i.symbol.endsWith("-EQ"),
           );
           spotToken = underlying.token;
-          spotExchange =
-              underlying.exchSeg; // Use exact exchange from instrument
+          spotExchange = underlying.exchSeg;
         } catch (_) {
           AppLog.w("⚠️ Could not resolve spot token for overview: $symbol");
           return {};
         }
       }
 
-      // 2. Fetch Full Market Data
-      // Note: Ensure your _apiService.fetchLiveMarketData requests "FULL" mode
-      // or returns 52-week high/low data.
       final data = await _fetchMarketData(spotToken, spotExchange);
-
       if (data != null) {
-        // Fix 0 prices on weekends by using 'close'
         double ltp = double.tryParse(data['ltp']?.toString() ?? "0") ?? 0;
         double close = double.tryParse(data['close']?.toString() ?? "0") ?? 0;
         if (ltp == 0 && close > 0) {
-          data['ltp'] = close; // Polyfill LTP
-          data['change'] = 0.0; // No change on weekend
+          data['ltp'] = close;
+          data['change'] = 0.0;
           data['pChange'] = 0.0;
         }
         return data;
@@ -108,13 +98,16 @@ class AngelOneOptionChainService {
   }
 
   // ---------------------------------------------------------------------------
-  // 3. FETCH OPTION CHAIN (Your Existing Logic)
+  // 3. FETCH OPTION CHAIN
   // ---------------------------------------------------------------------------
   Future<Map<String, dynamic>> fetchOptionChainData(
     String symbol, {
     required String exchange,
   }) async {
     try {
+      // DEBUG DEVICE DATE
+      print("🔥 DEBUG: Device Date is ${DateTime.now()}");
+
       final List<Instrument> allInstruments = await _getOrLoadScripMaster();
       if (allInstruments.isEmpty) throw "Scrip Master JSON is empty.";
 
@@ -126,7 +119,7 @@ class AngelOneOptionChainService {
       if (exchange == 'BSE') segment = 'BFO';
       if (exchange == 'NSE') segment = 'NFO';
 
-      // 1. Search for Spot Token if missing
+      // 1. Search for Spot Token
       if (spotToken.isEmpty) {
         try {
           final underlying = allInstruments.firstWhere(
@@ -138,7 +131,7 @@ class AngelOneOptionChainService {
         } catch (_) {}
       }
 
-      // 2. Fetch Spot Price (Handle 0 values for weekends)
+      // 2. Fetch Spot Price
       double referencePrice = 0.0;
       final spotExchange = (segment == "BFO") ? "BSE" : "NSE";
 
@@ -148,16 +141,12 @@ class AngelOneOptionChainService {
           double ltp = double.tryParse(spotData['ltp']?.toString() ?? "0") ?? 0;
           double close =
               double.tryParse(spotData['close']?.toString() ?? "0") ?? 0;
-          // ⭐️ Prioritize LTP, but use Close if LTP is 0 (Weekend Logic)
           referencePrice = (ltp > 0) ? ltp : close;
         }
       }
 
-      // 3. Fallback to Futures if Spot is still 0
+      // 3. Fallback to Futures
       if (referencePrice == 0.0) {
-        AppLog.w(
-          "⚠️ Spot Price is 0. Trying Futures fallback for $optionName...",
-        );
         referencePrice = await _fetchFuturesPrice(
           optionName,
           allInstruments,
@@ -165,9 +154,8 @@ class AngelOneOptionChainService {
         );
       }
 
-      // ⭐️ Final Safety Net: If even Futures fail, return error but don't crash
       if (referencePrice == 0.0) {
-        throw "Market Data Unavailable (Price is 0). Market might be closed.";
+        AppLog.w("⚠️ Market Price 0. Fetching full chain.");
       }
 
       // 4. Filter Options
@@ -182,24 +170,47 @@ class AngelOneOptionChainService {
 
       if (options.isEmpty) throw "No Options found for $optionName ($segment).";
 
-      // 5. Find Expiry & Range
-      final String nearestExpiry = _findNearestExpiry(options);
-      final double range = referencePrice * 0.03;
+      print("🔥 DEBUG: Found ${options.length} options for $optionName");
 
-      final List<Instrument> targetOptions = options.where((i) {
-        if (i.expiry != nearestExpiry) return false;
-        double strike = double.tryParse(i.strike) ?? 0.0;
-        if (strike > 100000) strike = strike / 100;
-        return strike >= (referencePrice - range) &&
-            strike <= (referencePrice + range);
-      }).toList();
+      // 5. GET ALL EXPIRIES
+      final List<String> allExpiries = _findAllExpiries(options);
+      print("🔥 DEBUG: Expiries after parse: $allExpiries");
 
-      if (targetOptions.isEmpty) {
-        // If tight range fails, try a wider range
-        throw "No strikes found near $referencePrice (Expiry: $nearestExpiry)";
+      // 6. TARGET LIST & SORTING
+      List<Instrument> targetOptions;
+
+      if (referencePrice > 0) {
+        final double range = referencePrice * 0.05; // 5% range
+        targetOptions = options.where((i) {
+          double strike = double.tryParse(i.strike) ?? 0.0;
+          if (strike > 100000) strike = strike / 100;
+          return strike >= (referencePrice - range) &&
+              strike <= (referencePrice + range);
+        }).toList();
+      } else {
+        targetOptions = List.from(options);
       }
 
-      // 6. Batch Fetch
+      if (targetOptions.isEmpty) throw "No strikes found.";
+
+      // ⭐️ ROBUST SORTING: Nearest Dates First
+      targetOptions.sort((a, b) {
+        DateTime dA = _parseDateRobust(a.expiry);
+        DateTime dB = _parseDateRobust(b.expiry);
+        int cmp = dA.compareTo(dB);
+        if (cmp != 0) return cmp;
+
+        double sA = double.tryParse(a.strike) ?? 0;
+        double sB = double.tryParse(b.strike) ?? 0;
+        return sA.compareTo(sB);
+      });
+
+      // Increase Safety Limit
+      if (targetOptions.length > 1500) {
+        targetOptions = targetOptions.sublist(0, 1500);
+      }
+
+      // 7. BATCH FETCH
       final List<String> allTokens = targetOptions.map((e) => e.token).toList();
       final Map<String, dynamic> liveDataMap = {};
 
@@ -210,8 +221,9 @@ class AngelOneOptionChainService {
             segment: allTokens.sublist(i, end),
           });
           for (var item in batchData) {
-            if (item is Map)
+            if (item is Map) {
               liveDataMap[item['symbolToken'] ?? item['token'] ?? ""] = item;
+            }
           }
         } catch (_) {}
       }
@@ -220,6 +232,7 @@ class AngelOneOptionChainService {
         targetOptions,
         liveDataMap,
         referencePrice,
+        allExpiries,
       );
     } catch (e) {
       AppLog.e("Error fetching chain: $e");
@@ -234,44 +247,59 @@ class AngelOneOptionChainService {
     List<Instrument> instruments,
     Map<String, dynamic> liveData,
     double spotPrice,
+    List<String> allExpiries,
   ) {
     final Map<String, Map<String, dynamic>> rows = {};
 
     for (var inst in instruments) {
       double strike = double.tryParse(inst.strike) ?? 0.0;
       if (strike > 100000) strike = strike / 100;
-      String strikeKey = strike.toStringAsFixed(2);
+
+      // Clean up expiry key
+      String cleanExpiry = inst.expiry.toUpperCase().replaceAll(
+        RegExp(r'[^A-Z0-9]'),
+        '',
+      );
+      String strikeKey = "${strike.toStringAsFixed(2)}_$cleanExpiry";
+
       final data = liveData[inst.token];
-
       int lotSize = int.tryParse(inst.lotSize) ?? 1;
-
       double ltp = double.tryParse(data?['ltp']?.toString() ?? "0") ?? 0.0;
-      // ⭐️ Use Close if LTP is 0 (Fixes weekend 0 values)
-      if (ltp == 0)
+      if (ltp == 0) {
         ltp = double.tryParse(data?['close']?.toString() ?? "0") ?? 0.0;
+      }
 
       final Map<String, dynamic> node = {
         'openInterest': data?['opnInterest'] ?? 0,
         'lastPrice': ltp,
         'pChange': data?['percentChange'] ?? 0.0,
         'lotSize': lotSize,
+        'expiryDate': cleanExpiry,
+        'symbol': inst.symbol,
       };
 
-      if (!rows.containsKey(strikeKey))
-        rows[strikeKey] = {'strikePrice': strike};
-      if (inst.symbol.endsWith("CE"))
+      if (!rows.containsKey(strikeKey)) {
+        rows[strikeKey] = {'strikePrice': strike, 'expiryDate': cleanExpiry};
+      }
+      if (inst.symbol.endsWith("CE")) {
         rows[strikeKey]!['CE'] = node;
-      else
+      } else {
         rows[strikeKey]!['PE'] = node;
+      }
     }
 
     final formattedRows = rows.values.toList();
-    formattedRows.sort(
-      (a, b) =>
-          (a['strikePrice'] as double).compareTo(b['strikePrice'] as double),
-    );
+    formattedRows.sort((a, b) {
+      int expCmp = _parseDateRobust(
+        a['expiryDate'],
+      ).compareTo(_parseDateRobust(b['expiryDate']));
+      if (expCmp != 0) return expCmp;
+      return (a['strikePrice'] as double).compareTo(b['strikePrice'] as double);
+    });
+
     return {
       'records': {'underlyingValue': spotPrice},
+      'expiryDates': allExpiries,
       'filtered': {'data': formattedRows},
     };
   }
@@ -300,16 +328,12 @@ class AngelOneOptionChainService {
                 inst.exchSeg == s,
           )
           .toList();
-
       if (futures.isEmpty) return 0.0;
-
       final String expiry = _findNearestExpiry(futures);
       final target = futures.firstWhere((f) => f.expiry == expiry);
-
       final data = await _fetchMarketData(target.token, s);
       if (data != null) {
         double val = (data['ltp'] as num?)?.toDouble() ?? 0.0;
-        // ⭐️ Fallback to Close for Futures too
         if (val == 0) val = (data['close'] as num?)?.toDouble() ?? 0.0;
         return val;
       }
@@ -317,25 +341,54 @@ class AngelOneOptionChainService {
     return 0.0;
   }
 
-  String _findNearestExpiry(List<Instrument> o) {
-    if (o.isEmpty) throw "No instruments";
-    final Set<String> exps = o.map((e) => e.expiry).toSet();
-    final DateFormat f = DateFormat("ddMMMyyyy", "en_US");
-    final DateTime now = DateTime.now().copyWith(hour: 0, minute: 0, second: 0);
+  // ⭐️ ROBUST PARSER: Handles "28-NOV-2024" and "28NOV24"
+  DateTime _parseDateRobust(String dateStr) {
+    // Remove non-alphanumeric (hyphens, spaces): 28-NOV-2024 -> 28NOV2024
+    String d = dateStr.trim().toUpperCase().replaceAll(
+      RegExp(r'[^A-Z0-9]'),
+      '',
+    );
+    try {
+      if (d.length >= 9) return DateFormat("ddMMMyyyy", "en_US").parseLoose(d);
+      if (d.length >= 7) {
+        // 28NOV24 -> 28NOV2024
+        String prefix = d.substring(0, 5);
+        String suffix = d.substring(5);
+        return DateFormat(
+          "ddMMMyyyy",
+          "en_US",
+        ).parseLoose("${prefix}20$suffix");
+      }
+    } catch (_) {}
+    return DateTime(2099);
+  }
+
+  // ⭐️ FIXED: Returns ALL dates (Past & Future) to ensure 2024 isn't hidden
+  List<String> _findAllExpiries(List<Instrument> o) {
+    final Set<String> exps = o
+        .map((e) => e.expiry.trim().toUpperCase())
+        .toSet();
     final List<DateTime> dates = [];
+    final Map<DateTime, String> map = {};
 
     for (var e in exps) {
-      try {
-        dates.add(f.parseLoose(e.trim()));
-      } catch (_) {}
+      DateTime dt = _parseDateRobust(e);
+      if (dt.year < 2099) {
+        dates.add(dt);
+        // Store cleaned version (no hyphens) to match Row logic
+        map[dt] = e.replaceAll(RegExp(r'[^A-Z0-9]'), '');
+      }
     }
     dates.sort();
 
-    for (var d in dates) {
-      if (d.isAtSameMomentAs(now) || d.isAfter(now))
-        return f.format(d).toUpperCase();
-    }
-    if (dates.isNotEmpty) return f.format(dates.last).toUpperCase();
+    // ⭐️ SHOW ALL DATES (Removed .where check)
+    return dates.map((d) => map[d]!).toList();
+  }
+
+  String _findNearestExpiry(List<Instrument> o) {
+    final all = _findAllExpiries(o);
+    if (all.isNotEmpty) return all.first;
+    if (o.isNotEmpty) return o.first.expiry;
     throw "No expiry found";
   }
 

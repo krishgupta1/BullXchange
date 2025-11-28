@@ -16,11 +16,15 @@ class TransactionModel {
   final String productType;
   final String orderType;
 
-  // ⭐️ NEW FIELDS FOR OPTIONS
+  // ⭐️ OPTIONS FIELDS
   final int? lotSize;
   final String? optionType;
   final String? expiryDate;
   final double? strikePrice;
+
+  // ⭐️ NEW: TARGET & STOP LOSS
+  final double? target;
+  final double? stopLoss;
 
   TransactionModel({
     this.id,
@@ -41,6 +45,8 @@ class TransactionModel {
     this.optionType,
     this.expiryDate,
     this.strikePrice,
+    this.target,
+    this.stopLoss,
   });
 
   Map<String, dynamic> toJson() {
@@ -58,11 +64,13 @@ class TransactionModel {
       'exchange': exchange,
       'productType': productType,
       'orderType': orderType,
-      // ⭐️ SAVE NEW FIELDS
       'lotSize': lotSize,
       'optionType': optionType,
       'expiryDate': expiryDate,
       'strikePrice': strikePrice,
+      // ⭐️ SAVE NEW FIELDS
+      'target': target,
+      'stopLoss': stopLoss,
     };
   }
 
@@ -85,11 +93,13 @@ class TransactionModel {
       exchange: data['exchange'] ?? 'NSE',
       productType: data['productType'] ?? 'Delivery',
       orderType: data['orderType'] ?? 'Market',
-      // ⭐️ LOAD NEW FIELDS
       lotSize: data['lotSize'],
       optionType: data['optionType'],
       expiryDate: data['expiryDate'],
       strikePrice: (data['strikePrice'] as num?)?.toDouble(),
+      // ⭐️ LOAD NEW FIELDS
+      target: (data['target'] as num?)?.toDouble(),
+      stopLoss: (data['stopLoss'] as num?)?.toDouble(),
     );
   }
 }

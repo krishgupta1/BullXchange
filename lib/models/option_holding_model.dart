@@ -12,7 +12,11 @@ class OptionHoldingModel {
   final double currentLtp; // For Portfolio display tracking
 
   final String transactionType; // "NRML" or "MIS"
-  final String exchange; // "NFO" or "BFO"
+  final String exchange; // "F&O" or "BFO"
+
+  // ⭐️ NEW: TARGET & STOP LOSS
+  final double? target;
+  final double? stopLoss;
 
   OptionHoldingModel({
     required this.symbol,
@@ -27,6 +31,8 @@ class OptionHoldingModel {
     required this.currentLtp,
     required this.transactionType,
     required this.exchange,
+    this.target,
+    this.stopLoss,
   });
 
   OptionHoldingModel copyWith({
@@ -34,6 +40,8 @@ class OptionHoldingModel {
     double? averagePrice,
     double? investedAmount,
     double? currentLtp,
+    double? target,
+    double? stopLoss,
   }) {
     return OptionHoldingModel(
       symbol: symbol,
@@ -48,6 +56,9 @@ class OptionHoldingModel {
       currentLtp: currentLtp ?? this.currentLtp,
       transactionType: transactionType,
       exchange: exchange,
+      // ⭐️ UPDATE OR KEEP EXISTING
+      target: target ?? this.target,
+      stopLoss: stopLoss ?? this.stopLoss,
     );
   }
 
@@ -64,6 +75,9 @@ class OptionHoldingModel {
     'currentLtp': currentLtp,
     'transactionType': transactionType,
     'exchange': exchange,
+    // ⭐️ SAVE NEW FIELDS
+    'target': target,
+    'stopLoss': stopLoss,
   };
 
   factory OptionHoldingModel.fromJson(Map<String, dynamic> json) {
@@ -79,7 +93,10 @@ class OptionHoldingModel {
       investedAmount: (json['investedAmount'] as num?)?.toDouble() ?? 0.0,
       currentLtp: (json['currentLtp'] as num?)?.toDouble() ?? 0.0,
       transactionType: json['transactionType'] ?? 'NRML',
-      exchange: json['exchange'] ?? 'NFO',
+      exchange: json['exchange'] ?? 'F&O',
+      // ⭐️ LOAD NEW FIELDS
+      target: (json['target'] as num?)?.toDouble(),
+      stopLoss: (json['stopLoss'] as num?)?.toDouble(),
     );
   }
 }

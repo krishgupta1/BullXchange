@@ -7,12 +7,12 @@ class CustomBackButton extends StatelessWidget {
   final EdgeInsets padding;
 
   const CustomBackButton({
-    Key? key,
+    super.key,
     this.onPressed,
     this.iconColor,
     this.iconSize = 18,
     this.padding = const EdgeInsets.all(8.0),
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
