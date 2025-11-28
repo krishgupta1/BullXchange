@@ -1,5 +1,6 @@
 import 'package:bullxchange/features/stock_market/screens/StockDetailPage.dart';
 import 'package:bullxchange/features/stock_market/widgets/stock_card.dart';
+import 'package:bullxchange/features/tools/coming_soon_page.dart';
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:provider/provider.dart';
@@ -271,14 +272,22 @@ Widget _buildToolItem(
   Color baseColor,
 ) {
   final theme = Theme.of(context);
+  final bool isComingSoon = label != "CHARGES";
 
   return InkWell(
     borderRadius: BorderRadius.circular(12),
     onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const CalculatorScreen()),
-      );
+      if (isComingSoon) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ComingSoonPage()),
+        );
+      } else {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ChargesApp()),
+        );
+      }
     },
     child: Column(
       mainAxisSize: MainAxisSize.min,
@@ -300,9 +309,6 @@ Widget _buildToolItem(
             fontWeight: FontWeight.w600,
             letterSpacing: 0.3,
           ),
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
         ),
       ],
     ),

@@ -161,7 +161,7 @@ class InstrumentProvider with ChangeNotifier {
     if (_isMarketOpen) {
       AppLog.i("🟢 Market is OPEN. Starting periodic fetch (1s).");
 
-      _refreshTimer = Timer.periodic(const Duration(seconds: 10), (
+      _refreshTimer = Timer.periodic(const Duration(seconds: 50), (
         timer,
       ) async {
         // Check status on every tick
