@@ -1,7 +1,7 @@
 import 'package:bullxchange/features/f&o/screens/future_option_explore_page.dart';
 import 'package:bullxchange/features/f&o/screens/future_option_orders_page.dart';
 import 'package:bullxchange/features/f&o/screens/future_option_position_page.dart';
-import 'package:bullxchange/features/f&o/screens/future_option_watchlist_page.dart';
+import 'package:bullxchange/features/f&o/screens/future_option_transactions.dart';
 import 'package:bullxchange/features/stock_market/widgets/action_tab_bar.dart';
 import 'package:bullxchange/features/stock_market/widgets/index_card.dart';
 import 'package:bullxchange/features/stock_market/widgets/main_page_header.dart';
@@ -117,7 +117,7 @@ class _FutureOptionPageState extends State<FutureOptionPage>
                       "Explore",
                       "Position",
                       "Orders",
-                      "Watchlist",
+                      "Transactions",
                     ],
                     selectedIndex: _selectedActionIndex,
                     onTabSelected: (index) {
@@ -136,7 +136,7 @@ class _FutureOptionPageState extends State<FutureOptionPage>
                         FutureOptionExplorePage(),
                         FnoPositionsPage(),
                         FutureOptionOrdersPage(),
-                        FutureOptionWatchlistPage(),
+                        FnoTransactionsPage(),
                       ],
                     ),
                   ),

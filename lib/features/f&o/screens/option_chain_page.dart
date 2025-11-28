@@ -128,7 +128,7 @@ class _OptionChainBodyState extends State<_OptionChainBody>
 
   void _startAutoRefresh() {
     _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 4), (_) => _fetchData());
+    _timer = Timer.periodic(const Duration(seconds: 100), (_) => _fetchData());
   }
 
   void _stopAutoRefresh() => _timer?.cancel();
@@ -532,7 +532,7 @@ class _OptionChainBodyState extends State<_OptionChainBody>
                       },
                       itemBuilder: (ctx, i) {
                         final row = rows[i];
-                        final isAtm = provider.atmIndex == i;
+                        // Removed decoration logic for ATM
                         return Container(
                           key: ValueKey("${row.strikePrice}_${row.expiryDate}"),
                           color: Colors.black,
@@ -547,22 +547,15 @@ class _OptionChainBodyState extends State<_OptionChainBody>
                                       horizontal: 6,
                                       vertical: 2,
                                     ),
-                                    decoration: isAtm
-                                        ? BoxDecoration(
-                                            color: Colors.white24,
-                                            borderRadius: BorderRadius.circular(
-                                              4,
-                                            ),
-                                          )
-                                        : null,
+                                    decoration: null, // No Highlight
                                     child: Text(
                                       row.strikePrice.toStringAsFixed(0),
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 14,
-                                        color: isAtm
-                                            ? Colors.white
-                                            : Colors.grey.shade400,
+                                        color: Colors
+                                            .grey
+                                            .shade400, // Uniform Color
                                       ),
                                     ),
                                   ),

@@ -3,12 +3,9 @@ import 'package:bullxchange/utils/logger.dart';
 import 'package:bullxchange/api/angel_one_option_chain_service.dart';
 import 'package:bullxchange/models/market_overview_data.dart';
 
-// ---------------------------------------------------------------------------
-// ⭐️ 1. MODEL (Simplified to match your actual data)
-// ---------------------------------------------------------------------------
 class OptionChainRow {
   final double strikePrice;
-  final String expiryDate; // Might be empty if API doesn't send it in row
+  final String expiryDate;
   final Map<String, dynamic>? ce;
   final Map<String, dynamic>? pe;
 
@@ -23,7 +20,6 @@ class OptionChainRow {
     Map<String, dynamic> map, {
     String defaultExpiry = "",
   }) {
-    // Try to find expiry in the row, otherwise use the default passed from Provider
     String exp =
         map['expiryDate']?.toString() ??
         map['expiry']?.toString() ??
@@ -57,9 +53,6 @@ class OptionChainRow {
   }
 }
 
-// ---------------------------------------------------------------------------
-// ⭐️ 2. PROVIDER
-// ---------------------------------------------------------------------------
 class OptionChainProvider extends ChangeNotifier {
   final AngelOneOptionChainService _apiService = AngelOneOptionChainService();
   final String symbol;
@@ -106,8 +99,7 @@ class OptionChainProvider extends ChangeNotifier {
   void selectExpiry(String expiry) {
     if (_selectedExpiry == expiry) return;
     _selectedExpiry = expiry;
-    _filterRows();
-    _safeNotifyListeners();
+    fetchOptionChain();
   }
 
   Future<void> fetchMarketOverview() async {
@@ -137,29 +129,26 @@ class OptionChainProvider extends ChangeNotifier {
 
   Future<void> fetchOptionChain() async {
     if (_isDisposed) return;
-    _isLoading = true;
-    _error = null;
-    if (_allRows.isEmpty) _safeNotifyListeners();
+
+    if (_allRows.isEmpty) {
+      _isLoading = true;
+      _error = null;
+      _safeNotifyListeners();
+    }
 
     try {
       final exchange = (symbol == 'BANKEX' || symbol == 'SENSEX')
           ? 'BSE'
           : 'NSE';
+
       final raw = await _apiService.fetchOptionChainData(
         symbol,
         exchange: exchange,
+        specificExpiry: _selectedExpiry.isEmpty ? null : _selectedExpiry,
       );
 
       if (_isDisposed) return;
 
-      // ⭐️ DEBUGGING: Print keys inside 'records' to find the Expiry list
-      if (raw['records'] != null) {
-        print("🔥 DEBUG RECORDS KEYS: ${raw['records'].keys.toList()}");
-      } else {
-        print("🔥 DEBUG: 'records' key is MISSING in response");
-      }
-
-      // 1. LTP Extraction
       if (raw['records']?['underlyingValue'] != null) {
         _underlyingLtp = double.tryParse(
           raw['records']['underlyingValue'].toString(),
@@ -167,23 +156,13 @@ class OptionChainProvider extends ChangeNotifier {
       }
       _underlyingLtp ??= 0.0;
 
-      // 2. EXPIRY EXTRACTION
       List<String> foundExpiries = [];
-
-      // Try finding 'expiryDates' in records (Standard NSE format)
-      if (raw['records'] != null && raw['records']['expiryDates'] != null) {
-        foundExpiries = List<String>.from(raw['records']['expiryDates']);
-      }
-      // Try finding 'expiryDates' at root
-      else if (raw['expiryDates'] != null) {
+      if (raw['expiryDates'] != null) {
         foundExpiries = List<String>.from(raw['expiryDates']);
       }
 
-      print("🔥 DEBUG: Expiries Found: $foundExpiries");
-
       _expiryDates = foundExpiries;
 
-      // If found, select first. If not, fallback to "Current"
       if (_expiryDates.isNotEmpty) {
         if (_selectedExpiry.isEmpty || _selectedExpiry == "Current") {
           _selectedExpiry = _expiryDates.first;
@@ -193,12 +172,10 @@ class OptionChainProvider extends ChangeNotifier {
         _selectedExpiry = "Current";
       }
 
-      // 3. ROW PARSING
       final List<dynamic>? list = raw['filtered']?['data'];
       if (list == null || list.isEmpty) {
         if (_allRows.isEmpty) _error = "No contracts found.";
       } else {
-        // Pass the selected expiry to the row since the row data doesn't have it
         _allRows = list
             .map(
               (e) => OptionChainRow.fromMap(e, defaultExpiry: _selectedExpiry),
@@ -209,7 +186,6 @@ class OptionChainProvider extends ChangeNotifier {
     } catch (e) {
       if (_allRows.isEmpty) {
         _error = "Error loading data. Market might be closed.";
-        print("🔥 DEBUG ERROR: $e");
         AppLog.e("Provider Error: $e");
       }
     } finally {
@@ -221,11 +197,6 @@ class OptionChainProvider extends ChangeNotifier {
   }
 
   void _filterRows() {
-    // Since your API rows don't have dates, we assume the data returned IS for the selected expiry
-    // so we just show everything.
-    // If your API returns mixed data without dates in rows, sorting is impossible on client side.
-
-    // Simple filter: Just pass through everything if date match isn't possible
     _filteredRows = _allRows;
     _findAtm();
   }

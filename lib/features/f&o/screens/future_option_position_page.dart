@@ -146,6 +146,8 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
           bottomNavigationBar: _FnoBottomPnlBar(
             totalPnl: totalOverallPnl,
             totalPnlPercent: totalPnlPercent,
+            totalInvested: totalOverallPnl,
+            totalCurrentValue: totalInvestment + totalOverallPnl,
           ),
         );
       },
@@ -350,14 +352,17 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
   }
 }
 
-// --- ⭐️ NEW TOTAL P&L BOTTOM BAR ---
 class _FnoBottomPnlBar extends StatefulWidget {
   final double totalPnl;
   final double totalPnlPercent;
+  final double totalInvested;
+  final double totalCurrentValue;
 
   const _FnoBottomPnlBar({
     required this.totalPnl,
     required this.totalPnlPercent,
+    required this.totalInvested,
+    required this.totalCurrentValue,
   });
 
   @override
@@ -370,9 +375,12 @@ class _FnoBottomPnlBarState extends State<_FnoBottomPnlBar> {
   @override
   Widget build(BuildContext context) {
     final isProfit = widget.totalPnl >= 0;
+
+    // Clean, sharp colors
     final pnlColor = isProfit
-        ? const Color(0xFF00C853)
-        : const Color(0xFFFF3D00);
+        ? const Color(0xFF4CAF50) // Material Green
+        : const Color(0xFFF44336); // Material Red
+
     final formatter = NumberFormat.currency(
       locale: 'en_IN',
       symbol: '₹',
@@ -380,68 +388,136 @@ class _FnoBottomPnlBarState extends State<_FnoBottomPnlBar> {
     );
 
     return Container(
-      // 1. Reduced vertical padding to 6
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      // Minimal margin, closer to bottom
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        color: const Color(0xFF1E1E1E), // Matte Black/Grey
+        borderRadius: BorderRadius.circular(12), // Tighter radius
+        border: Border.all(color: Colors.white12, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withOpacity(0.4),
             blurRadius: 10,
-            offset: const Offset(0, -4),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: SafeArea(
-        top: false, // Ensure no extra padding on top
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              "Active PL",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 13, // Slightly smaller text
-                fontWeight: FontWeight.w500,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => setState(() => _isExpanded = !_isExpanded),
+          borderRadius: BorderRadius.circular(12),
+          child: AnimatedSize(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
+            alignment: Alignment.topCenter,
+            child: Padding(
+              // Compact Padding
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // --- COMPACT HEADER ---
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Left: Label + Value in one line
+                      Row(
+                        children: [
+                          Text(
+                            "P&L",
+                            style: TextStyle(
+                              color: Colors.grey.shade400,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            "${isProfit ? '+' : ''}${formatter.format(widget.totalPnl)}",
+                            style: TextStyle(
+                              color: pnlColor,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      // Right: % and Chevron
+                      Row(
+                        children: [
+                          Text(
+                            "${widget.totalPnlPercent.abs().toStringAsFixed(2)}%",
+                            style: TextStyle(
+                              color: pnlColor,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(
+                            _isExpanded
+                                ? Icons.keyboard_arrow_up
+                                : Icons.keyboard_arrow_down,
+                            color: Colors.grey.shade600,
+                            size: 18,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+
+                  // --- HIDDEN DETAILS ---
+                  if (_isExpanded) ...[
+                    const SizedBox(height: 12),
+                    // Thin separator
+                    Container(height: 1, color: Colors.white.withOpacity(0.05)),
+                    const SizedBox(height: 10),
+
+                    // Single Row Details
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildMiniDetail(
+                          "Invested",
+                          widget.totalInvested,
+                          formatter,
+                        ),
+                        _buildMiniDetail(
+                          "Current",
+                          widget.totalCurrentValue,
+                          formatter,
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
               ),
             ),
-            Row(
-              children: [
-                Text(
-                  "${isProfit ? '+' : ''}${formatter.format(widget.totalPnl)}",
-                  style: TextStyle(
-                    color: pnlColor,
-                    fontSize: 14, // Slightly adjusted for compact look
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  "(${isProfit ? '+' : ''}${widget.totalPnlPercent.abs().toStringAsFixed(2)}%)",
-                  style: TextStyle(color: pnlColor, fontSize: 11),
-                ),
-                const SizedBox(width: 8),
-                // 2. Replaced IconButton with GestureDetector to remove default 48px padding
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _isExpanded = !_isExpanded;
-                    });
-                  },
-                  child: Icon(
-                    _isExpanded
-                        ? Icons.keyboard_arrow_down
-                        : Icons.keyboard_arrow_up,
-                    color: Colors.white70,
-                    size: 20, // Smaller icon size
-                  ),
-                ),
-              ],
-            ),
-          ],
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _buildMiniDetail(String label, double value, NumberFormat formatter) {
+    return Row(
+      children: [
+        Text(
+          "$label: ",
+          style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+        ),
+        Text(
+          formatter.format(value),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 }
