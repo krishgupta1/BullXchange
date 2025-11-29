@@ -228,14 +228,12 @@ class AngelOneOptionChainService {
           final batchData = await _apiService.fetchLiveMarketData({
             segment: allTokens.sublist(i, end),
           });
-          if (batchData != null) {
-            for (var item in batchData) {
-              if (item is Map) {
-                liveDataMap[item['symbolToken'] ?? item['token'] ?? ""] = item;
-              }
+          for (var item in batchData) {
+            if (item is Map) {
+              liveDataMap[item['symbolToken'] ?? item['token'] ?? ""] = item;
             }
           }
-        } catch (_) {}
+                } catch (_) {}
       }
 
       return _buildOptionChainResponse(
