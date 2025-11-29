@@ -35,8 +35,7 @@ class _HomePageState extends State<HomePage> {
         return Center(
           child: Text(
             'AI Stats Page',
-            style: TextStyle(
-              fontSize: 10,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),

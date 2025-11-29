@@ -269,8 +269,7 @@ class _AddFundPageState extends State<AddFundPage> {
                 controller: _coinController,
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                style: TextStyle(
-                  fontSize: 24,
+                style: Theme.of(context).textTheme.displayMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: colorScheme.onSurface,
                 ),

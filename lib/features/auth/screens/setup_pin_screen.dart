@@ -58,12 +58,10 @@ class _SetupPinScreenState extends State<SetupPinScreen> {
     final defaultPinTheme = PinTheme(
       width: 56,
       height: 56,
-      textStyle: TextStyle(
-        fontSize: 18,
+      textStyle: textTheme.bodyLarge?.copyWith(
         fontWeight: FontWeight.w600,
-        // --- ⭐️ MODIFIED: Theme text color ---
         color: colorScheme.onSurface,
-      ),
+      ) ?? const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
       decoration: BoxDecoration(
         // --- ⭐️ MODIFIED: Theme surface color ---
         color: colorScheme.surface,
@@ -138,11 +136,8 @@ class _SetupPinScreenState extends State<SetupPinScreen> {
                     Center(
                       child: Text(
                         'Create PIN',
-                        style: TextStyle(
-                          fontFamily: 'EudoxusSans',
-                          fontSize: 24,
+                        style: textTheme.displayMedium?.copyWith(
                           fontWeight: FontWeight.w700,
-                          // --- ⭐️ MODIFIED: Theme text color ---
                           color: colorScheme.onSurface,
                         ),
                       ),
@@ -152,9 +147,7 @@ class _SetupPinScreenState extends State<SetupPinScreen> {
                       child: Text(
                         'Enter a 4-digit PIN to secure your account',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontFamily: 'EudoxusSans',
-                          fontSize: 14,
+                        style: textTheme.bodyMedium?.copyWith(
                           // --- ⭐️ MODIFIED: Theme grey color ---
                           color: textTheme.bodySmall?.color,
                         ),

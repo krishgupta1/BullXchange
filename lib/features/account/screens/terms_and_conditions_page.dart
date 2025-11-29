@@ -191,8 +191,7 @@ class TermsAndConditionsPage extends StatelessWidget {
             width: 100,
             child: Text(
               '$label:',
-              style: TextStyle(
-                fontSize: 11,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: textTheme.bodySmall?.color,
                 fontWeight: FontWeight.w600,
               ),
@@ -201,8 +200,7 @@ class TermsAndConditionsPage extends StatelessWidget {
           Expanded(
             child: Text(
               value,
-              style: TextStyle(
-                fontSize: 11,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurface,
                 fontWeight: FontWeight.w500,
               ),
@@ -274,8 +272,7 @@ class TermsAndConditionsPage extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 8.0),
               child: Text(
                 cleanText,
-                style: TextStyle(
-                  fontSize: 11,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: isBold
                       ? colorScheme.onSurface
                       : colorScheme.onSurfaceVariant,
@@ -330,8 +327,7 @@ class TermsAndConditionsPage extends StatelessWidget {
           SizedBox(height: 12),
           Text(
             'By using BullXChange, you acknowledge that all trading is simulated and involves NO real money. Happy Learning! 🚀',
-            style: TextStyle(
-              fontSize: 11,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Colors.white,
               height: 1.5,
               fontWeight: FontWeight.w500,

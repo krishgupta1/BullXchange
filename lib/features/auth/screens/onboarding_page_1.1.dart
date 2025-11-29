@@ -49,11 +49,9 @@ class OnboardingPage extends StatelessWidget {
                         Text(
                           'Buy & Trade Top Stock and F&O',
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.headlineMedium
+                          style: Theme.of(context).textTheme.headlineSmall
                               ?.copyWith(
                                 fontWeight: FontWeight.w700,
-                                fontSize: 20,
-                                // --- ⭐️ MODIFIED: Theme text color ---
                                 color: colorScheme.onSurface,
                               ),
                         ),

@@ -226,8 +226,7 @@ class PrivacyPolicyPage extends StatelessWidget {
             width: 100,
             child: Text(
               '$label:',
-              style: TextStyle(
-                fontSize: 11,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: textTheme.bodySmall?.color,
                 fontWeight: FontWeight.w600,
               ),
@@ -236,8 +235,7 @@ class PrivacyPolicyPage extends StatelessWidget {
           Expanded(
             child: Text(
               value,
-              style: TextStyle(
-                fontSize: 11,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurface,
                 fontWeight: FontWeight.w500,
               ),
@@ -309,8 +307,7 @@ class PrivacyPolicyPage extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 8.0),
               child: Text(
                 cleanText,
-                style: TextStyle(
-                  fontSize: 11,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: isBold
                       ? colorScheme.onSurface
                       : colorScheme.onSurfaceVariant,
@@ -365,8 +362,7 @@ class PrivacyPolicyPage extends StatelessWidget {
           SizedBox(height: 12),
           Text(
             'BullXchange is dedicated to user privacy. We respect your data and only use it to enhance your paper trading experience. Your trust is our asset.',
-            style: TextStyle(
-              fontSize: 11,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Colors.white,
               height: 1.5,
               fontWeight: FontWeight.w500,

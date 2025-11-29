@@ -81,7 +81,6 @@ class MainPageHeader extends StatelessWidget {
                   'Hi, ${userName ?? defaultUserName}',
                   style: textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w800,
-                    fontSize: 18,
                     color: colorScheme.onSurface,
                     letterSpacing: -0.5,
                   ),
@@ -91,9 +90,8 @@ class MainPageHeader extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   welcomeMessage,
-                  style: textTheme.bodyMedium?.copyWith(
+                  style: textTheme.bodySmall?.copyWith(
                     color: textTheme.bodyMedium?.color?.withOpacity(0.6),
-                    fontSize: 11,
                     fontWeight: FontWeight.w500,
                     letterSpacing: 0.2,
                   ),

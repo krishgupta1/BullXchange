@@ -73,10 +73,8 @@ class TransactionSuccessPage extends StatelessWidget {
               Text(
                 "Transaction Complete",
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 22,
+                style: textTheme.displayMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  // --- ⭐️ MODIFIED: Theme text color ---
                   color: colorScheme.onSurface,
                 ),
               ),
@@ -84,9 +82,7 @@ class TransactionSuccessPage extends StatelessWidget {
               Text(
                 "You $actionText $stockQuantity stocks of $companyName.",
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 10,
-                  // --- ⭐️ MODIFIED: Theme grey color ---
+                style: textTheme.bodySmall?.copyWith(
                   color: textTheme.bodySmall?.color,
                   height: 1.5,
                 ),

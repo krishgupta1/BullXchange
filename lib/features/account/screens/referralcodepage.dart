@@ -53,7 +53,9 @@ class ReferralCodePage extends StatelessWidget {
                   child: Text(
                     'Error: Image not found\n at assets/images/refer_page.png',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: colorScheme.error, fontSize: 10),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colorScheme.error,
+                    ),
                   ),
                 );
               },
@@ -64,8 +66,7 @@ class ReferralCodePage extends StatelessWidget {
             Text(
               'Refer & Earn',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 24,
+              style: Theme.of(context).textTheme.displayMedium?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: colorScheme.onSurface,
               ),

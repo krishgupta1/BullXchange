@@ -83,11 +83,10 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
     final defaultPinTheme = PinTheme(
       width: 56,
       height: 56,
-      textStyle: TextStyle(
-        fontSize: 18,
+      textStyle: textTheme.bodyLarge?.copyWith(
         fontWeight: FontWeight.w600,
         color: colorScheme.onSurface,
-      ),
+      ) ?? const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
@@ -162,8 +161,7 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
                         widget.expectedPin != null
                             ? 'Confirm PIN'
                             : 'Enter PIN',
-                        style: TextStyle(
-                          fontSize: 24,
+                        style: textTheme.displayMedium?.copyWith(
                           fontWeight: FontWeight.w700,
                           color: colorScheme.onSurface,
                         ),
@@ -175,7 +173,7 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
                         widget.expectedPin != null
                             ? 'Re-enter to confirm'
                             : 'Unlock to continue',
-                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                        style: textTheme.bodyMedium?.copyWith(
                           color: textTheme.bodySmall?.color,
                         ),
                       ),

@@ -65,9 +65,8 @@ class IndexCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   name,
-                  style: TextStyle(
+                  style: textTheme.bodySmall?.copyWith(
                     color: textTheme.bodyMedium?.color?.withOpacity(0.6),
-                    fontSize: 11,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.5,
                   ),
@@ -110,9 +109,8 @@ class IndexCard extends StatelessWidget {
             ),
             child: Text(
               changeText,
-              style: TextStyle(
+              style: textTheme.bodySmall?.copyWith(
                 color: changeColor,
-                fontSize: 10,
                 fontWeight: FontWeight.w700,
               ),
             ),
