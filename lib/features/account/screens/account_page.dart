@@ -1,4 +1,5 @@
 import 'package:bullxchange/features/account/screens/add_fund.dart';
+import 'package:bullxchange/features/account/screens/billing_payement_page.dart';
 import 'package:bullxchange/features/account/screens/edit_profile_page.dart';
 import 'package:bullxchange/features/account/screens/faq_page.dart';
 import 'package:bullxchange/features/account/screens/referralcodepage.dart';
@@ -187,8 +188,7 @@ class AccountScreen extends StatelessWidget {
           children: [
             Text(
               'Account',
-              style: TextStyle(
-                fontSize: 28,
+              style: theme.textTheme.displayMedium?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: colorScheme.onSurface,
               ),
@@ -206,7 +206,7 @@ class AccountScreen extends StatelessWidget {
                 'Edit Profile',
                 style: TextStyle(
                   color: colorScheme.secondary,
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -240,11 +240,12 @@ class AccountScreen extends StatelessWidget {
           backgroundColor: colorScheme.primary.withOpacity(0.1),
           child: Text(
             getInitials(name),
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.primary,
-            ),
+            style:
+                Theme.of(context).textTheme.displayMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.primary,
+                ) ??
+                const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
         ),
         const SizedBox(width: 16),
@@ -253,16 +254,17 @@ class AccountScreen extends StatelessWidget {
           children: [
             Text(
               name,
-              style: TextStyle(
-                fontSize: 20,
+              style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                 fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
+                color: colorScheme.error,
               ),
             ),
             const SizedBox(height: 4),
             Text(
               email,
-              style: TextStyle(fontSize: 14, color: textTheme.bodySmall?.color),
+              style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                color: textTheme.bodySmall?.color,
+              ),
             ),
           ],
         ),
@@ -302,8 +304,7 @@ class AccountScreen extends StatelessWidget {
             children: [
               Text(
                 'Wallet Balance',
-                style: TextStyle(
-                  fontSize: 14,
+                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                   fontWeight: FontWeight.w500,
                   color: colorScheme.onSurface.withOpacity(0.7),
                 ),
@@ -311,11 +312,9 @@ class AccountScreen extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 formattedBalance,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.onSurface,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge!.copyWith(color: colorScheme.onSurface),
               ),
             ],
           ),
@@ -338,7 +337,7 @@ class AccountScreen extends StatelessWidget {
             child: Text(
               'Add Fund',
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onPrimary,
               ),
@@ -378,7 +377,7 @@ class AccountScreen extends StatelessWidget {
                 Text(
                   'Referral Code',
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: colorScheme.onSurface.withOpacity(0.8),
                   ),
@@ -387,7 +386,7 @@ class AccountScreen extends StatelessWidget {
                 Text(
                   'Share your friend get \$20 of free stocks',
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 11,
                     color: textTheme.bodySmall?.color,
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -416,8 +415,15 @@ class AccountScreen extends StatelessWidget {
             context,
             icon: Icons.payment,
             color: colorScheme.secondary,
-            text: 'Billing/Payment',
-            onTap: () {},
+            text: 'Wallet History',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const FundsHistoryPage(),
+                ),
+              );
+            },
           ),
           Divider(
             height: 24,
@@ -482,8 +488,7 @@ class AccountScreen extends StatelessWidget {
             const SizedBox(width: 12),
             Text(
               text,
-              style: TextStyle(
-                fontSize: 16,
+              style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurface,
               ),
@@ -520,8 +525,7 @@ class AccountScreen extends StatelessWidget {
           Expanded(
             child: Text(
               "We'd love to hear your feedback!",
-              style: TextStyle(
-                fontSize: 14,
+              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onPrimary,
               ),
@@ -561,9 +565,7 @@ class AccountScreen extends StatelessWidget {
             const SizedBox(width: 8),
             Text(
               "Log Out",
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+              style: Theme.of(context).textTheme.titleLarge!.copyWith(
                 color: colorScheme.error, // ⭐️ Adaptive Red
               ),
             ),

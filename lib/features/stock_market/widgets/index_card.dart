@@ -65,9 +65,8 @@ class IndexCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   name,
-                  style: TextStyle(
+                  style: textTheme.bodySmall?.copyWith(
                     color: textTheme.bodyMedium?.color?.withOpacity(0.6),
-                    fontSize: 13,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.5,
                   ),
@@ -92,7 +91,7 @@ class IndexCard extends StatelessWidget {
           Text(
             value != "0.00" ? "₹$value" : "...",
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 18,
               fontWeight: FontWeight.w800,
               color: colorScheme.onSurface,
               letterSpacing: -0.5,
@@ -110,9 +109,8 @@ class IndexCard extends StatelessWidget {
             ),
             child: Text(
               changeText,
-              style: TextStyle(
+              style: textTheme.bodySmall?.copyWith(
                 color: changeColor,
-                fontSize: 12,
                 fontWeight: FontWeight.w700,
               ),
             ),

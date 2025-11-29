@@ -44,14 +44,15 @@ class StockListItem extends StatelessWidget {
                 children: [
                   Text(
                     instrument.symbol.replaceAll('-EQ', ''),
-                    style: const TextStyle(
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
-                      fontSize: 12,
                     ),
                   ),
                   Text(
                     instrument.name,
-                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
@@ -68,10 +69,9 @@ class StockListItem extends StatelessWidget {
               children: [
                 Text(
                   "₹$ltp",
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 Row(
                   children: [
@@ -84,7 +84,9 @@ class StockListItem extends StatelessWidget {
                     ),
                     Text(
                       "${percentChange.abs().toStringAsFixed(2)}%",
-                      style: TextStyle(color: changeColor, fontSize: 12),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: changeColor),
                     ),
                   ],
                 ),

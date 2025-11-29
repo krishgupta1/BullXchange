@@ -112,6 +112,9 @@ class _FaqPageState extends State<FaqPage> {
                       iconColor: theme.brightness == Brightness.light
                           ? const Color(0xFF5B71DA)
                           : colorScheme.primary,
+                      onTap: () {
+                        // TODO: Implement filtering or navigation for "Getting Started"
+                      },
                     ),
                     const SizedBox(width: 12),
                     _buildTopicCard(
@@ -125,6 +128,9 @@ class _FaqPageState extends State<FaqPage> {
                       iconColor: theme.brightness == Brightness.light
                           ? const Color(0xFF1E8D5F)
                           : Colors.green,
+                      onTap: () {
+                        // TODO: Implement filtering or navigation for "How to Invest"
+                      },
                     ),
                     const SizedBox(width: 12),
                     _buildTopicCard(
@@ -138,6 +144,9 @@ class _FaqPageState extends State<FaqPage> {
                       iconColor: theme.brightness == Brightness.light
                           ? const Color(0xFFDA5B71)
                           : colorScheme.secondary,
+                      onTap: () {
+                        // TODO: Implement filtering or navigation for "Payments"
+                      },
                     ),
                   ],
                 ),
@@ -156,17 +165,7 @@ class _FaqPageState extends State<FaqPage> {
                       color: colorScheme.onSurface,
                     ),
                   ),
-                  TextButton(
-                    onPressed: () {},
-                    child: Text(
-                      'View all',
-                      style: TextStyle(
-                        // --- ⭐️ MODIFIED: Theme accent color ---
-                        color: colorScheme.secondary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                  // ⭐️ REMOVED: "View all" TextButton
                 ],
               ),
               const SizedBox(height: 10),
@@ -188,35 +187,39 @@ class _FaqPageState extends State<FaqPage> {
     required String text,
     required Color color,
     required Color iconColor,
+    VoidCallback? onTap, // ⭐️ Added onTap callback
   }) {
     // --- ⭐️ Theme se colors lo ---
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
-      width: 160,
-      padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: color, // Color ab dynamic hai
-        borderRadius: BorderRadius.circular(16.0),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: iconColor, size: 30), // Icon color dynamic hai
-          const SizedBox(height: 8),
-          Flexible(
-            child: Text(
-              text,
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 15,
-                // --- ⭐️ MODIFIED: Theme text color ---
-                color: colorScheme.onSurface,
-                height: 1.3,
+    return GestureDetector(
+      onTap: onTap, // ⭐️ Handle tap
+      child: Container(
+        width: 160,
+        padding: const EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: color, // Color ab dynamic hai
+          borderRadius: BorderRadius.circular(16.0),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: iconColor, size: 30), // Icon color dynamic hai
+            const SizedBox(height: 8),
+            Flexible(
+              child: Text(
+                text,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 10,
+                  // --- ⭐️ MODIFIED: Theme text color ---
+                  color: colorScheme.onSurface,
+                  height: 1.3,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -228,23 +231,48 @@ class _FaqPageState extends State<FaqPage> {
       children: [
         _buildExpansionTile(
           context, // ⭐️ Pass context
-          'How to create a account?',
-          'Open the Tradebase app to get started and follow the steps. Tradebase doesn\'t charge a fee to create or maintain your Tradebase account.',
+          'What is BullXChange?',
+          'BullXChange ek paper trading simulation app hai jisme users stock market trading ka practice kar sakte hain using virtual currency.',
         ),
         _buildExpansionTile(
           context, // ⭐️ Pass context
-          'How to add a payment method?',
-          'You can add a payment method by navigating to your "Wallet" or "Profile" section and selecting "Add Payment Method". We support various options including bank transfers and debit/credit cards.',
+          'Is this real trading?',
+          'Nahi. App me real trading, demat linking, ya brokerage operations nahi hote.',
         ),
         _buildExpansionTile(
           context, // ⭐️ Pass context
-          'Is Tradebase secure?',
-          'Yes, Tradebase uses industry-standard encryption and security protocols to protect your data and transactions. Your security is our top priority.',
+          'What is virtual currency?',
+          'App ke andar jo funds milte hain woh 100% virtual hote hain. Inka koi real monetary value nahi hota.',
         ),
         _buildExpansionTile(
           context, // ⭐️ Pass context
-          'What is KYC verification?',
-          'KYC (Know Your Customer) verification is a mandatory process to verify your identity. This helps us comply with financial regulations and ensures a safe trading environment for everyone.',
+          'Can I top-up virtual currency?',
+          'Haan. Jab balance khatam ho jaye, users UPI ke through virtual credits top-up kar sakte hain. \n\n⚠️ Virtual currency non-withdrawable, non-refundable, aur non-convertible hoti hai.',
+        ),
+        _buildExpansionTile(
+          context, // ⭐️ Pass context
+          'Are stock prices real?',
+          'Real Indian stock market data par based price simulation use hota hai (slight delay possible).',
+        ),
+        _buildExpansionTile(
+          context, // ⭐️ Pass context
+          'Do I need a Demat account?',
+          'Nahi. Ye sirf educational purpose ke liye hai.',
+        ),
+        _buildExpansionTile(
+          context, // ⭐️ Pass context
+          'Can I withdraw my virtual profits?',
+          'Nahi. Saare profits/losses virtual hote hain.',
+        ),
+        _buildExpansionTile(
+          context, // ⭐️ Pass context
+          'Is BullXChange linked to any broker?',
+          'Nahi. App Groww, Angel One, Zerodha, Upstox ya kisi broker se affiliated nahi hai.',
+        ),
+        _buildExpansionTile(
+          context, // ⭐️ Pass context
+          'Is my data safe?',
+          'Haan. Hum personal data ko secure rakhte hain aur third parties ko sell nahi karte.',
         ),
       ],
     );
@@ -272,12 +300,12 @@ class _FaqPageState extends State<FaqPage> {
           title,
           style: TextStyle(
             fontWeight: FontWeight.w600,
-            fontSize: 16,
+            fontSize: 10,
             // --- ⭐️ MODIFIED: Theme text color ---
             color: colorScheme.onSurface,
           ),
         ),
-        initiallyExpanded: title == 'How to create a account?',
+        initiallyExpanded: title == 'What is BullXChange?',
         trailing: Builder(
           builder: (context) {
             final ExpansibleController controller = ExpansibleController.of(
@@ -312,7 +340,7 @@ class _FaqPageState extends State<FaqPage> {
             style: TextStyle(
               // --- ⭐️ MODIFIED: Theme text color (thoda halka) ---
               color: colorScheme.onSurface.withOpacity(0.7),
-              fontSize: 14,
+              fontSize: 10,
               height: 1.5,
             ),
           ),

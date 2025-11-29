@@ -24,7 +24,7 @@ class ReferralCodePage extends StatelessWidget {
         title: Text(
           'Referral Code',
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontSize: 20,
+            fontSize: 14,
             color: colorScheme.onSurface,
           ),
         ),
@@ -53,7 +53,9 @@ class ReferralCodePage extends StatelessWidget {
                   child: Text(
                     'Error: Image not found\n at assets/images/refer_page.png',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: colorScheme.error, fontSize: 12),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: colorScheme.error),
                   ),
                 );
               },
@@ -64,8 +66,7 @@ class ReferralCodePage extends StatelessWidget {
             Text(
               'Refer & Earn',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 28,
+              style: Theme.of(context).textTheme.displayMedium?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: colorScheme.onSurface,
               ),
@@ -76,8 +77,7 @@ class ReferralCodePage extends StatelessWidget {
             Text(
               'Share this code with your friend and\nboth of you will get \$10 free stocks.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
+              style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                 color: textTheme.bodySmall?.color,
                 height: 1.5,
               ),
@@ -107,8 +107,7 @@ class ReferralCodePage extends StatelessWidget {
                   children: [
                     Text(
                       _referralCode,
-                      style: TextStyle(
-                        fontSize: 20,
+                      style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                         fontWeight: FontWeight.bold,
                         color: colorScheme.onSurface,
                         letterSpacing: 1.1,
@@ -140,11 +139,11 @@ class ReferralCodePage extends StatelessWidget {
                             const SizedBox(width: 8),
                             Text(
                               'Copy Code',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: colorScheme.secondary,
-                              ),
+                              style: Theme.of(context).textTheme.bodyLarge!
+                                  .copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: colorScheme.secondary,
+                                  ),
                             ),
                           ],
                         ),
@@ -173,8 +172,7 @@ class ReferralCodePage extends StatelessWidget {
                 ),
                 child: Text(
                   'Refer friend',
-                  style: TextStyle(
-                    fontSize: 18,
+                  style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                     fontWeight: FontWeight.bold,
                     color: colorScheme.onPrimary,
                   ),

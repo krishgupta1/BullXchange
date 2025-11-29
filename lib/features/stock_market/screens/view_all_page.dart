@@ -112,7 +112,14 @@ class _ViewAllPageState extends State<ViewAllPage> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        leading: const CustomBackButton(),
+        leading: CustomBackButton(
+          onPressed: () {
+            // Ensure safe pop with context check
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
+          },
+        ),
         title: Text(
           "Market Watch",
           style: theme.textTheme.titleMedium?.copyWith(
@@ -125,72 +132,82 @@ class _ViewAllPageState extends State<ViewAllPage> {
         elevation: 0,
         scrolledUnderElevation: 0,
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: _buildSearchBar(context),
-          ),
-          Expanded(
-            child: Consumer<InstrumentProvider>(
-              builder: (context, provider, child) {
-                if (allStocks.isEmpty) {
-                  return _buildShimmerLoadingList(context);
-                }
+      body: PopScope(
+        onPopInvoked: (didPop) {
+          if (didPop) {
+            // Cleanup when popping
+            _scrollController.removeListener(() {});
+            _scrollController.dispose();
+            searchController.dispose();
+          }
+        },
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              child: _buildSearchBar(context),
+            ),
+            Expanded(
+              child: Consumer<InstrumentProvider>(
+                builder: (context, provider, child) {
+                  if (allStocks.isEmpty) {
+                    return _buildShimmerLoadingList(context);
+                  }
 
-                if (filteredStocks.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.search_off_rounded,
-                          size: 48,
-                          color: theme.disabledColor,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          "No stocks found",
-                          style: theme.textTheme.bodyLarge?.copyWith(
+                  if (filteredStocks.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.search_off_rounded,
+                            size: 48,
                             color: theme.disabledColor,
                           ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                return ListView.separated(
-                  physics: const BouncingScrollPhysics(),
-                  controller: _scrollController,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: displayedStocks.length + (isLoadingMore ? 1 : 0),
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    if (index >= displayedStocks.length) {
-                      return _buildLoadMoreShimmer(context);
-                    }
-                    final instrument = displayedStocks[index];
-                    return StockCard(
-                      instrument: instrument,
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                StockDetailPage(instrument: instrument),
+                          const SizedBox(height: 16),
+                          Text(
+                            "No stocks found",
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: theme.disabledColor,
+                            ),
                           ),
-                        );
-                      },
+                        ],
+                      ),
                     );
-                  },
-                );
-              },
+                  }
+
+                  return ListView.separated(
+                    physics: const BouncingScrollPhysics(),
+                    controller: _scrollController,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: displayedStocks.length + (isLoadingMore ? 1 : 0),
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      if (index >= displayedStocks.length) {
+                        return _buildLoadMoreShimmer(context);
+                      }
+                      final instrument = displayedStocks[index];
+                      return StockCard(
+                        instrument: instrument,
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  StockDetailPage(instrument: instrument),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

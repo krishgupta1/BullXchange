@@ -434,7 +434,6 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
     // ... Copy existing code from your file ...
     // I'm abbreviating here to save space, but ensure you keep the original _buildOrderSummary code
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -598,7 +597,7 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
                 )
               : const Text(
                   "Swipe to Buy",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
                 ),
         ),
       ),
@@ -681,7 +680,6 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
     // ... Keep existing logic ...
     // (Included for completeness if you copy-paste the whole file, otherwise use existing)
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final double shortAmount = required - available;
 
     showDialog(
@@ -849,9 +847,9 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
                     )
                   : Text(
                       _formatter.format(_availableFunds),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.secondary,
+                      style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
+                        color: colorScheme.secondary,
                       ),
                     ),
             ],

@@ -215,7 +215,7 @@ class _SideMenuState extends State<SideMenu> {
                             userProfile?.name ?? "Guest User",
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
-                              fontSize: 15,
+                              fontSize: 11,
                             ),
                             overflow: TextOverflow.ellipsis,
                             maxLines: 1,
@@ -335,7 +335,7 @@ class _SideMenuState extends State<SideMenu> {
                                     isDarkMode ? "Dark Mode" : "Light Mode",
                                     style: theme.textTheme.bodyMedium?.copyWith(
                                       fontWeight: FontWeight.w600,
-                                      fontSize: 14,
+                                      fontSize: 10,
                                     ),
                                   ),
                                 ),
@@ -516,7 +516,7 @@ class MenuRow extends StatelessWidget {
                         color: isSelected
                             ? Colors.white
                             : theme.textTheme.bodyMedium?.color,
-                        fontSize: 15,
+                        fontSize: 11,
                         fontFamily: "Inter",
                         fontWeight: isSelected
                             ? FontWeight.w600

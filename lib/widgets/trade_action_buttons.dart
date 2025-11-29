@@ -41,7 +41,7 @@ class TradeActionButtons extends StatelessWidget {
               child: Text(
                 sellLabel,
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontSize: 10,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.5,
                 ),
@@ -65,7 +65,7 @@ class TradeActionButtons extends StatelessWidget {
               child: Text(
                 buyLabel,
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontSize: 10,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.5,
                 ),

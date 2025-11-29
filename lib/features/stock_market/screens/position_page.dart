@@ -33,7 +33,7 @@ Widget _buildIntradayBadge(BuildContext context) {
         Text(
           "INTRADAY",
           style: TextStyle(
-            fontSize: 9,
+            fontSize: 10,
             fontWeight: FontWeight.w700,
             color: isDark ? Colors.blue.shade200 : Colors.blue.shade700,
             letterSpacing: 0.5,
@@ -334,7 +334,7 @@ class _PositionPageState extends State<PositionPage> {
                     "Total P&L",
                     style: TextStyle(
                       color: theme.textTheme.bodySmall?.color,
-                      fontSize: 13,
+                      fontSize: 10,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -347,7 +347,7 @@ class _PositionPageState extends State<PositionPage> {
                         "$sign₹${totalPnl.abs().toStringAsFixed(2)}",
                         style: TextStyle(
                           color: pnlColor,
-                          fontSize: 28,
+                          fontSize: 24,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.5,
                         ),
@@ -366,7 +366,7 @@ class _PositionPageState extends State<PositionPage> {
                   "$sign${totalPnlPercent.abs().toStringAsFixed(2)}%",
                   style: TextStyle(
                     color: pnlColor,
-                    fontSize: 13,
+                    fontSize: 10,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -386,7 +386,7 @@ class _PositionPageState extends State<PositionPage> {
                     "Total Invested",
                     style: TextStyle(
                       color: theme.textTheme.bodySmall?.color,
-                      fontSize: 12,
+                      fontSize: 10,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -394,7 +394,7 @@ class _PositionPageState extends State<PositionPage> {
                     "₹${totalInvestment.toStringAsFixed(2)}",
                     style: TextStyle(
                       color: colorScheme.onSurface,
-                      fontSize: 15,
+                      fontSize: 10,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -428,7 +428,7 @@ class _PositionPageState extends State<PositionPage> {
                         style: TextStyle(
                           color: colorScheme.error,
                           fontWeight: FontWeight.bold,
-                          fontSize: 13,
+                          fontSize: 10,
                         ),
                       ),
                     ],
@@ -467,7 +467,7 @@ class _EmptyState extends StatelessWidget {
         Text(
           "No Open Positions",
           style: TextStyle(
-            fontSize: 18,
+            fontSize: 10,
             fontWeight: FontWeight.bold,
             color: theme.colorScheme.onSurface,
           ),
@@ -582,7 +582,7 @@ class _PositionStockItemState extends State<PositionStockItem> {
             color: theme.brightness == Brightness.dark
                 ? color.withRed(255).withGreen(255)
                 : color,
-            fontSize: 18,
+            fontSize: 10,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -628,7 +628,7 @@ class _PositionStockItemState extends State<PositionStockItem> {
                     p.stockSymbol,
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      fontSize: 15,
+                      fontSize: 10,
                       color: colorScheme.onSurface,
                     ),
                   ),
@@ -674,7 +674,7 @@ class _PositionStockItemState extends State<PositionStockItem> {
                     priceFormatter.format(val * p.quantity),
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      fontSize: 15,
+                      fontSize: 10,
                       color: colorScheme.onSurface,
                     ),
                   ),
@@ -700,7 +700,7 @@ class _PositionStockItemState extends State<PositionStockItem> {
                         "$sign₹${plVal.abs().toStringAsFixed(2)} (${pctVal.abs().toStringAsFixed(2)}%)",
                         style: TextStyle(
                           color: color,
-                          fontSize: 12,
+                          fontSize: 10,
                           fontWeight: FontWeight.w600,
                         ),
                       );
@@ -749,7 +749,7 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
             title,
             style: TextStyle(
               color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
-              fontSize: 14,
+              fontSize: 10,
             ),
           ),
           valueWidget,
@@ -777,7 +777,7 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
             color: theme.brightness == Brightness.dark
                 ? color.withRed(255).withGreen(255)
                 : color,
-            fontSize: 20,
+            fontSize: 10,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -914,7 +914,7 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
                         Text(
                           position.stockName,
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 10,
                             fontWeight: FontWeight.bold,
                             color: colorScheme.onSurface,
                           ),
@@ -931,7 +931,7 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
                                 color:
                                     theme.textTheme.bodySmall?.color ??
                                     colorScheme.onSurface.withOpacity(0.7),
-                                fontSize: 13,
+                                fontSize: 10,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -954,7 +954,7 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
                 Text(
                   "${position.quantity} Shares",
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: 10,
                     fontWeight: FontWeight.w600,
                     color: colorScheme.onSurface,
                   ),
@@ -967,7 +967,7 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
                 Text(
                   priceFormatter.format(investedAmount),
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: 10,
                     fontWeight: FontWeight.w600,
                     color: colorScheme.onSurface,
                   ),
@@ -982,7 +982,7 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
                   builder: (_, ltpVal, __) => Text(
                     priceFormatter.format(ltpVal),
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: 10,
                       fontWeight: FontWeight.w600,
                       color: colorScheme.onSurface,
                     ),
@@ -1006,7 +1006,7 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
                         "$sign₹${plVal.abs().toStringAsFixed(2)} ($sign${pctVal.abs().toStringAsFixed(2)}%)",
                         style: TextStyle(
                           color: color,
-                          fontSize: 15,
+                          fontSize: 10,
                           fontWeight: FontWeight.bold,
                         ),
                       ),

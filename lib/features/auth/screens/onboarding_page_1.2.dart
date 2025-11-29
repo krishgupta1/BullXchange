@@ -64,11 +64,8 @@ class OnboardingPage12 extends StatelessWidget {
                         Text(
                           'Get Started with BullXchange',
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.headlineMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 24,
-                              ),
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -116,11 +113,8 @@ class OnboardingPage12 extends StatelessWidget {
                           ),
                           child: Text(
                             'Get Started',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: colorScheme.onPrimary,
-                            ),
+                            style: Theme.of(context).textTheme.titleLarge!
+                                .copyWith(color: colorScheme.onPrimary),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -152,9 +146,7 @@ class OnboardingPage12 extends StatelessWidget {
                           ),
                           child: Text(
                             'Sign in',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
+                            style: Theme.of(context).textTheme.titleLarge!.copyWith(
                               // ⭐️ FIX: If Dark Mode -> White, Else -> Primary Blue
                               color: isDarkMode
                                   ? Colors.white

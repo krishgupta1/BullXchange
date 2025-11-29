@@ -111,7 +111,7 @@ class _HoldingsPageState extends State<HoldingsPage> {
                         Text(
                           "Holdings (${userHoldings?.length ?? 0})",
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 10,
                             fontWeight: FontWeight.w700,
                             color: colorScheme.onSurface,
                           ),
@@ -289,7 +289,7 @@ class _PortfolioStockItemState extends State<PortfolioStockItem> {
                       .withGreen(255)
                       .withBlue(255) // Lighter shade
                 : color,
-            fontSize: 18,
+            fontSize: 10,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -331,7 +331,7 @@ class _PortfolioStockItemState extends State<PortfolioStockItem> {
                     h.stockSymbol,
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      fontSize: 15,
+                      fontSize: 10,
                       color: colorScheme.onSurface,
                     ),
                   ),
@@ -340,7 +340,7 @@ class _PortfolioStockItemState extends State<PortfolioStockItem> {
                     "${h.quantity} shares • Avg. ${h.transactionPrice.toStringAsFixed(1)}",
                     style: TextStyle(
                       color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
-                      fontSize: 12,
+                      fontSize: 10,
                     ),
                   ),
                 ],
@@ -357,7 +357,7 @@ class _PortfolioStockItemState extends State<PortfolioStockItem> {
                     "₹${(val * h.quantity).toStringAsFixed(2)}",
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      fontSize: 15,
+                      fontSize: 10,
                       color: colorScheme.onSurface,
                     ),
                   ),
@@ -382,7 +382,7 @@ class _PortfolioStockItemState extends State<PortfolioStockItem> {
                         "₹${plVal.abs().toStringAsFixed(2)} (${pctVal.abs().toStringAsFixed(2)}%)",
                         style: TextStyle(
                           color: color,
-                          fontSize: 12,
+                          fontSize: 10,
                           fontWeight: FontWeight.w500,
                         ),
                       );
@@ -434,13 +434,13 @@ class PortfolioStockItemDetailsSheet extends StatelessWidget {
             title,
             style: TextStyle(
               color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
-              fontSize: 14,
+              fontSize: 10,
             ),
           ),
           Text(
             value,
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 10,
               fontWeight: FontWeight.w600,
               color: valueColor ?? theme.colorScheme.onSurface,
             ),
@@ -546,7 +546,7 @@ class PortfolioStockItemDetailsSheet extends StatelessWidget {
                         Text(
                           holding.stockName,
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 10,
                             fontWeight: FontWeight.bold,
                             color: colorScheme.onSurface,
                           ),
@@ -557,7 +557,7 @@ class PortfolioStockItemDetailsSheet extends StatelessWidget {
                         Text(
                           holding.stockSymbol,
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: 10,
                             color:
                                 theme.textTheme.bodySmall?.color?.withOpacity(
                                   0.8,
@@ -734,7 +734,7 @@ class PortfolioSummaryCard extends StatelessWidget {
                       Text(
                         "Current Value",
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 10,
                           color: theme.textTheme.bodySmall?.color,
                         ),
                       ),
@@ -742,7 +742,7 @@ class PortfolioSummaryCard extends StatelessWidget {
                       Text(
                         "₹${currentValue.toStringAsFixed(2)}",
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 10,
                           fontWeight: FontWeight.bold,
                           color: colorScheme.onSurface,
                           letterSpacing: -0.5,
@@ -777,7 +777,7 @@ class PortfolioSummaryCard extends StatelessWidget {
                                 ? Colors.green
                                 : Colors.red,
                             fontWeight: FontWeight.bold,
-                            fontSize: 13,
+                            fontSize: 10,
                           ),
                         ),
                       ],
@@ -835,7 +835,7 @@ class PortfolioSummaryCard extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            fontSize: 12,
+            fontSize: 10,
             color: theme.textTheme.bodySmall?.color,
           ),
         ),
@@ -856,7 +856,7 @@ class PortfolioSummaryCard extends StatelessWidget {
             Text(
               value,
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 10,
                 fontWeight: FontWeight.w600,
                 color: valueColor ?? theme.colorScheme.onSurface,
               ),

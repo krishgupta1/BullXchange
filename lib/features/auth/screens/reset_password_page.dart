@@ -91,22 +91,16 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
               // Title
               Text(
                 'Password Recovery',
-                style: TextStyle(
-                  fontFamily: 'EudoxusSans',
-                  fontSize: 28,
+                style: textTheme.displayMedium?.copyWith(
                   fontWeight: FontWeight.w700,
-                  // --- ⭐️ MODIFIED: Theme text color ---
                   color: colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 12),
               Text(
                 'Enter your email to recover your password',
-                style: TextStyle(
-                  fontFamily: 'EudoxusSans',
-                  fontSize: 16,
+                style: textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w400,
-                  // --- ⭐️ MODIFIED: Theme grey color ---
                   color: textTheme.bodySmall?.color,
                 ),
               ),
@@ -116,11 +110,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 padding: const EdgeInsets.only(bottom: 8.0),
                 child: Text(
                   'Email address',
-                  style: TextStyle(
-                    fontFamily: 'EudoxusSans',
-                    fontSize: 14,
+                  style: textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w700,
-                    // --- ⭐️ MODIFIED: Theme text color ---
                     color: colorScheme.onSurface,
                   ),
                 ),
@@ -133,10 +124,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 decoration: InputDecoration(
                   hintText: 'username@mail.com',
                   // --- ⭐️ MODIFIED: Theme hint color ---
-                  hintStyle: TextStyle(
-                    fontFamily: 'EudoxusSans',
+                  hintStyle: textTheme.bodyMedium?.copyWith(
                     color: textTheme.bodySmall?.color,
-                    fontSize: 16,
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(20),
@@ -187,7 +176,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                           'Send Reset Password Link',
                           style: TextStyle(
                             fontFamily: 'EudoxusSans',
-                            fontSize: 18,
+                            fontSize: 12,
                             fontWeight: FontWeight.w700,
                             // --- ⭐️ MODIFIED: Theme text color ---
                             color: colorScheme.onPrimary,

@@ -61,7 +61,7 @@ class FutureOptionOrdersPage extends StatelessWidget {
                   Text(
                     "Open F&O orders (2)", // Hardcoded count
                     style: const TextStyle(
-                      fontSize: 20,
+                      fontSize: 10,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -87,7 +87,7 @@ class FutureOptionOrdersPage extends StatelessWidget {
                   ),
                   Text(
                     "Lots/Price", // Changed from Qty to Lots
-                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 10),
                   ),
                 ],
               ),
@@ -172,7 +172,7 @@ class _FnoOrderItem extends StatelessWidget {
                         text: "$orderType ",
                         style: TextStyle(
                           color: orderType == 'BUY' ? Colors.green : Colors.red,
-                          fontSize: 12,
+                          fontSize: 10,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -184,14 +184,14 @@ class _FnoOrderItem extends StatelessWidget {
                   symbol,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 12,
+                    fontSize: 10,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
                 Text(
                   "Mkt ₹${ltp == 0.0 ? '--' : ltp.toStringAsFixed(2)}",
-                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  style: TextStyle(color: Colors.grey[600], fontSize: 10),
                 ),
               ],
             ),
@@ -203,20 +203,20 @@ class _FnoOrderItem extends StatelessWidget {
             children: [
               Text(
                 productType,
-                style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                style: TextStyle(color: Colors.grey[600], fontSize: 10),
               ),
               const SizedBox(height: 2),
               Text(
                 "$lots Lots ($totalQuantity)",
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 12,
+                  fontSize: 10,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 priceText,
-                style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                style: TextStyle(color: Colors.grey[600], fontSize: 10),
               ),
             ],
           ),
@@ -262,7 +262,7 @@ class _EmptyState extends StatelessWidget {
         SizedBox(height: 16),
         Text(
           "No Pending F&O Orders",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
         ),
         SizedBox(height: 8),
         Text(

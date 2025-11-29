@@ -193,7 +193,7 @@ class _SellStockPageState extends State<SellStockPage> {
               'Sell Order',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSurface,
+                color: colorScheme.onSurface,
               ),
             ),
             Text(
@@ -563,7 +563,7 @@ class _SellStockPageState extends State<SellStockPage> {
                           // CHANGED: Use onSurface with opacity to ensure visibility in dark mode
                           // 'disabledColor' is often too dark on black backgrounds
                           color: colorScheme.onSurface.withOpacity(0.35),
-                          fontSize: 16,
+                          fontSize: 10,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -748,7 +748,7 @@ class _SwipeToConfirmButtonState extends State<SwipeToConfirmButton> {
                     style: TextStyle(
                       color: widget.color,
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      fontSize: 10,
                       letterSpacing: 0.5,
                     ),
                   ),

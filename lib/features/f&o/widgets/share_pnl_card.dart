@@ -26,7 +26,6 @@ class SharePnlCard extends StatelessWidget {
     final bool isSuperProfit = roi > 50.0; // Rocket mode if > 50% return
 
     List<Color> gradientColors;
-    String imageAsset = "";
     IconData statusIcon;
 
     if (isSuperProfit) {
@@ -115,7 +114,7 @@ class SharePnlCard extends StatelessWidget {
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 18,
+                fontSize: 10,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -130,7 +129,7 @@ class SharePnlCard extends StatelessWidget {
               "${pnl >= 0 ? '+' : ''}${roi.toStringAsFixed(2)}%",
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 42,
+                fontSize: 36,
                 fontWeight: FontWeight.w900,
                 letterSpacing: -1,
               ),
@@ -139,7 +138,7 @@ class SharePnlCard extends StatelessWidget {
               "Return on Investment",
               style: TextStyle(
                 color: Colors.white.withOpacity(0.7),
-                fontSize: 12,
+                fontSize: 10,
               ),
             ),
 
@@ -197,7 +196,7 @@ class SharePnlCard extends StatelessWidget {
           val,
           style: TextStyle(
             color: Colors.white,
-            fontSize: 14,
+            fontSize: 10,
             fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
           ),
         ),

@@ -97,7 +97,7 @@ class MiniChart extends StatelessWidget {
                         const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
-                          fontSize: 12,
+                          fontSize: 10,
                         ),
                       );
                     }).toList();

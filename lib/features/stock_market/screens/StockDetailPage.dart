@@ -332,7 +332,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
                 instrument.symbol.replaceAll('-EQ', ''),
                 style: textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  fontSize: 18,
+                  fontSize: 10,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -416,7 +416,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
                 style: TextStyle(
                   color: changeColor,
                   fontWeight: FontWeight.bold,
-                  fontSize: 14,
+                  fontSize: 10,
                 ),
               ),
             ],
@@ -485,7 +485,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
                   stat['label']!,
                   style: textTheme.bodySmall?.copyWith(
                     color: textTheme.bodySmall?.color?.withOpacity(0.7),
-                    fontSize: 11,
+                    fontSize: 10,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -498,7 +498,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
                     stat['value']!,
                     style: textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      fontSize: 13,
+                      fontSize: 10,
                     ),
                   ),
                 ),

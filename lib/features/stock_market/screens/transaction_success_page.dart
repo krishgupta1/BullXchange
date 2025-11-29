@@ -73,10 +73,8 @@ class TransactionSuccessPage extends StatelessWidget {
               Text(
                 "Transaction Complete",
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 26,
+                style: textTheme.displayMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  // --- ⭐️ MODIFIED: Theme text color ---
                   color: colorScheme.onSurface,
                 ),
               ),
@@ -84,9 +82,7 @@ class TransactionSuccessPage extends StatelessWidget {
               Text(
                 "You $actionText $stockQuantity stocks of $companyName.",
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  // --- ⭐️ MODIFIED: Theme grey color ---
+                style: textTheme.bodySmall?.copyWith(
                   color: textTheme.bodySmall?.color,
                   height: 1.5,
                 ),
@@ -109,7 +105,7 @@ class TransactionSuccessPage extends StatelessWidget {
                 child: Text(
                   "Go to Home",
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 10,
                     fontWeight: FontWeight.bold,
                     // --- ⭐️ MODIFIED: Theme text color ---
                     color: colorScheme.onPrimary,
@@ -132,7 +128,7 @@ class TransactionSuccessPage extends StatelessWidget {
                 child: Text(
                   "Order Details",
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 10,
                     fontWeight: FontWeight.w600,
                     // --- ⭐️ MODIFIED: Theme accent color (Pink) ---
                     color: colorScheme.secondary,

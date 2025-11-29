@@ -102,7 +102,7 @@ class FutureOptionExplorePage extends StatelessWidget {
         title,
         style: Theme.of(context).textTheme.headlineSmall?.copyWith(
           fontWeight: FontWeight.bold,
-          fontSize: 20,
+          fontSize: 10,
         ),
       ),
     );
@@ -198,7 +198,7 @@ class _IndexGridCard extends StatelessWidget {
                             style: Theme.of(context).textTheme.titleSmall
                                 ?.copyWith(
                                   fontWeight: FontWeight.w700,
-                                  fontSize: 13,
+                                  fontSize: 11,
                                 ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -227,7 +227,7 @@ class _IndexGridCard extends StatelessWidget {
                   ltp.toStringAsFixed(2),
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
-                    fontSize: 18,
+                    fontSize: 10,
                   ),
                 ),
                 const SizedBox(height: 6),

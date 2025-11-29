@@ -82,7 +82,7 @@ class _LoginPageState extends State<LoginPage> {
                     'BullXchange',
                     style: TextStyle(
                       fontFamily: 'EudoxusSans',
-                      fontSize: 20,
+                      fontSize: 18,
                       fontWeight: FontWeight.w700,
                       // --- ⭐️ MODIFIED: Theme primary color (Blue) ---
                       color: colorScheme.primary,
@@ -93,22 +93,16 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 40),
               Text(
                 "Let's Sign You In",
-                style: TextStyle(
-                  fontFamily: 'EudoxusSans',
-                  fontSize: 28,
+                style: textTheme.displayMedium?.copyWith(
                   fontWeight: FontWeight.w700,
-                  // --- ⭐️ MODIFIED: Theme text color ---
                   color: colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 "Welcome back, you've been missed!",
-                style: TextStyle(
-                  fontFamily: 'EudoxusSans',
-                  fontSize: 16,
+                style: textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w400,
-                  // --- ⭐️ MODIFIED: Theme grey color ---
                   color: textTheme.bodySmall?.color,
                 ),
               ),

@@ -20,7 +20,7 @@ class ContactUsPage extends StatelessWidget {
         title: Text(
           'Contact Us',
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontSize: 20,
+            fontSize: 10,
             color: colorScheme.onSurface,
           ),
         ),
@@ -55,7 +55,7 @@ class ContactUsPage extends StatelessWidget {
             Text(
               "We're here to help!",
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 10,
                 fontWeight: FontWeight.bold,
                 color: colorScheme.onSurface,
               ),
@@ -65,7 +65,7 @@ class ContactUsPage extends StatelessWidget {
               "Have questions or need support? Reach out to us anytime.",
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 10,
                 color: textTheme.bodySmall?.color, // Grey
                 height: 1.5,
               ),
@@ -111,7 +111,7 @@ class ContactUsPage extends StatelessWidget {
             Text(
               "Follow us",
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 10,
                 fontWeight: FontWeight.w600,
                 color: textTheme.bodySmall?.color,
               ),
@@ -180,7 +180,7 @@ class ContactUsPage extends StatelessWidget {
           title,
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: 16,
+            fontSize: 10,
             color: colorScheme.onSurface,
           ),
         ),
@@ -188,7 +188,7 @@ class ContactUsPage extends StatelessWidget {
           padding: const EdgeInsets.only(top: 4.0),
           child: Text(
             subtitle,
-            style: TextStyle(color: textTheme.bodySmall?.color, fontSize: 14),
+            style: TextStyle(color: textTheme.bodySmall?.color, fontSize: 10),
           ),
         ),
         trailing: Icon(

@@ -82,7 +82,7 @@ class _SignupPageState extends State<SignupPage> {
         ),
         content: Text(
           message,
-          style: TextStyle(color: colorScheme.onSurface, fontSize: 16),
+          style: TextStyle(color: colorScheme.onSurface, fontSize: 13),
         ),
         actions: [
           TextButton(
@@ -248,9 +248,7 @@ class _SignupPageState extends State<SignupPage> {
                   const SizedBox(width: 12),
                   Text(
                     'BullXchange',
-                    style: TextStyle(
-                      fontFamily: 'EudoxusSans',
-                      fontSize: 20,
+                    style: textTheme.bodyLarge?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: colorScheme.primary,
                     ),
@@ -261,9 +259,7 @@ class _SignupPageState extends State<SignupPage> {
 
               Text(
                 "Getting Started",
-                style: TextStyle(
-                  fontFamily: 'EudoxusSans',
-                  fontSize: 28,
+                style: textTheme.displayMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                   color: colorScheme.onSurface,
                 ),
@@ -272,9 +268,7 @@ class _SignupPageState extends State<SignupPage> {
 
               Text(
                 "Create an account to continue!",
-                style: TextStyle(
-                  fontFamily: 'EudoxusSans',
-                  fontSize: 16,
+                style: textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w400,
                   color: textTheme.bodySmall?.color,
                 ),
@@ -340,11 +334,11 @@ class _SignupPageState extends State<SignupPage> {
                   Expanded(
                     child: RichText(
                       text: TextSpan(
-                        style: TextStyle(
-                          fontFamily: 'EudoxusSans',
-                          fontSize: 14,
-                          color: textTheme.bodySmall?.color,
-                        ),
+                        style:
+                            textTheme.bodyMedium?.copyWith(
+                              color: textTheme.bodySmall?.color,
+                            ) ??
+                            const TextStyle(fontSize: 13),
                         children: [
                           const TextSpan(text: 'I agree to the '),
                           TextSpan(
@@ -391,9 +385,7 @@ class _SignupPageState extends State<SignupPage> {
                         )
                       : Text(
                           'Start',
-                          style: TextStyle(
-                            fontFamily: 'EudoxusSans',
-                            fontSize: 16,
+                          style: textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w700,
                             color: colorScheme.onPrimary,
                           ),
@@ -405,12 +397,12 @@ class _SignupPageState extends State<SignupPage> {
               Center(
                 child: RichText(
                   text: TextSpan(
-                    style: TextStyle(
-                      fontFamily: 'EudoxusSans',
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: textTheme.bodySmall?.color,
-                    ),
+                    style:
+                        textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: textTheme.bodySmall?.color,
+                        ) ??
+                        const TextStyle(fontSize: 13),
                     children: [
                       const TextSpan(text: "Already have an account? "),
                       TextSpan(
@@ -457,8 +449,7 @@ class _SignupPageState extends State<SignupPage> {
       children: [
         Text(
           label,
-          style: TextStyle(
-            fontSize: 14,
+          style: Theme.of(context).textTheme.bodyMedium!.copyWith(
             fontWeight: FontWeight.w500,
             color: colorScheme.onSurface,
           ),

@@ -595,7 +595,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
                         ? colorScheme.onSecondary
                         : theme.textTheme.bodyMedium?.color,
                     fontWeight: FontWeight.w600,
-                    fontSize: 14,
+                    fontSize: 10,
                   ),
                 ),
               ),
@@ -780,7 +780,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
                         "Swipe to Buy",
                         style: TextStyle(
                           color: theme.disabledColor,
-                          fontSize: 16,
+                          fontSize: 10,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -1091,7 +1091,7 @@ class _SwipeToConfirmButtonState extends State<SwipeToConfirmButton> {
                     style: TextStyle(
                       color: widget.color,
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      fontSize: 10,
                       letterSpacing: 0.5,
                     ),
                   ),
