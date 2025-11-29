@@ -345,7 +345,10 @@ Widget _buildWatchlistHeader(
         IconButton(
           icon: Icon(Icons.add_box_outlined, color: colorScheme.onSurface),
           onPressed: () {
-            Navigator.pushReplacement(
+            // ----- CHANGED FROM pushReplacement TO push -----
+            // This stacks ViewAllPage ON TOP of WatchListPage
+            // instead of destroying WatchListPage.
+            Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const ViewAllPage()),
             );

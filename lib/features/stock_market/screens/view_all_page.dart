@@ -112,14 +112,9 @@ class _ViewAllPageState extends State<ViewAllPage> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        leading: CustomBackButton(
-          onPressed: () {
-            // Ensure safe pop with context check
-            if (Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-            }
-          },
-        ),
+        // Because we used Navigator.push in the previous screen,
+        // Navigator.pop here will work perfectly (no black screen).
+        leading: CustomBackButton(onPressed: () => Navigator.pop(context)),
         title: Text(
           "Market Watch",
           style: theme.textTheme.titleMedium?.copyWith(
@@ -132,82 +127,72 @@ class _ViewAllPageState extends State<ViewAllPage> {
         elevation: 0,
         scrolledUnderElevation: 0,
       ),
-      body: PopScope(
-        onPopInvoked: (didPop) {
-          if (didPop) {
-            // Cleanup when popping
-            _scrollController.removeListener(() {});
-            _scrollController.dispose();
-            searchController.dispose();
-          }
-        },
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              child: _buildSearchBar(context),
-            ),
-            Expanded(
-              child: Consumer<InstrumentProvider>(
-                builder: (context, provider, child) {
-                  if (allStocks.isEmpty) {
-                    return _buildShimmerLoadingList(context);
-                  }
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: _buildSearchBar(context),
+          ),
+          Expanded(
+            child: Consumer<InstrumentProvider>(
+              builder: (context, provider, child) {
+                if (allStocks.isEmpty) {
+                  return _buildShimmerLoadingList(context);
+                }
 
-                  if (filteredStocks.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.search_off_rounded,
-                            size: 48,
+                if (filteredStocks.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.search_off_rounded,
+                          size: 48,
+                          color: theme.disabledColor,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          "No stocks found",
+                          style: theme.textTheme.bodyLarge?.copyWith(
                             color: theme.disabledColor,
                           ),
-                          const SizedBox(height: 16),
-                          Text(
-                            "No stocks found",
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              color: theme.disabledColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-
-                  return ListView.separated(
-                    physics: const BouncingScrollPhysics(),
-                    controller: _scrollController,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: displayedStocks.length + (isLoadingMore ? 1 : 0),
-                    separatorBuilder: (context, index) =>
-                        const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      if (index >= displayedStocks.length) {
-                        return _buildLoadMoreShimmer(context);
-                      }
-                      final instrument = displayedStocks[index];
-                      return StockCard(
-                        instrument: instrument,
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  StockDetailPage(instrument: instrument),
-                            ),
-                          );
-                        },
-                      );
-                    },
+                        ),
+                      ],
+                    ),
                   );
-                },
-              ),
+                }
+
+                return ListView.separated(
+                  physics: const BouncingScrollPhysics(),
+                  controller: _scrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: displayedStocks.length + (isLoadingMore ? 1 : 0),
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    if (index >= displayedStocks.length) {
+                      return _buildLoadMoreShimmer(context);
+                    }
+                    final instrument = displayedStocks[index];
+                    return StockCard(
+                      instrument: instrument,
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                StockDetailPage(instrument: instrument),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                );
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
