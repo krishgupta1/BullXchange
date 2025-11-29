@@ -33,8 +33,8 @@ class BottomNavBar extends StatelessWidget {
           : Colors.grey.shade600,
 
       // Sizing
-      selectedFontSize: 14,
-      unselectedFontSize: 14,
+      selectedFontSize: 10,
+      unselectedFontSize: 10,
       iconSize: 28,
 
       // --- ⭐️ ADDED: Font Weight 500 ---
@@ -71,3 +71,4 @@ class BottomNavBar extends StatelessWidget {
     );
   }
 }
+

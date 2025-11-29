@@ -34,7 +34,7 @@ class ChargesApp extends StatelessWidget {
           ),
           titleTextStyle: const TextStyle(
             color: Color(0xFF1A1F36),
-            fontSize: 16,
+            fontSize: 10,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.5,
           ),
@@ -81,7 +81,7 @@ class ChargesApp extends StatelessWidget {
           ),
           titleTextStyle: TextStyle(
             color: Colors.white,
-            fontSize: 16,
+            fontSize: 10,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.5,
           ),
@@ -281,7 +281,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.onSurface,
                           fontWeight: FontWeight.w700,
-                          fontSize: 18,
+                          fontSize: 10,
                         ),
                       ),
                     ),
@@ -311,7 +311,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                               "ENTER TURNOVER",
                               style: TextStyle(
                                 color: Colors.grey.shade500,
-                                fontSize: 12,
+                                fontSize: 10,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 1.5,
                               ),
@@ -326,7 +326,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                                       decimal: true,
                                     ),
                                 style: TextStyle(
-                                  fontSize: 32,
+                                  fontSize: 10,
                                   fontWeight: FontWeight.w800,
                                   color: Theme.of(
                                     context,
@@ -384,7 +384,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                           child: const Text(
                             "Calculate",
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 10,
                               fontWeight: FontWeight.w600,
                               letterSpacing: 0.5,
                             ),
@@ -474,7 +474,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                             context,
                           ).colorScheme.onSurface.withOpacity(0.65),
                     fontWeight: FontWeight.w700,
-                    fontSize: 13,
+                    fontSize: 11,
                   ),
                 ),
               ),
@@ -514,7 +514,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                             context,
                           ).colorScheme.onSurface.withOpacity(0.65),
                     fontWeight: FontWeight.w700,
-                    fontSize: 13,
+                    fontSize: 11,
                   ),
                 ),
               ),
@@ -568,7 +568,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                         color: Theme.of(
                           context,
                         ).colorScheme.onPrimary.withOpacity(0.9),
-                        fontSize: 13,
+                        fontSize: 11,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -577,7 +577,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                       _formatCurrency(_charges!['total']!),
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onPrimary,
-                        fontSize: 24,
+                        fontSize: 10,
                         fontWeight: FontWeight.w700,
                         fontFeatures: const [FontFeature.tabularFigures()],
                       ),
@@ -640,7 +640,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
             label,
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.85),
-              fontSize: 14,
+              fontSize: 10,
               fontWeight: isBold ? FontWeight.w600 : FontWeight.w400,
             ),
           ),
@@ -648,7 +648,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
             _formatCurrency(value),
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurface,
-              fontSize: 14,
+              fontSize: 10,
               fontWeight: isBold ? FontWeight.w700 : FontWeight.w500,
               fontFeatures: const [FontFeature.tabularFigures()],
             ),
@@ -723,3 +723,4 @@ class ChargeCalculatorService {
 }
 
 // --- END LOGIC ---
+

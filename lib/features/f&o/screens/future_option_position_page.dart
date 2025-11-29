@@ -2,7 +2,6 @@ import 'package:bullxchange/features/f&o/widgets/share_pnl_card.dart';
 import 'package:bullxchange/models/option_holding_model.dart';
 import 'package:bullxchange/models/user_profile_data_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
-import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -17,8 +16,6 @@ class FnoPositionsPage extends StatefulWidget {
 }
 
 class _FnoPositionsPageState extends State<FnoPositionsPage> {
-  final UserService _userService = UserService();
-
   Future<void> _handleExitAllPositions(
     BuildContext context,
     List<OptionHoldingModel> positions,
@@ -213,7 +210,7 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
                     "Total P&L (F&O)",
                     style: TextStyle(
                       color: theme.textTheme.bodySmall?.color,
-                      fontSize: 13,
+                      fontSize: 11,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -226,7 +223,7 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
                         "$sign₹${totalPnl.abs().toStringAsFixed(2)}",
                         style: TextStyle(
                           color: pnlColor,
-                          fontSize: 15,
+                          fontSize: 11,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.5,
                         ),
@@ -245,7 +242,7 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
                   "$sign${totalPnlPercent.abs().toStringAsFixed(2)}%",
                   style: TextStyle(
                     color: pnlColor,
-                    fontSize: 13,
+                    fontSize: 11,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -267,7 +264,7 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
                     "Total Invested",
                     style: TextStyle(
                       color: theme.textTheme.bodySmall?.color,
-                      fontSize: 12,
+                      fontSize: 10,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -275,7 +272,7 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
                     "₹${totalInvestment.toStringAsFixed(2)}",
                     style: TextStyle(
                       color: colorScheme.onSurface,
-                      fontSize: 15,
+                      fontSize: 11,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -309,7 +306,7 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
                         style: TextStyle(
                           color: colorScheme.error,
                           fontWeight: FontWeight.bold,
-                          fontSize: 13,
+                          fontSize: 11,
                         ),
                       ),
                     ],
@@ -340,7 +337,7 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
           Text(
             "F&O",
             style: TextStyle(
-              fontSize: 9,
+              fontSize: 10,
               fontWeight: FontWeight.w700,
               color: isDark ? Colors.orange.shade200 : Colors.orange.shade800,
               letterSpacing: 0.5,
@@ -428,7 +425,7 @@ class _FnoBottomPnlBarState extends State<_FnoBottomPnlBar> {
                             "P&L",
                             style: TextStyle(
                               color: Colors.grey.shade400,
-                              fontSize: 13,
+                              fontSize: 11,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -437,7 +434,7 @@ class _FnoBottomPnlBarState extends State<_FnoBottomPnlBar> {
                             "${isProfit ? '+' : ''}${formatter.format(widget.totalPnl)}",
                             style: TextStyle(
                               color: pnlColor,
-                              fontSize: 15,
+                              fontSize: 11,
                               fontWeight: FontWeight.w700,
                               letterSpacing: 0.3,
                             ),
@@ -452,7 +449,7 @@ class _FnoBottomPnlBarState extends State<_FnoBottomPnlBar> {
                             "${widget.totalPnlPercent.abs().toStringAsFixed(2)}%",
                             style: TextStyle(
                               color: pnlColor,
-                              fontSize: 13,
+                              fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -513,7 +510,7 @@ class _FnoBottomPnlBarState extends State<_FnoBottomPnlBar> {
           formatter.format(value),
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 12,
+            fontSize: 10,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -629,7 +626,7 @@ class _FnoPositionItemState extends State<FnoPositionItem> {
                   style: TextStyle(
                     color: typeColor,
                     fontWeight: FontWeight.w900,
-                    fontSize: 16,
+                    fontSize: 10,
                   ),
                 ),
               ),
@@ -645,7 +642,7 @@ class _FnoPositionItemState extends State<FnoPositionItem> {
                     widget.position.contractSymbol,
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
-                      fontSize: 14,
+                      fontSize: 10,
                       color: theme.colorScheme.onSurface,
                     ),
                     overflow: TextOverflow.ellipsis,
@@ -676,7 +673,7 @@ class _FnoPositionItemState extends State<FnoPositionItem> {
                         "${widget.position.quantity} Qty",
                         style: TextStyle(
                           color: theme.textTheme.bodySmall?.color,
-                          fontSize: 12,
+                          fontSize: 10,
                         ),
                       ),
                     ],
@@ -695,7 +692,7 @@ class _FnoPositionItemState extends State<FnoPositionItem> {
                     formatter.format(ltp * widget.position.quantity),
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 15,
+                      fontSize: 11,
                     ),
                   ),
                 ),
@@ -719,7 +716,7 @@ class _FnoPositionItemState extends State<FnoPositionItem> {
                         style: TextStyle(
                           color: pnlColor,
                           fontWeight: FontWeight.w600,
-                          fontSize: 12,
+                          fontSize: 10,
                         ),
                       ),
                     );
@@ -759,7 +756,7 @@ class _EmptyState extends StatelessWidget {
         Text(
           "No Open F&O Positions",
           style: TextStyle(
-            fontSize: 18,
+            fontSize: 10,
             fontWeight: FontWeight.bold,
             color: theme.colorScheme.onSurface,
           ),

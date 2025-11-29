@@ -82,7 +82,7 @@ class _LoginPageState extends State<LoginPage> {
                     'BullXchange',
                     style: TextStyle(
                       fontFamily: 'EudoxusSans',
-                      fontSize: 20,
+                      fontSize: 18,
                       fontWeight: FontWeight.w700,
                       // --- ⭐️ MODIFIED: Theme primary color (Blue) ---
                       color: colorScheme.primary,
@@ -95,7 +95,7 @@ class _LoginPageState extends State<LoginPage> {
                 "Let's Sign You In",
                 style: TextStyle(
                   fontFamily: 'EudoxusSans',
-                  fontSize: 28,
+                  fontSize: 24,
                   fontWeight: FontWeight.w700,
                   // --- ⭐️ MODIFIED: Theme text color ---
                   color: colorScheme.onSurface,
@@ -106,7 +106,7 @@ class _LoginPageState extends State<LoginPage> {
                 "Welcome back, you've been missed!",
                 style: TextStyle(
                   fontFamily: 'EudoxusSans',
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: FontWeight.w400,
                   // --- ⭐️ MODIFIED: Theme grey color ---
                   color: textTheme.bodySmall?.color,
@@ -247,3 +247,5 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
+
+

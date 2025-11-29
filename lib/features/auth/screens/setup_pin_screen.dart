@@ -59,7 +59,7 @@ class _SetupPinScreenState extends State<SetupPinScreen> {
       width: 56,
       height: 56,
       textStyle: TextStyle(
-        fontSize: 20,
+        fontSize: 18,
         fontWeight: FontWeight.w600,
         // --- ⭐️ MODIFIED: Theme text color ---
         color: colorScheme.onSurface,
@@ -140,7 +140,7 @@ class _SetupPinScreenState extends State<SetupPinScreen> {
                         'Create PIN',
                         style: TextStyle(
                           fontFamily: 'EudoxusSans',
-                          fontSize: 28,
+                          fontSize: 24,
                           fontWeight: FontWeight.w700,
                           // --- ⭐️ MODIFIED: Theme text color ---
                           color: colorScheme.onSurface,
@@ -154,7 +154,7 @@ class _SetupPinScreenState extends State<SetupPinScreen> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontFamily: 'EudoxusSans',
-                          fontSize: 16,
+                          fontSize: 14,
                           // --- ⭐️ MODIFIED: Theme grey color ---
                           color: textTheme.bodySmall?.color,
                         ),
@@ -252,3 +252,5 @@ class _SetupPinScreenState extends State<SetupPinScreen> {
     );
   }
 }
+
+

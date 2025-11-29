@@ -17,8 +17,6 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  bool _notificationsEnabled = true;
-
   @override
   Widget build(BuildContext context) {
     final themeNotifier = Provider.of<ThemeNotifier>(context);
@@ -28,12 +26,10 @@ class _SettingsPageState extends State<SettingsPage> {
     final bool isDarkMode = themeNotifier.themeMode == ThemeMode.dark;
 
     // Background color for the grouped sections
-    final tileColor = isDarkMode
-        ? const Color(0xFF1E1E1E)
-        : Colors.grey.shade50;
+    final tileColor = theme.cardColor;
 
     // Common background color for icons
-    final iconBgColor = colorScheme.primary.withOpacity(0.1);
+    final iconBgColor = colorScheme.surfaceContainerHighest.withOpacity(0.4);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -52,7 +48,7 @@ class _SettingsPageState extends State<SettingsPage> {
         scrolledUnderElevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
         child: Column(
           children: [
             // --- GENERAL SECTION ---
@@ -62,8 +58,10 @@ class _SettingsPageState extends State<SettingsPage> {
               children: [
                 _buildSettingsTile(
                   title: 'Dark Mode',
-                  icon: Icons.dark_mode_outlined,
-                  iconColor: Colors.purple,
+                  icon: isDarkMode
+                      ? Icons.dark_mode_rounded
+                      : Icons.light_mode_rounded,
+                  iconColor: isDarkMode ? Colors.purpleAccent : Colors.orange,
                   iconBgColor: iconBgColor,
                   onTap: () {
                     themeNotifier.setThemeMode(
@@ -72,7 +70,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   },
                   trailing: CupertinoSwitch(
                     value: isDarkMode,
-                    activeTrackColor: colorScheme.primary,
+                    activeColor: colorScheme.primary,
                     onChanged: (bool value) {
                       themeNotifier.setThemeMode(
                         value ? ThemeMode.dark : ThemeMode.light,
@@ -82,33 +80,11 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 _buildDivider(theme),
                 _buildSettingsTile(
-                  title: 'Notifications',
-                  icon: Icons.notifications_outlined,
-                  iconColor: Colors.orange,
-                  iconBgColor: iconBgColor,
-                  onTap: () {
-                    setState(() {
-                      _notificationsEnabled = !_notificationsEnabled;
-                    });
-                  },
-                  trailing: CupertinoSwitch(
-                    value: _notificationsEnabled,
-                    activeTrackColor: colorScheme.primary,
-                    onChanged: (bool value) {
-                      setState(() {
-                        _notificationsEnabled = value;
-                      });
-                    },
-                  ),
-                ),
-                _buildDivider(theme),
-                _buildSettingsTile(
                   title: 'Contact Us',
-                  icon: Icons.mail_outline,
-                  iconColor: Colors.blue,
+                  icon: Icons.mail_outline_rounded,
+                  iconColor: Colors.blueAccent,
                   iconBgColor: iconBgColor,
                   onTap: () {
-                    // Handle contact us logic here
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -128,7 +104,7 @@ class _SettingsPageState extends State<SettingsPage> {
               children: [
                 _buildSettingsTile(
                   title: 'Change Login PIN',
-                  icon: Icons.lock_outline,
+                  icon: Icons.lock_outline_rounded,
                   iconColor: Colors.teal,
                   iconBgColor: iconBgColor,
                   onTap: () {
@@ -141,7 +117,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 _buildDivider(theme),
                 _buildSettingsTile(
                   title: 'Change Password',
-                  icon: Icons.key_outlined,
+                  icon: Icons.vpn_key_outlined,
                   iconColor: Colors.redAccent,
                   iconBgColor: iconBgColor,
                   onTap: () {
@@ -167,7 +143,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   icon: Icons.privacy_tip_outlined,
                   iconColor: Colors.green,
                   iconBgColor: iconBgColor,
-                  subtitle: 'Choose what data you share with us',
+                  subtitle: 'Usage & data policies',
                   onTap: () {
                     Navigator.push(
                       context,
@@ -179,9 +155,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 _buildDivider(theme),
                 _buildSettingsTile(
-                  title: 'Legal',
-                  icon: Icons.gavel_outlined,
-                  iconColor: Colors.indigo,
+                  title: 'Terms & Conditions',
+                  icon: Icons.description_outlined,
+                  iconColor: Colors.indigoAccent,
                   iconBgColor: iconBgColor,
                   onTap: () {
                     Navigator.push(
@@ -198,15 +174,28 @@ class _SettingsPageState extends State<SettingsPage> {
             const SizedBox(height: 40),
 
             // --- FOOTER ---
-            Text(
-              '© 2025 BullXchange • Ver 1.0',
-              style: TextStyle(
-                color: textTheme.bodySmall?.color,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
+            Column(
+              children: [
+                Text(
+                  'BullXchange',
+                  style: TextStyle(
+                    color: colorScheme.onSurface,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Version 1.0.0',
+                  style: TextStyle(
+                    color: textTheme.bodySmall?.color?.withOpacity(0.7),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 30),
           ],
         ),
       ),
@@ -217,13 +206,12 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _buildSectionHeader(String title, TextTheme textTheme) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12, left: 4),
+      padding: const EdgeInsets.only(bottom: 8, left: 12),
       child: Align(
         alignment: Alignment.centerLeft,
         child: Text(
           title,
-          style: TextStyle(
-            fontSize: 14,
+          style: Theme.of(context).textTheme.bodyMedium!.copyWith(
             fontWeight: FontWeight.w600,
             color: textTheme.bodySmall?.color,
             letterSpacing: 0.5,
@@ -241,6 +229,14 @@ class _SettingsPageState extends State<SettingsPage> {
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(20),
+        // Subtle shadow for better separation
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(children: children),
     );
@@ -250,7 +246,8 @@ class _SettingsPageState extends State<SettingsPage> {
     return Divider(
       height: 1,
       thickness: 1,
-      indent: 60, // Indent to allow space for the icon
+      indent: 60, // Indent to align with text start
+      endIndent: 0,
       color: theme.dividerColor.withOpacity(0.1),
     );
   }
@@ -268,7 +265,7 @@ class _SettingsPageState extends State<SettingsPage> {
     final textTheme = Theme.of(context).textTheme;
 
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       onTap: onTap,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
 
@@ -285,9 +282,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
       title: Text(
         title,
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
+        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+          fontWeight: FontWeight.w500,
           color: colorScheme.onSurface,
         ),
       ),
@@ -298,20 +294,21 @@ class _SettingsPageState extends State<SettingsPage> {
               child: Text(
                 subtitle,
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 11,
                   color: textTheme.bodySmall?.color,
                 ),
               ),
             )
           : null,
 
-      trailing:
-          trailing ??
+      trailing: trailing ??
           Icon(
             Icons.arrow_forward_ios_rounded,
-            color: textTheme.bodySmall?.color?.withOpacity(0.5),
-            size: 18,
+            color: textTheme.bodySmall?.color?.withOpacity(0.4),
+            size: 16,
           ),
     );
   }
 }
+
+

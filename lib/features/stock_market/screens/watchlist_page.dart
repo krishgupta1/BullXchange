@@ -53,6 +53,13 @@ class _WatchListPageState extends State<WatchListPage> {
     });
   }
 
+  // Allow external widgets to update sorting via a safe method
+  void updateSort(SortType value) {
+    setState(() {
+      _currentSort = value;
+    });
+  }
+
   void _deleteSelectedStocks() async {
     if (uid == null || _selectedTokens.isEmpty) return;
 
@@ -285,7 +292,7 @@ class _EmptyState extends StatelessWidget {
         Text(
           "Your Watchlist is Empty",
           style: TextStyle(
-            fontSize: 18,
+            fontSize: 10,
             fontWeight: FontWeight.bold,
             color: colorScheme.onSurface,
           ),
@@ -316,7 +323,7 @@ Widget _buildWatchlistHeader(
       Text(
         isEditMode ? "Select Stocks" : "$stockCount stocks",
         style: TextStyle(
-          fontSize: 16,
+          fontSize: 10,
           fontWeight: FontWeight.bold,
           color: colorScheme.onSurface,
         ),
@@ -361,7 +368,7 @@ Widget _buildSortHeader(BuildContext context) {
       PopupMenuButton<SortType>(
         onSelected: (value) {
           final state = context.findAncestorStateOfType<_WatchListPageState>();
-          state?.setState(() => state._currentSort = value);
+          state?.updateSort(value);
         },
         child: Row(
           children: [
@@ -403,7 +410,7 @@ Widget _buildSortHeader(BuildContext context) {
         style: TextStyle(
           color: textTheme.bodySmall?.color,
           fontWeight: FontWeight.w500,
-          fontSize: 12,
+          fontSize: 10,
         ),
       ),
     ],
@@ -465,7 +472,7 @@ class _WatchlistStockItem extends StatelessWidget {
                 child: StockCard(
                   instrument: instrument,
                   onTap: null,
-                  fontSize: 12,
+                  fontSize: 10,
                 ),
               ),
             ],

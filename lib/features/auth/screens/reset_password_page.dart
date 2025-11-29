@@ -93,7 +93,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 'Password Recovery',
                 style: TextStyle(
                   fontFamily: 'EudoxusSans',
-                  fontSize: 28,
+                  fontSize: 24,
                   fontWeight: FontWeight.w700,
                   // --- ⭐️ MODIFIED: Theme text color ---
                   color: colorScheme.onSurface,
@@ -104,7 +104,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 'Enter your email to recover your password',
                 style: TextStyle(
                   fontFamily: 'EudoxusSans',
-                  fontSize: 16,
+                  fontSize: 12,
                   fontWeight: FontWeight.w400,
                   // --- ⭐️ MODIFIED: Theme grey color ---
                   color: textTheme.bodySmall?.color,
@@ -118,7 +118,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   'Email address',
                   style: TextStyle(
                     fontFamily: 'EudoxusSans',
-                    fontSize: 14,
+                    fontSize: 12,
                     fontWeight: FontWeight.w700,
                     // --- ⭐️ MODIFIED: Theme text color ---
                     color: colorScheme.onSurface,
@@ -136,7 +136,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   hintStyle: TextStyle(
                     fontFamily: 'EudoxusSans',
                     color: textTheme.bodySmall?.color,
-                    fontSize: 16,
+                    fontSize: 12,
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(20),
@@ -187,7 +187,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                           'Send Reset Password Link',
                           style: TextStyle(
                             fontFamily: 'EudoxusSans',
-                            fontSize: 18,
+                            fontSize: 12,
                             fontWeight: FontWeight.w700,
                             // --- ⭐️ MODIFIED: Theme text color ---
                             color: colorScheme.onPrimary,
@@ -202,3 +202,5 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     );
   }
 }
+
+

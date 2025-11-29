@@ -657,7 +657,7 @@ class _SellOptionPageState extends State<SellOptionPage> {
                 )
               : const Text(
                   "Swipe to Sell",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
                 ),
         ),
       ),
@@ -732,3 +732,5 @@ class _SellOptionPageState extends State<SellOptionPage> {
     );
   }
 }
+
+

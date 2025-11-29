@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'dart:math';
 
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/models/stock_holding_model.dart';
@@ -596,7 +595,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
                         ? colorScheme.onSecondary
                         : theme.textTheme.bodyMedium?.color,
                     fontWeight: FontWeight.w600,
-                    fontSize: 14,
+                    fontSize: 10,
                   ),
                 ),
               ),
@@ -781,7 +780,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
                         "Swipe to Buy",
                         style: TextStyle(
                           color: theme.disabledColor,
-                          fontSize: 16,
+                          fontSize: 10,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -1092,7 +1091,7 @@ class _SwipeToConfirmButtonState extends State<SwipeToConfirmButton> {
                     style: TextStyle(
                       color: widget.color,
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      fontSize: 10,
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -1173,3 +1172,5 @@ class _SwipeToConfirmButtonState extends State<SwipeToConfirmButton> {
     );
   }
 }
+
+

@@ -46,7 +46,7 @@ class LtpChangeWidget extends StatelessWidget {
       children: [
         Text(
           ltp,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
         ),
         const SizedBox(height: 4),
         Text(
@@ -54,10 +54,12 @@ class LtpChangeWidget extends StatelessWidget {
           style: TextStyle(
             color: changeColor,
             fontWeight: FontWeight.w500,
-            fontSize: 13,
+            fontSize: 11,
           ),
         ),
       ],
     );
   }
 }
+
+

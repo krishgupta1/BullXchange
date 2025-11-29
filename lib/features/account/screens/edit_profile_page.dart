@@ -220,7 +220,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         child: Text(
                           'Save',
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 10,
                             fontWeight: FontWeight.bold,
                             // --- ⭐️ MODIFIED: Theme text color ---
                             color: colorScheme.onPrimary,
@@ -252,7 +252,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           child: Text(
             initials,
             style: TextStyle(
-              fontSize: 48,
+              fontSize: 40,
               fontWeight: FontWeight.bold,
               // --- ⭐️ MODIFIED: Theme color ---
               color: colorScheme.primary,
@@ -316,7 +316,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               color: enabled
                   ? colorScheme.secondary
                   : textTheme.bodySmall?.color,
-              fontSize: 14,
+              fontSize: 10,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -377,3 +377,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 }
+
+
+

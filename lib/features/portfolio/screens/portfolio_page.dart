@@ -21,6 +21,9 @@ class _PortfolioPageState extends State<PortfolioPage> {
   late Stream<List<TransactionModel>> _transactionStream;
   String _currentUid = "";
 
+  // 0 = Stocks, 1 = F&O
+  int _selectedSegment = 0;
+
   @override
   void initState() {
     super.initState();
@@ -40,9 +43,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
     final isDark = theme.brightness == Brightness.dark;
 
     // --- Colors Matching Your UI ---
-    final Color backgroundColor = isDark
-        ? Colors.black
-        : const Color(0xFFF2F2F7);
+    final Color backgroundColor = isDark ? Colors.black : const Color(0xFFF2F2F7);
     final Color cardColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
     final Color textColor = theme.textTheme.bodyLarge!.color!;
     final Color subTextColor = const Color(0xFF8E8E93);
@@ -87,24 +88,33 @@ class _PortfolioPageState extends State<PortfolioPage> {
         }
 
         final userProfile = snapshot.data!;
-        final holdings = userProfile.stocks;
+        final allHoldings = userProfile.stocks;
         final availableCash = userProfile.availableFunds;
 
+        // Fetch live data for all holdings
         WidgetsBinding.instance.addPostFrameCallback((_) {
           Provider.of<InstrumentProvider>(
             context,
             listen: false,
-          ).fetchLiveDataForHoldings(holdings);
+          ).fetchLiveDataForHoldings(allHoldings);
         });
 
         return Consumer<InstrumentProvider>(
           builder: (context, instrumentProvider, child) {
-            double totalEquityValue = 0;
-            double totalInvested = 0;
-            double todaysPL = 0;
-            final List<Map<String, dynamic>> calculatedHoldings = [];
+            // --- DATA PROCESSING & SEPARATION ---
+            
+            final List<Map<String, dynamic>> stockList = [];
+            final List<Map<String, dynamic>> fnoList = [];
 
-            for (var holding in holdings) {
+            double totalEquityCurrent = 0;
+            double totalEquityInvested = 0;
+            
+            double totalFnoCurrent = 0;
+            double totalFnoInvested = 0;
+
+            double todaysTotalPL = 0; // Combined P&L for today
+
+            for (var holding in allHoldings) {
               final instrument = instrumentProvider.getInstrumentBySymbol(
                 holding.stockSymbol,
               );
@@ -117,12 +127,11 @@ class _PortfolioPageState extends State<PortfolioPage> {
 
               double currentVal = holding.quantity * currentPrice;
               double investedVal = holding.quantity * holding.transactionPrice;
+              double dayPL = (currentPrice - yesterdayClose) * holding.quantity;
 
-              totalEquityValue += currentVal;
-              totalInvested += investedVal;
-              todaysPL += (currentPrice - yesterdayClose) * holding.quantity;
+              todaysTotalPL += dayPL;
 
-              calculatedHoldings.add({
+              final holdingData = {
                 'symbol': holding.stockSymbol,
                 'quantity': holding.quantity,
                 'avgBuyPrice': holding.transactionPrice,
@@ -130,15 +139,35 @@ class _PortfolioPageState extends State<PortfolioPage> {
                 'companyName': holding.stockName,
                 'currentVal': currentVal,
                 'investedVal': investedVal,
-              });
+              };
+
+              // --- TODO: F&O LOGIC HERE ---
+              // Adjust this logic to match how you identify F&O in your database
+              bool isFno = holding.stockSymbol.endsWith("CE") || holding.stockSymbol.endsWith("PE");
+
+              if (isFno) {
+                fnoList.add(holdingData);
+                totalFnoCurrent += currentVal;
+                totalFnoInvested += investedVal;
+              } else {
+                stockList.add(holdingData);
+                totalEquityCurrent += currentVal;
+                totalEquityInvested += investedVal;
+              }
             }
 
-            double totalPortfolioValue = totalEquityValue + availableCash;
-            double overallPL = totalEquityValue - totalInvested;
+            // --- COMMON CALCULATIONS (Aggregated) ---
+            double totalPortfolioValue = availableCash + totalEquityCurrent + totalFnoCurrent;
+            double totalInvested = totalEquityInvested + totalFnoInvested;
+            
+            double totalEquityPL = totalEquityCurrent - totalEquityInvested;
+            double totalFnoPL = totalFnoCurrent - totalFnoInvested;
+            double overallPL = totalEquityPL + totalFnoPL; // Net P&L
+            
             double overallPLPercent = (totalInvested > 0)
                 ? (overallPL / totalInvested) * 100
                 : 0.0;
-
+            
             return Scaffold(
               backgroundColor: backgroundColor,
               appBar: AppBar(
@@ -168,68 +197,11 @@ class _PortfolioPageState extends State<PortfolioPage> {
                   children: [
                     const SizedBox(height: 10),
 
-                    _buildSectionHeader("Account", subTextColor),
-                    Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: cardColor,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 4,
-                        ),
-                        leading: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: kBlue,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(Icons.person, color: Colors.white),
-                        ),
-                        title: Text(
-                          userProfile.name.isEmpty
-                              ? "Trader"
-                              : userProfile.name,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: textColor,
-                            fontSize: 16,
-                          ),
-                        ),
-                        subtitle: Text(
-                          "BullXchange Pro",
-                          style: TextStyle(color: subTextColor, fontSize: 13),
-                        ),
-                        trailing: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: kBlue.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            "PRO",
-                            style: TextStyle(
-                              color: kBlue,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 10,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
+                    // --- 1. COMMON TOP HEADER (Total Value) ---
                     _buildSectionHeader("Overview", subTextColor),
                     _buildSummaryCard(
                       totalPortfolioValue,
-                      todaysPL,
+                      todaysTotalPL,
                       totalInvested,
                       availableCash,
                       overallPL,
@@ -244,36 +216,92 @@ class _PortfolioPageState extends State<PortfolioPage> {
 
                     const SizedBox(height: 24),
 
-                    _buildSectionHeader("Allocation", subTextColor),
-                    _buildAllocationChart(
-                      totalEquityValue,
-                      availableCash,
-                      cardColor,
-                      textColor,
-                      subTextColor,
-                      kBlue,
-                      kGreen,
+                    // --- 2. TOGGLE SWITCH (Stocks | F&O) ---
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: cardColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: subTextColor.withOpacity(0.1)),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _buildSegmentButton(
+                              title: "Stocks",
+                              isSelected: _selectedSegment == 0,
+                              onTap: () => setState(() => _selectedSegment = 0),
+                              activeColor: kBlue,
+                              textColor: textColor,
+                            ),
+                          ),
+                          Expanded(
+                            child: _buildSegmentButton(
+                              title: "F&O",
+                              isSelected: _selectedSegment == 1,
+                              onTap: () => setState(() => _selectedSegment = 1),
+                              activeColor: kBlue,
+                              textColor: textColor,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+
+                    const SizedBox(height: 16),
+
+                    // --- 3. DYNAMIC CONTENT BASED ON SELECTION ---
+                    if (_selectedSegment == 0) ...[
+                      // STOCKS CONTENT
+                       _buildSectionHeader(
+                        "Holdings (${stockList.length})",
+                        subTextColor,
+                        trailing: "See All",
+                      ),
+                      _buildHoldingsList(
+                        stockList,
+                        currency,
+                        cardColor,
+                        textColor,
+                        subTextColor,
+                        kGreen,
+                        kRed,
+                      ),
+                      const SizedBox(height: 24),
+                      _buildSectionHeader("Allocation", subTextColor),
+                      _buildAllocationChart(
+                        totalEquityCurrent,
+                        availableCash,
+                        cardColor,
+                        textColor,
+                        subTextColor,
+                        kBlue,
+                        kGreen,
+                      ),
+                    ] else ...[
+                      // F&O CONTENT
+                      _buildSectionHeader(
+                        "Positions (${fnoList.length})",
+                        subTextColor,
+                        trailing: "See All",
+                      ),
+                      fnoList.isEmpty 
+                      ? _buildEmptyState("No Active F&O Positions", cardColor, subTextColor)
+                      : _buildHoldingsList(
+                        fnoList,
+                        currency,
+                        cardColor,
+                        textColor,
+                        subTextColor,
+                        kGreen,
+                        kRed,
+                      ),
+                    ],
 
                     const SizedBox(height: 24),
 
-                    _buildSectionHeader(
-                      "Holdings",
-                      subTextColor,
-                      trailing: "See All",
-                    ),
-                    _buildHoldingsList(
-                      calculatedHoldings,
-                      currency,
-                      cardColor,
-                      textColor,
-                      subTextColor,
-                      kGreen,
-                      kRed,
-                    ),
-
-                    const SizedBox(height: 24),
-
+                    // --- 4. RECENT ACTIVITY (FILTERED BY TAB) ---
                     _buildSectionHeader("Recent Activity", subTextColor),
                     _buildRecentTransactions(
                       currency,
@@ -282,6 +310,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
                       subTextColor,
                       kGreen,
                       kRed,
+                      _selectedSegment, // PASSING SELECTION HERE
                     ),
                   ],
                 ),
@@ -293,7 +322,55 @@ class _PortfolioPageState extends State<PortfolioPage> {
     );
   }
 
-  // --- WIDGETS (Unchanged from previous reliable version) ---
+  // --- WIDGET HELPER METHODS ---
+
+  Widget _buildSegmentButton({
+    required String title,
+    required bool isSelected,
+    required VoidCallback onTap,
+    required Color activeColor,
+    required Color textColor,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? activeColor.withOpacity(0.15) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          title,
+          style: TextStyle(
+            color: isSelected ? activeColor : textColor.withOpacity(0.6),
+            fontWeight: FontWeight.bold,
+            fontSize: 10,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(String msg, Color cardColor, Color subTextColor) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(30),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.layers_clear_outlined, size: 40, color: subTextColor.withOpacity(0.5)),
+          const SizedBox(height: 10),
+          Text(msg, style: TextStyle(color: subTextColor)),
+        ],
+      ),
+    );
+  }
 
   Widget _buildSectionHeader(
     String title,
@@ -309,7 +386,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
             title.toUpperCase(),
             style: TextStyle(
               color: subTextColor,
-              fontSize: 13,
+              fontSize: 11,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.5,
             ),
@@ -319,7 +396,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
               trailing,
               style: const TextStyle(
                 color: Color(0xFF007AFF),
-                fontSize: 13,
+                fontSize: 11,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -441,7 +518,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
               title,
               style: TextStyle(
                 color: subTextColor,
-                fontSize: 12,
+                fontSize: 10,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -449,7 +526,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
               currency.format(value),
               style: TextStyle(
                 color: textColor,
-                fontSize: 15,
+                fontSize: 11,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -484,14 +561,14 @@ class _PortfolioPageState extends State<PortfolioPage> {
         children: [
           Text(
             "Total Portfolio Value",
-            style: TextStyle(color: subTextColor, fontSize: 13),
+            style: TextStyle(color: subTextColor, fontSize: 11),
           ),
           const SizedBox(height: 6),
           Text(
             currency.format(totalValue),
             style: TextStyle(
               color: textColor,
-              fontSize: 34,
+              fontSize: 30,
               fontWeight: FontWeight.w700,
               letterSpacing: -0.5,
             ),
@@ -519,7 +596,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
                   style: TextStyle(
                     color: todaysPL >= 0 ? kGreen : kRed,
                     fontWeight: FontWeight.w600,
-                    fontSize: 13,
+                    fontSize: 11,
                   ),
                 ),
               ],
@@ -534,7 +611,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
                   children: [
                     Text(
                       "Invested",
-                      style: TextStyle(color: subTextColor, fontSize: 12),
+                      style: TextStyle(color: subTextColor, fontSize: 10),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -542,7 +619,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
                       style: TextStyle(
                         color: textColor,
                         fontWeight: FontWeight.w600,
-                        fontSize: 16,
+                        fontSize: 10,
                       ),
                     ),
                   ],
@@ -554,7 +631,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
                   children: [
                     Text(
                       "Cash",
-                      style: TextStyle(color: subTextColor, fontSize: 12),
+                      style: TextStyle(color: subTextColor, fontSize: 10),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -562,7 +639,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
                       style: TextStyle(
                         color: textColor,
                         fontWeight: FontWeight.w600,
-                        fontSize: 16,
+                        fontSize: 10,
                       ),
                     ),
                   ],
@@ -574,7 +651,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
                   children: [
                     Text(
                       "Overall Returns",
-                      style: TextStyle(color: subTextColor, fontSize: 12),
+                      style: TextStyle(color: subTextColor, fontSize: 10),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -582,7 +659,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
                       style: TextStyle(
                         color: overallPL >= 0 ? kGreen : kRed,
                         fontWeight: FontWeight.w600,
-                        fontSize: 16,
+                        fontSize: 10,
                       ),
                     ),
                   ],
@@ -605,20 +682,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
     Color kRed,
   ) {
     if (holdings.isEmpty) {
-      return Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Center(
-          child: Text(
-            "No holdings found",
-            style: TextStyle(color: subTextColor),
-          ),
-        ),
-      );
+      return _buildEmptyState("No holdings found", cardColor, subTextColor);
     }
 
     return Container(
@@ -666,12 +730,12 @@ class _PortfolioPageState extends State<PortfolioPage> {
               style: TextStyle(
                 color: textColor,
                 fontWeight: FontWeight.w600,
-                fontSize: 16,
+                fontSize: 10,
               ),
             ),
             subtitle: Text(
               "${stock['quantity']} Qty • Avg ${currency.format(stock['avgBuyPrice'])}",
-              style: TextStyle(color: subTextColor, fontSize: 12),
+              style: TextStyle(color: subTextColor, fontSize: 10),
             ),
             trailing: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -682,14 +746,14 @@ class _PortfolioPageState extends State<PortfolioPage> {
                   style: TextStyle(
                     color: textColor,
                     fontWeight: FontWeight.bold,
-                    fontSize: 15,
+                    fontSize: 11,
                   ),
                 ),
                 Text(
                   "${isProfit ? '+' : ''}${currency.format(profitLoss)}",
                   style: TextStyle(
                     color: isProfit ? kGreen : kRed,
-                    fontSize: 12,
+                    fontSize: 10,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -701,6 +765,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
     );
   }
 
+  // --- NEW PROFESSIONAL & FILTERED RECENT ACTIVITY ---
   Widget _buildRecentTransactions(
     NumberFormat currency,
     Color cardColor,
@@ -708,6 +773,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
     Color subTextColor,
     Color kGreen,
     Color kRed,
+    int selectedSegment,
   ) {
     return StreamBuilder<List<TransactionModel>>(
       stream: _transactionStream,
@@ -720,56 +786,63 @@ class _PortfolioPageState extends State<PortfolioPage> {
             ),
           );
         }
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: cardColor,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Text(
-                "No recent transactions",
-                style: TextStyle(color: subTextColor),
-              ),
-            ),
+        
+        // 1. Filter Logic
+        final allTransactions = snapshot.data ?? [];
+        final filteredTransactions = allTransactions.where((txn) {
+          // Logic to identify if a Transaction is F&O
+          // Update this condition based on your exact data model
+          bool isFnoTxn = txn.stockSymbol.endsWith("CE") || txn.stockSymbol.endsWith("PE");
+          
+          if (selectedSegment == 1) {
+            return isFnoTxn; // Show F&O
+          } else {
+            return !isFnoTxn; // Show Stocks
+          }
+        }).toList();
+
+        if (filteredTransactions.isEmpty) {
+          return _buildEmptyState(
+            selectedSegment == 0 ? "No recent stock orders" : "No recent F&O trades", 
+            cardColor, 
+            subTextColor
           );
         }
-
-        final transactions = snapshot.data!;
 
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
             color: cardColor,
             borderRadius: BorderRadius.circular(12),
+            // Subtle shadow for pro feel
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: ListView.separated(
             padding: EdgeInsets.zero,
             physics: const NeverScrollableScrollPhysics(),
             shrinkWrap: true,
-            itemCount: transactions.length > 5 ? 5 : transactions.length,
+            itemCount: filteredTransactions.length > 10 ? 10 : filteredTransactions.length,
             separatorBuilder: (ctx, idx) => Divider(
               height: 1,
               thickness: 0.5,
-              indent: 60,
-              color: subTextColor.withOpacity(0.2),
+              indent: 16,
+              endIndent: 16,
+              color: subTextColor.withOpacity(0.15),
             ),
             itemBuilder: (context, index) {
-              final txn = transactions[index];
-              final bool isBuy = txn.transactionType == "BUY";
-              final String txnTime = DateFormat(
-                'd MMM',
-              ).format(txn.transactionTime);
+              final txn = filteredTransactions[index];
+              final bool isBuy = txn.transactionType.toUpperCase() == "BUY";
+              final String txnTime = DateFormat('d MMM, HH:mm').format(txn.transactionTime);
 
-              return ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 4,
-                ),
+              return InkWell(
                 onTap: () {
-                  Navigator.push(
+                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => OrderDetailsPage(
@@ -779,49 +852,113 @@ class _PortfolioPageState extends State<PortfolioPage> {
                     ),
                   );
                 },
-                leading: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: (isBuy ? kGreen : kRed).withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    isBuy ? Icons.arrow_downward : Icons.arrow_upward,
-                    color: isBuy ? kGreen : kRed,
-                    size: 18,
-                  ),
-                ),
-                title: Text(
-                  txn.stockSymbol,
-                  style: TextStyle(
-                    color: textColor,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
-                ),
-                subtitle: Text(
-                  "${isBuy ? 'Bought' : 'Sold'} • $txnTime",
-                  style: TextStyle(color: subTextColor, fontSize: 12),
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      currency.format(txn.totalAmount),
-                      style: TextStyle(
-                        color: textColor,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // --- Left: Symbol & Qty ---
+                      Expanded(
+                        flex: 5,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              txn.stockSymbol,
+                              style: TextStyle(
+                                color: textColor,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 11,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Text(
+                                  "${txn.quantity} Qty",
+                                  style: TextStyle(
+                                    color: subTextColor,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Container(
+                                  width: 3, height: 3,
+                                  decoration: BoxDecoration(color: subTextColor, shape: BoxShape.circle),
+                                ),
+                                const SizedBox(width: 6),
+                                 Text(
+                                  txnTime,
+                                  style: TextStyle(
+                                    color: subTextColor,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Icon(
-                      Icons.chevron_right,
-                      color: subTextColor.withOpacity(0.5),
-                      size: 20,
-                    ),
-                  ],
+
+                      // --- Right: Price & Tags ---
+                      Expanded(
+                        flex: 4,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              currency.format(txn.totalAmount),
+                              style: TextStyle(
+                                color: textColor,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 11,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Product Tag (CNC vs NRML)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: subTextColor.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    selectedSegment == 0 ? "CNC" : "NRML", // Mock tag
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: subTextColor,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                // BUY/SELL Tag
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: (isBuy ? kGreen : kRed).withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    isBuy ? "BUY" : "SELL",
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      color: isBuy ? kGreen : kRed,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               );
             },
@@ -831,3 +968,4 @@ class _PortfolioPageState extends State<PortfolioPage> {
     );
   }
 }
+

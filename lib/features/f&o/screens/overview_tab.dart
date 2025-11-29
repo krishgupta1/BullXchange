@@ -56,7 +56,7 @@ class OverviewTab extends StatelessWidget {
             Text(
               provider.symbol,
               style: const TextStyle(
-                fontSize: 16,
+                fontSize: 10,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
@@ -69,7 +69,7 @@ class OverviewTab extends StatelessWidget {
                 Text(
                   _formatNum(data.currentPrice),
                   style: const TextStyle(
-                    fontSize: 24,
+                    fontSize: 10,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
@@ -78,7 +78,7 @@ class OverviewTab extends StatelessWidget {
                 Text(
                   "${isNegative ? '' : '+'}${_formatNum(data.priceChange)} (${data.percentChange.toStringAsFixed(2)}%)",
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 10,
                     fontWeight: FontWeight.w500,
                     color: color,
                   ),
@@ -94,7 +94,7 @@ class OverviewTab extends StatelessWidget {
                 const Text(
                   "Performance",
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 10,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
@@ -191,7 +191,7 @@ class _RangeLabels extends StatelessWidget {
           children: [
             Text(
               labelLow,
-              style: TextStyle(color: Colors.grey[500], fontSize: 12),
+              style: TextStyle(color: Colors.grey[500], fontSize: 10),
             ),
             const SizedBox(height: 2),
             Text(
@@ -208,7 +208,7 @@ class _RangeLabels extends StatelessWidget {
           children: [
             Text(
               labelHigh,
-              style: TextStyle(color: Colors.grey[500], fontSize: 12),
+              style: TextStyle(color: Colors.grey[500], fontSize: 10),
             ),
             const SizedBox(height: 2),
             Text(
@@ -241,13 +241,13 @@ class _StatItem extends StatelessWidget {
           ? CrossAxisAlignment.end
           : CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(color: Colors.grey[500], fontSize: 13)),
+        Text(label, style: TextStyle(color: Colors.grey[500], fontSize: 11)),
         const SizedBox(height: 4),
         Text(
           value,
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 15,
+            fontSize: 11,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -272,7 +272,7 @@ class _ListRow extends StatelessWidget {
               Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontSize: 10,
                   color: Colors.white,
                   fontWeight: FontWeight.w500,
                 ),
@@ -286,3 +286,5 @@ class _ListRow extends StatelessWidget {
     );
   }
 }
+
+

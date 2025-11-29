@@ -52,7 +52,7 @@ class OnboardingPage extends StatelessWidget {
                           style: Theme.of(context).textTheme.headlineMedium
                               ?.copyWith(
                                 fontWeight: FontWeight.w700,
-                                fontSize: 24,
+                                fontSize: 20,
                                 // --- ⭐️ MODIFIED: Theme text color ---
                                 color: colorScheme.onSurface,
                               ),
@@ -107,9 +107,7 @@ class OnboardingPage extends StatelessWidget {
                           ),
                           child: Text(
                             'Next',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
+                            style: Theme.of(context).textTheme.titleLarge!.copyWith(
                               // --- ⭐️⭐️ FIX: Text color ko onPrimary (White) kiya ---
                               color: colorScheme.onPrimary,
                             ),

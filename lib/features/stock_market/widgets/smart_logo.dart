@@ -94,7 +94,7 @@ class _SmartLogoState extends State<SmartLogo> {
             letter,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 24,
+              fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -103,3 +103,5 @@ class _SmartLogoState extends State<SmartLogo> {
     }
   }
 }
+
+

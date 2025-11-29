@@ -84,7 +84,7 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
       width: 56,
       height: 56,
       textStyle: TextStyle(
-        fontSize: 20,
+        fontSize: 18,
         fontWeight: FontWeight.w600,
         color: colorScheme.onSurface,
       ),
@@ -163,7 +163,7 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
                             ? 'Confirm PIN'
                             : 'Enter PIN',
                         style: TextStyle(
-                          fontSize: 28,
+                          fontSize: 24,
                           fontWeight: FontWeight.w700,
                           color: colorScheme.onSurface,
                         ),
@@ -175,8 +175,7 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
                         widget.expectedPin != null
                             ? 'Re-enter to confirm'
                             : 'Unlock to continue',
-                        style: TextStyle(
-                          fontSize: 16,
+                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                           color: textTheme.bodySmall?.color,
                         ),
                       ),
@@ -230,8 +229,7 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
                           },
                           child: Text(
                             'Reset PIN?',
-                            style: TextStyle(
-                              fontSize: 14,
+                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                               fontWeight: FontWeight.w500,
                               color: colorScheme.primary,
                             ),
@@ -292,3 +290,6 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
     );
   }
 }
+
+
+

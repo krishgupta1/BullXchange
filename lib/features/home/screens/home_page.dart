@@ -36,7 +36,7 @@ class _HomePageState extends State<HomePage> {
           child: Text(
             'AI Stats Page',
             style: TextStyle(
-              fontSize: 24,
+              fontSize: 10,
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
@@ -104,3 +104,5 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
+
+

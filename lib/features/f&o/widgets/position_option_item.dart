@@ -87,7 +87,7 @@ class PositionOptionItem extends StatelessWidget {
                     position.contractSymbol,
                     style: const TextStyle(
                       fontWeight: FontWeight.w700,
-                      fontSize: 14,
+                      fontSize: 10,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -117,7 +117,7 @@ class PositionOptionItem extends StatelessWidget {
                   formatter.format(currentVal),
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 14,
+                    fontSize: 10,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -126,7 +126,7 @@ class PositionOptionItem extends StatelessWidget {
                   style: TextStyle(
                     color: pnlColor,
                     fontWeight: FontWeight.w600,
-                    fontSize: 12,
+                    fontSize: 10,
                   ),
                 ),
               ],
@@ -147,7 +147,7 @@ class PositionOptionItem extends StatelessWidget {
       child: Text(
         text,
         style: TextStyle(
-          fontSize: 9,
+          fontSize: 10,
           fontWeight: FontWeight.bold,
           color: Theme.of(context).textTheme.bodySmall?.color,
         ),
@@ -155,3 +155,6 @@ class PositionOptionItem extends StatelessWidget {
     );
   }
 }
+
+
+

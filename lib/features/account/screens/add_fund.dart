@@ -85,13 +85,12 @@ class _AddFundPageState extends State<AddFundPage> {
               children: [
                 const Text(
                   "Scan to Pay",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 5),
                 Text(
                   "Amount: ₹${_calculatedPrice.toStringAsFixed(2)}",
-                  style: const TextStyle(
-                    fontSize: 16,
+                  style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                     color: Colors.green,
                     fontWeight: FontWeight.bold,
                   ),
@@ -314,7 +313,7 @@ class _AddFundPageState extends State<AddFundPage> {
                   Text(
                     "₹${_calculatedPrice.toStringAsFixed(2)}",
                     style: TextStyle(
-                      fontSize: 32,
+                      fontSize: 28,
                       fontWeight: FontWeight.bold,
                       color: colorScheme.primary,
                     ),
@@ -342,9 +341,7 @@ class _AddFundPageState extends State<AddFundPage> {
                       ? const CircularProgressIndicator(color: Colors.white)
                       : Text(
                           "Pay ₹${_calculatedPrice.toStringAsFixed(2)}",
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                          style: Theme.of(context).textTheme.headlineSmall!.copyWith(
                           ),
                         ),
                 ),
@@ -356,3 +353,5 @@ class _AddFundPageState extends State<AddFundPage> {
     );
   }
 }
+
+

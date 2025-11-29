@@ -29,7 +29,7 @@ class ComingSoonPage extends StatelessWidget {
         child: Text(
           "Coming Soon ❤️",
           style: TextStyle(
-            fontSize: 26,
+            fontSize: 22,
             fontWeight: FontWeight.w800,
             color: isDark
                 ? Colors.white.withOpacity(0.9)
@@ -40,3 +40,4 @@ class ComingSoonPage extends StatelessWidget {
     );
   }
 }
+

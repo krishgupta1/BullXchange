@@ -81,7 +81,7 @@ class MainPageHeader extends StatelessWidget {
                   'Hi, ${userName ?? defaultUserName}',
                   style: textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w800,
-                    fontSize: 20,
+                    fontSize: 18,
                     color: colorScheme.onSurface,
                     letterSpacing: -0.5,
                   ),
@@ -93,7 +93,7 @@ class MainPageHeader extends StatelessWidget {
                   welcomeMessage,
                   style: textTheme.bodyMedium?.copyWith(
                     color: textTheme.bodyMedium?.color?.withOpacity(0.6),
-                    fontSize: 13,
+                    fontSize: 11,
                     fontWeight: FontWeight.w500,
                     letterSpacing: 0.2,
                   ),
@@ -113,3 +113,5 @@ class MainPageHeader extends StatelessWidget {
     );
   }
 }
+
+

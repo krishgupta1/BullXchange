@@ -82,7 +82,7 @@ class _SignupPageState extends State<SignupPage> {
         ),
         content: Text(
           message,
-          style: TextStyle(color: colorScheme.onSurface, fontSize: 16),
+          style: TextStyle(color: colorScheme.onSurface, fontSize: 12),
         ),
         actions: [
           TextButton(
@@ -250,7 +250,7 @@ class _SignupPageState extends State<SignupPage> {
                     'BullXchange',
                     style: TextStyle(
                       fontFamily: 'EudoxusSans',
-                      fontSize: 20,
+                      fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: colorScheme.primary,
                     ),
@@ -263,7 +263,7 @@ class _SignupPageState extends State<SignupPage> {
                 "Getting Started",
                 style: TextStyle(
                   fontFamily: 'EudoxusSans',
-                  fontSize: 28,
+                  fontSize: 24,
                   fontWeight: FontWeight.w700,
                   color: colorScheme.onSurface,
                 ),
@@ -274,7 +274,7 @@ class _SignupPageState extends State<SignupPage> {
                 "Create an account to continue!",
                 style: TextStyle(
                   fontFamily: 'EudoxusSans',
-                  fontSize: 16,
+                  fontSize: 12,
                   fontWeight: FontWeight.w400,
                   color: textTheme.bodySmall?.color,
                 ),
@@ -342,7 +342,7 @@ class _SignupPageState extends State<SignupPage> {
                       text: TextSpan(
                         style: TextStyle(
                           fontFamily: 'EudoxusSans',
-                          fontSize: 14,
+                          fontSize: 12,
                           color: textTheme.bodySmall?.color,
                         ),
                         children: [
@@ -393,7 +393,7 @@ class _SignupPageState extends State<SignupPage> {
                           'Start',
                           style: TextStyle(
                             fontFamily: 'EudoxusSans',
-                            fontSize: 16,
+                            fontSize: 12,
                             fontWeight: FontWeight.w700,
                             color: colorScheme.onPrimary,
                           ),
@@ -407,7 +407,7 @@ class _SignupPageState extends State<SignupPage> {
                   text: TextSpan(
                     style: TextStyle(
                       fontFamily: 'EudoxusSans',
-                      fontSize: 16,
+                      fontSize: 12,
                       fontWeight: FontWeight.bold,
                       color: textTheme.bodySmall?.color,
                     ),
@@ -457,8 +457,7 @@ class _SignupPageState extends State<SignupPage> {
       children: [
         Text(
           label,
-          style: TextStyle(
-            fontSize: 14,
+          style: Theme.of(context).textTheme.bodyMedium!.copyWith(
             fontWeight: FontWeight.w500,
             color: colorScheme.onSurface,
           ),
@@ -496,3 +495,6 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 }
+
+
+

@@ -85,7 +85,7 @@ class _PasswordConfirmationScreenState
         title: Text(
           "Confirm Password",
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontSize: 20,
+            fontSize: 12,
             fontWeight: FontWeight.w600,
             color: colorScheme.onSurface,
           ),
@@ -135,8 +135,7 @@ class _PasswordConfirmationScreenState
                     Text(
                       "Enter your account password\nto reset your PIN",
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 18,
+                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                         fontWeight: FontWeight.w500,
                         // --- ⭐️ MODIFIED: Theme text color ---
                         color: colorScheme.onSurface,
@@ -218,7 +217,7 @@ class _PasswordConfirmationScreenState
                         // --- ⭐️ MODIFIED: Theme error color ---
                         style: TextStyle(
                           color: colorScheme.error,
-                          fontSize: 14,
+                          fontSize: 12,
                         ),
                       ),
                     // --- ⭐️⭐️ FIX: Spacer() ko SizedBox se replace kiya ⭐️⭐️ ---
@@ -247,12 +246,10 @@ class _PasswordConfirmationScreenState
                                   strokeWidth: 2.5,
                                 ),
                               )
-                            : const Text(
+                            : Text(
                                 "Verify",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                style: Theme.of(context).textTheme.bodyMedium!
+                                    .copyWith(fontWeight: FontWeight.w600),
                               ),
                       ),
                     ),
