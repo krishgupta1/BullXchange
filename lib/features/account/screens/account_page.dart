@@ -4,10 +4,11 @@ import 'package:bullxchange/features/account/screens/edit_profile_page.dart';
 import 'package:bullxchange/features/account/screens/faq_page.dart';
 import 'package:bullxchange/features/account/screens/referralcodepage.dart';
 import 'package:bullxchange/features/account/screens/settings_page.dart';
-import 'package:bullxchange/features/auth/screens/login_page.dart'; // ⭐️ Import Login Page
+import 'package:bullxchange/features/auth/screens/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:url_launcher/url_launcher.dart'; // ⭐️ Import for opening the link
 
 class AccountScreen extends StatelessWidget {
   const AccountScreen({super.key});
@@ -66,6 +67,22 @@ class AccountScreen extends StatelessWidget {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text("Error logging out: $e")));
+      }
+    }
+  }
+
+  // --- ⭐️ OPEN FEEDBACK LINK FUNCTION ---
+  Future<void> _openFeedbackForm(BuildContext context) async {
+    final Uri url = Uri.parse('https://forms.gle/dXqKDExCBkqr9rnZ7');
+    try {
+      if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+        throw 'Could not launch $url';
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Could not open link: $e')));
       }
     }
   }
@@ -155,10 +172,14 @@ class AccountScreen extends StatelessWidget {
                   const SizedBox(height: 24),
                   _buildOptionList(context),
                   const SizedBox(height: 24),
-                  _buildFeedbackCard(context),
-                  const SizedBox(height: 20),
 
-                  // --- ⭐️ NEW LOGOUT BUTTON ---
+                  // --- ⭐️ CLICKABLE FEEDBACK CARD ---
+                  GestureDetector(
+                    onTap: () => _openFeedbackForm(context),
+                    child: _buildFeedbackCard(context),
+                  ),
+
+                  const SizedBox(height: 20),
                   _buildLogoutButton(context),
 
                   const SizedBox(height: 40), // Extra space at bottom
@@ -170,11 +191,6 @@ class AccountScreen extends StatelessWidget {
       ),
     );
   }
-
-  // ... (Keep _buildAppBar, _buildProfileHeader, _buildWalletCard, _buildReferralCard as they were) ...
-  // Paste your previous helper widgets here or keep them if they are in the file.
-
-  // --- Re-pasting helper widgets for completeness ---
 
   Widget _buildAppBar(BuildContext context, String userId) {
     final theme = Theme.of(context);
@@ -537,7 +553,6 @@ class AccountScreen extends StatelessWidget {
     );
   }
 
-  // --- ⭐️ 6. NEW LOGOUT BUTTON WIDGET ---
   Widget _buildLogoutButton(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -558,16 +573,13 @@ class AccountScreen extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.logout_rounded,
-              color: colorScheme.error, // ⭐️ Adaptive Red
-            ),
+            Icon(Icons.logout_rounded, color: colorScheme.error),
             const SizedBox(width: 8),
             Text(
               "Log Out",
-              style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                color: colorScheme.error, // ⭐️ Adaptive Red
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge!.copyWith(color: colorScheme.error),
             ),
           ],
         ),
