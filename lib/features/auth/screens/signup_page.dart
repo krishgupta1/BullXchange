@@ -9,6 +9,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:bullxchange/widgets/custom_back_button.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter/services.dart'; // Required for Clipboard
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -22,6 +23,7 @@ class _SignupPageState extends State<SignupPage> {
   final _emailController = TextEditingController();
   final _mobileController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _referralController = TextEditingController();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final UserService _usersService = UserService();
@@ -36,16 +38,26 @@ class _SignupPageState extends State<SignupPage> {
     _emailController.dispose();
     _mobileController.dispose();
     _passwordController.dispose();
+    _referralController.dispose();
     super.dispose();
   }
 
-  // (validateEmailWithAPI function unchanged)
+  // ⭐️ MODIFIED: Restored API Validation with Safety Checks
   Future<bool> validateEmailWithAPI(String email) async {
+    // 1. Basic Regex Check First (Saves API Credits)
+    final bool emailValid = RegExp(
+      r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
+    ).hasMatch(email);
+
+    if (!emailValid) return false;
+
+    // 2. Real API Check
     try {
       final dio = Dio();
       final apiKey = dotenv.env['ABSTRACT_API_KEY'];
 
-      if (apiKey == null || apiKey.isEmpty) return false;
+      // If key is missing, don't block user, just assume true
+      if (apiKey == null || apiKey.isEmpty) return true;
 
       final response = await dio.get(
         'https://emailvalidation.abstractapi.com/v1/',
@@ -53,15 +65,15 @@ class _SignupPageState extends State<SignupPage> {
       );
 
       if (response.statusCode == 200) {
+        // Only block if explicitly undeliverable
         return response.data['deliverability'] == 'DELIVERABLE';
       }
-      return false;
+      return true; // Fallback to true if API status is not 200
     } catch (_) {
-      return false;
+      return true; // Fallback to true if Network/API fails
     }
   }
 
-  // ✅ Popup error dialog (Theme-Aware)
   Future<void> _showErrorDialog(String message) async {
     if (!mounted) return;
 
@@ -100,14 +112,13 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 
-  // ✅ Signup flow
   Future<void> _signUp() async {
     final fullName = _fullNameController.text.trim();
     final email = _emailController.text.trim();
     final mobileNo = _mobileController.text.trim();
     final password = _passwordController.text.trim();
+    final referralCode = _referralController.text.trim().toUpperCase();
 
-    // 1. Basic Client-Side Validation
     if (fullName.isEmpty ||
         email.isEmpty ||
         mobileNo.isEmpty ||
@@ -134,8 +145,7 @@ class _SignupPageState extends State<SignupPage> {
     setState(() => _isSubmitting = true);
 
     try {
-      // 2. ⭐️ CHECK MOBILE UNIQUENESS (New Logic)
-      // We check this BEFORE the email API to save API credits and time.
+      // 2. CHECK MOBILE UNIQUENESS
       final bool mobileExists = await _usersService.isMobileNumberRegistered(
         mobileNo,
       );
@@ -145,7 +155,7 @@ class _SignupPageState extends State<SignupPage> {
         await _showErrorDialog(
           'This mobile number is already registered with another account.',
         );
-        return; // Stop execution here
+        return;
       }
 
       // 3. Validate Email with API
@@ -170,6 +180,7 @@ class _SignupPageState extends State<SignupPage> {
           name: fullName,
           emailId: email,
           mobileNo: mobileNo,
+          referralCode: referralCode.isNotEmpty ? referralCode : null,
         );
 
         if (!mounted) return;
@@ -320,6 +331,33 @@ class _SignupPageState extends State<SignupPage> {
                   ),
                 ),
               ),
+              const SizedBox(height: 16),
+
+              // ⭐️ Referral Code UI
+              _buildTextFieldWithLabel(
+                context: context,
+                label: 'Referral Code (Optional)',
+                controller: _referralController,
+                hintText: 'Enter code (e.g. JOHNX9Z2)',
+                keyboardType: TextInputType.text,
+                textCapitalization: TextCapitalization.characters,
+                suffixIcon: IconButton(
+                  onPressed: () async {
+                    final data = await Clipboard.getData(Clipboard.kTextPlain);
+                    if (data?.text != null) {
+                      setState(() {
+                        _referralController.text = data!.text!.toUpperCase();
+                      });
+                    }
+                  },
+                  icon: Icon(
+                    Icons.content_paste_rounded,
+                    color: colorScheme.primary.withOpacity(0.7),
+                    size: 20,
+                  ),
+                  tooltip: "Paste Code",
+                ),
+              ),
               const SizedBox(height: 24),
 
               Row(
@@ -439,6 +477,7 @@ class _SignupPageState extends State<SignupPage> {
     required TextInputType keyboardType,
     bool obscureText = false,
     Widget? suffixIcon,
+    TextCapitalization textCapitalization = TextCapitalization.none,
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -459,6 +498,7 @@ class _SignupPageState extends State<SignupPage> {
           controller: controller,
           keyboardType: keyboardType,
           obscureText: obscureText,
+          textCapitalization: textCapitalization,
           style: TextStyle(color: colorScheme.onSurface),
           decoration: InputDecoration(
             hintText: hintText,
