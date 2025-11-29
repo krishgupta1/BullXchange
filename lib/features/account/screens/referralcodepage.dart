@@ -53,9 +53,9 @@ class ReferralCodePage extends StatelessWidget {
                   child: Text(
                     'Error: Image not found\n at assets/images/refer_page.png',
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: colorScheme.error,
-                    ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: colorScheme.error),
                   ),
                 );
               },
@@ -139,10 +139,11 @@ class ReferralCodePage extends StatelessWidget {
                             const SizedBox(width: 8),
                             Text(
                               'Copy Code',
-                              style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: colorScheme.secondary,
-                              ),
+                              style: Theme.of(context).textTheme.bodyLarge!
+                                  .copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: colorScheme.secondary,
+                                  ),
                             ),
                           ],
                         ),
@@ -185,6 +186,3 @@ class ReferralCodePage extends StatelessWidget {
     );
   }
 }
-
-
-

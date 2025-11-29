@@ -319,5 +319,3 @@ Widget _buildLogoContainer(String name, {double radius = 20}) {
     ),
   );
 }
-
-

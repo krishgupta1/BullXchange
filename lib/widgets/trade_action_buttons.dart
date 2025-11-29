@@ -77,4 +77,3 @@ class TradeActionButtons extends StatelessWidget {
     );
   }
 }
-

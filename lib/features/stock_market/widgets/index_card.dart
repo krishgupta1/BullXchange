@@ -120,5 +120,3 @@ class IndexCard extends StatelessWidget {
     );
   }
 }
-
-

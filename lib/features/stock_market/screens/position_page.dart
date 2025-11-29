@@ -1031,6 +1031,3 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
     );
   }
 }
-
-
-

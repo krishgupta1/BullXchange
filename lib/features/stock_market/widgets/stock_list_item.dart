@@ -50,9 +50,9 @@ class StockListItem extends StatelessWidget {
                   ),
                   Text(
                     instrument.name,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[600],
-                    ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
@@ -69,9 +69,9 @@ class StockListItem extends StatelessWidget {
               children: [
                 Text(
                   "₹$ltp",
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 Row(
                   children: [
@@ -84,9 +84,9 @@ class StockListItem extends StatelessWidget {
                     ),
                     Text(
                       "${percentChange.abs().toStringAsFixed(2)}%",
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: changeColor,
-                      ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: changeColor),
                     ),
                   ],
                 ),
@@ -122,5 +122,3 @@ class StockListItem extends StatelessWidget {
     return points;
   }
 }
-
-

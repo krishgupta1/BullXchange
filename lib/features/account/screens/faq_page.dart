@@ -63,10 +63,10 @@ class _FaqPageState extends State<FaqPage> {
                 child: Text(
                   'How can we help you?',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        // --- ⭐️ MODIFIED: Theme text color ---
-                        color: colorScheme.onSurface,
-                      ),
+                    fontWeight: FontWeight.bold,
+                    // --- ⭐️ MODIFIED: Theme text color ---
+                    color: colorScheme.onSurface,
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -160,10 +160,10 @@ class _FaqPageState extends State<FaqPage> {
                   Text(
                     'Top Questions',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          // --- ⭐️ MODIFIED: Theme text color ---
-                          color: colorScheme.onSurface,
-                        ),
+                      fontWeight: FontWeight.bold,
+                      // --- ⭐️ MODIFIED: Theme text color ---
+                      color: colorScheme.onSurface,
+                    ),
                   ),
                   // ⭐️ REMOVED: "View all" TextButton
                 ],
@@ -318,7 +318,8 @@ class _FaqPageState extends State<FaqPage> {
                   controller.isExpanded ? Icons.remove : Icons.add,
                   // --- ⭐️ MODIFIED: Theme colors ---
                   color: controller.isExpanded
-                      ? colorScheme.secondary // Pink
+                      ? colorScheme
+                            .secondary // Pink
                       : textTheme.bodySmall?.color, // Grey
                   size: 20,
                 );
@@ -348,6 +349,3 @@ class _FaqPageState extends State<FaqPage> {
     );
   }
 }
-
-
-

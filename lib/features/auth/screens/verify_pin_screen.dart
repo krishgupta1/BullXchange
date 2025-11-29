@@ -83,10 +83,12 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
     final defaultPinTheme = PinTheme(
       width: 56,
       height: 56,
-      textStyle: textTheme.bodyLarge?.copyWith(
-        fontWeight: FontWeight.w600,
-        color: colorScheme.onSurface,
-      ) ?? const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+      textStyle:
+          textTheme.bodyLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          ) ??
+          const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
@@ -227,10 +229,11 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
                           },
                           child: Text(
                             'Reset PIN?',
-                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                              fontWeight: FontWeight.w500,
-                              color: colorScheme.primary,
-                            ),
+                            style: Theme.of(context).textTheme.bodyMedium!
+                                .copyWith(
+                                  fontWeight: FontWeight.w500,
+                                  color: colorScheme.primary,
+                                ),
                           ),
                         ),
                       ),
@@ -288,6 +291,3 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
     );
   }
 }
-
-
-

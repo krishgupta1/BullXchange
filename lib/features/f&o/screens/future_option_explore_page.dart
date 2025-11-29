@@ -259,5 +259,3 @@ class _IndexGridCard extends StatelessWidget {
     );
   }
 }
-
-

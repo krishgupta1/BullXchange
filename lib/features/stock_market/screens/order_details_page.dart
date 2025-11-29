@@ -362,6 +362,3 @@ class OrderDetailsPage extends StatelessWidget {
     );
   }
 }
-
-
-

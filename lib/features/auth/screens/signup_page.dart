@@ -334,9 +334,11 @@ class _SignupPageState extends State<SignupPage> {
                   Expanded(
                     child: RichText(
                       text: TextSpan(
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: textTheme.bodySmall?.color,
-                        ) ?? const TextStyle(fontSize: 13),
+                        style:
+                            textTheme.bodyMedium?.copyWith(
+                              color: textTheme.bodySmall?.color,
+                            ) ??
+                            const TextStyle(fontSize: 13),
                         children: [
                           const TextSpan(text: 'I agree to the '),
                           TextSpan(
@@ -395,10 +397,12 @@ class _SignupPageState extends State<SignupPage> {
               Center(
                 child: RichText(
                   text: TextSpan(
-                    style: textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: textTheme.bodySmall?.color,
-                    ) ?? const TextStyle(fontSize: 13),
+                    style:
+                        textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: textTheme.bodySmall?.color,
+                        ) ??
+                        const TextStyle(fontSize: 13),
                     children: [
                       const TextSpan(text: "Already have an account? "),
                       TextSpan(
@@ -483,6 +487,3 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 }
-
-
-

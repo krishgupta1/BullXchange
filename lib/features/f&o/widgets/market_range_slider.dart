@@ -64,4 +64,3 @@ class MarketRangeSlider extends StatelessWidget {
     );
   }
 }
-

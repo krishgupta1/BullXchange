@@ -240,10 +240,12 @@ class AccountScreen extends StatelessWidget {
           backgroundColor: colorScheme.primary.withOpacity(0.1),
           child: Text(
             getInitials(name),
-            style: Theme.of(context).textTheme.displayMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: colorScheme.primary,
-            ) ?? const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            style:
+                Theme.of(context).textTheme.displayMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.primary,
+                ) ??
+                const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
         ),
         const SizedBox(width: 16),

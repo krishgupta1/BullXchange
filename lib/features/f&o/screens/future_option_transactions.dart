@@ -356,6 +356,3 @@ class _FnoTransactionsPageState extends State<FnoTransactionsPage> {
     return grouped;
   }
 }
-
-
-

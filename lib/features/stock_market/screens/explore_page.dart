@@ -314,6 +314,3 @@ Widget _buildToolItem(
     ),
   );
 }
-
-
-

@@ -58,10 +58,12 @@ class _SetupPinScreenState extends State<SetupPinScreen> {
     final defaultPinTheme = PinTheme(
       width: 56,
       height: 56,
-      textStyle: textTheme.bodyLarge?.copyWith(
-        fontWeight: FontWeight.w600,
-        color: colorScheme.onSurface,
-      ) ?? const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+      textStyle:
+          textTheme.bodyLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          ) ??
+          const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
       decoration: BoxDecoration(
         // --- ⭐️ MODIFIED: Theme surface color ---
         color: colorScheme.surface,
@@ -245,5 +247,3 @@ class _SetupPinScreenState extends State<SetupPinScreen> {
     );
   }
 }
-
-

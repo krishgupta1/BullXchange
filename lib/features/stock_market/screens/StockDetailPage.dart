@@ -590,6 +590,3 @@ class _TradingViewChartState extends State<TradingViewChart> {
     return WebViewWidget(controller: _controller);
   }
 }
-
-
-

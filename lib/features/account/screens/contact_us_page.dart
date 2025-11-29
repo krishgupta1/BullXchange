@@ -234,6 +234,3 @@ class ContactUsPage extends StatelessWidget {
     );
   }
 }
-
-
-

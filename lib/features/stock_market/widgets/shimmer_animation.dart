@@ -50,4 +50,3 @@ class StockListItemShimmer extends StatelessWidget {
     );
   }
 }
-

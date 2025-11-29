@@ -142,5 +142,3 @@ class MiniChart extends StatelessWidget {
     );
   }
 }
-
-

@@ -65,9 +65,7 @@ class OnboardingPage12 extends StatelessWidget {
                           'Get Started with BullXchange',
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
+                              ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 16),
                         Text(

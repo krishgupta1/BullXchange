@@ -58,5 +58,3 @@ class LogoContainer extends StatelessWidget {
     );
   }
 }
-
-

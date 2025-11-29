@@ -732,5 +732,3 @@ class _SellOptionPageState extends State<SellOptionPage> {
     );
   }
 }
-
-

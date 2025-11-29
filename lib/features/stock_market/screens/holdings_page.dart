@@ -971,6 +971,3 @@ class HoldingsListSkeleton extends StatelessWidget {
     );
   }
 }
-
-
-

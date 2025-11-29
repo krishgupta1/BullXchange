@@ -340,8 +340,9 @@ class _AddFundPageState extends State<AddFundPage> {
                       ? const CircularProgressIndicator(color: Colors.white)
                       : Text(
                           "Pay ₹${_calculatedPrice.toStringAsFixed(2)}",
-                          style: Theme.of(context).textTheme.headlineSmall!.copyWith(
-                          ),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.headlineSmall!.copyWith(),
                         ),
                 ),
               ),
@@ -352,5 +353,3 @@ class _AddFundPageState extends State<AddFundPage> {
     );
   }
 }
-
-

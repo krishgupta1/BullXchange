@@ -286,5 +286,3 @@ class _ListRow extends StatelessWidget {
     );
   }
 }
-
-

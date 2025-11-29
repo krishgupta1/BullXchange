@@ -111,5 +111,3 @@ class MainPageHeader extends StatelessWidget {
     );
   }
 }
-
-

@@ -103,5 +103,3 @@ class _SmartLogoState extends State<SmartLogo> {
     }
   }
 }
-
-

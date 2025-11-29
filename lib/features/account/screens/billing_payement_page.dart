@@ -197,11 +197,7 @@ class FundsHistoryPage extends StatelessWidget {
                     color: theme.dividerColor.withOpacity(0.1),
                   ),
                 ),
-                child: Icon(
-                  iconData,
-                  size: 20,
-                  color: statusColor,
-                ),
+                child: Icon(iconData, size: 20, color: statusColor),
               ),
               const SizedBox(width: 12),
               // Title and Date
@@ -252,7 +248,10 @@ class FundsHistoryPage extends StatelessWidget {
             children: [
               // Status Badge
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: statusBg,
                   borderRadius: BorderRadius.circular(8),
@@ -343,21 +342,18 @@ class _EmptyFundsState extends StatelessWidget {
         Text(
           "No Transactions Found",
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
-              ),
+            fontWeight: FontWeight.bold,
+            color: colorScheme.onSurface,
+          ),
         ),
         const SizedBox(height: 8),
         Text(
           "Your fund requests will appear here.",
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).disabledColor,
-              ),
+            color: Theme.of(context).disabledColor,
+          ),
         ),
       ],
     );
   }
 }
-
-
-

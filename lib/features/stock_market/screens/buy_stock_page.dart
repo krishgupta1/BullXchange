@@ -1172,5 +1172,3 @@ class _SwipeToConfirmButtonState extends State<SwipeToConfirmButton> {
     );
   }
 }
-
-

@@ -535,4 +535,3 @@ class MenuRow extends StatelessWidget {
     );
   }
 }
-

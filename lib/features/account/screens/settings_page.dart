@@ -301,7 +301,8 @@ class _SettingsPageState extends State<SettingsPage> {
             )
           : null,
 
-      trailing: trailing ??
+      trailing:
+          trailing ??
           Icon(
             Icons.arrow_forward_ios_rounded,
             color: textTheme.bodySmall?.color?.withOpacity(0.4),
@@ -310,5 +311,3 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 }
-
-

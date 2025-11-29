@@ -43,7 +43,9 @@ class _PortfolioPageState extends State<PortfolioPage> {
     final isDark = theme.brightness == Brightness.dark;
 
     // --- Colors Matching Your UI ---
-    final Color backgroundColor = isDark ? Colors.black : const Color(0xFFF2F2F7);
+    final Color backgroundColor = isDark
+        ? Colors.black
+        : const Color(0xFFF2F2F7);
     final Color cardColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
     final Color textColor = theme.textTheme.bodyLarge!.color!;
     final Color subTextColor = const Color(0xFF8E8E93);
@@ -102,13 +104,13 @@ class _PortfolioPageState extends State<PortfolioPage> {
         return Consumer<InstrumentProvider>(
           builder: (context, instrumentProvider, child) {
             // --- DATA PROCESSING & SEPARATION ---
-            
+
             final List<Map<String, dynamic>> stockList = [];
             final List<Map<String, dynamic>> fnoList = [];
 
             double totalEquityCurrent = 0;
             double totalEquityInvested = 0;
-            
+
             double totalFnoCurrent = 0;
             double totalFnoInvested = 0;
 
@@ -143,7 +145,9 @@ class _PortfolioPageState extends State<PortfolioPage> {
 
               // --- TODO: F&O LOGIC HERE ---
               // Adjust this logic to match how you identify F&O in your database
-              bool isFno = holding.stockSymbol.endsWith("CE") || holding.stockSymbol.endsWith("PE");
+              bool isFno =
+                  holding.stockSymbol.endsWith("CE") ||
+                  holding.stockSymbol.endsWith("PE");
 
               if (isFno) {
                 fnoList.add(holdingData);
@@ -157,17 +161,18 @@ class _PortfolioPageState extends State<PortfolioPage> {
             }
 
             // --- COMMON CALCULATIONS (Aggregated) ---
-            double totalPortfolioValue = availableCash + totalEquityCurrent + totalFnoCurrent;
+            double totalPortfolioValue =
+                availableCash + totalEquityCurrent + totalFnoCurrent;
             double totalInvested = totalEquityInvested + totalFnoInvested;
-            
+
             double totalEquityPL = totalEquityCurrent - totalEquityInvested;
             double totalFnoPL = totalFnoCurrent - totalFnoInvested;
             double overallPL = totalEquityPL + totalFnoPL; // Net P&L
-            
+
             double overallPLPercent = (totalInvested > 0)
                 ? (overallPL / totalInvested) * 100
                 : 0.0;
-            
+
             return Scaffold(
               backgroundColor: backgroundColor,
               appBar: AppBar(
@@ -223,7 +228,9 @@ class _PortfolioPageState extends State<PortfolioPage> {
                       decoration: BoxDecoration(
                         color: cardColor,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: subTextColor.withOpacity(0.1)),
+                        border: Border.all(
+                          color: subTextColor.withOpacity(0.1),
+                        ),
                       ),
                       child: Row(
                         children: [
@@ -254,7 +261,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
                     // --- 3. DYNAMIC CONTENT BASED ON SELECTION ---
                     if (_selectedSegment == 0) ...[
                       // STOCKS CONTENT
-                       _buildSectionHeader(
+                      _buildSectionHeader(
                         "Holdings (${stockList.length})",
                         subTextColor,
                         trailing: "See All",
@@ -286,17 +293,21 @@ class _PortfolioPageState extends State<PortfolioPage> {
                         subTextColor,
                         trailing: "See All",
                       ),
-                      fnoList.isEmpty 
-                      ? _buildEmptyState("No Active F&O Positions", cardColor, subTextColor)
-                      : _buildHoldingsList(
-                        fnoList,
-                        currency,
-                        cardColor,
-                        textColor,
-                        subTextColor,
-                        kGreen,
-                        kRed,
-                      ),
+                      fnoList.isEmpty
+                          ? _buildEmptyState(
+                              "No Active F&O Positions",
+                              cardColor,
+                              subTextColor,
+                            )
+                          : _buildHoldingsList(
+                              fnoList,
+                              currency,
+                              cardColor,
+                              textColor,
+                              subTextColor,
+                              kGreen,
+                              kRed,
+                            ),
                     ],
 
                     const SizedBox(height: 24),
@@ -337,7 +348,9 @@ class _PortfolioPageState extends State<PortfolioPage> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? activeColor.withOpacity(0.15) : Colors.transparent,
+          color: isSelected
+              ? activeColor.withOpacity(0.15)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
         alignment: Alignment.center,
@@ -364,7 +377,11 @@ class _PortfolioPageState extends State<PortfolioPage> {
       ),
       child: Column(
         children: [
-          Icon(Icons.layers_clear_outlined, size: 40, color: subTextColor.withOpacity(0.5)),
+          Icon(
+            Icons.layers_clear_outlined,
+            size: 40,
+            color: subTextColor.withOpacity(0.5),
+          ),
           const SizedBox(height: 10),
           Text(msg, style: TextStyle(color: subTextColor)),
         ],
@@ -786,14 +803,15 @@ class _PortfolioPageState extends State<PortfolioPage> {
             ),
           );
         }
-        
+
         // 1. Filter Logic
         final allTransactions = snapshot.data ?? [];
         final filteredTransactions = allTransactions.where((txn) {
           // Logic to identify if a Transaction is F&O
           // Update this condition based on your exact data model
-          bool isFnoTxn = txn.stockSymbol.endsWith("CE") || txn.stockSymbol.endsWith("PE");
-          
+          bool isFnoTxn =
+              txn.stockSymbol.endsWith("CE") || txn.stockSymbol.endsWith("PE");
+
           if (selectedSegment == 1) {
             return isFnoTxn; // Show F&O
           } else {
@@ -803,9 +821,11 @@ class _PortfolioPageState extends State<PortfolioPage> {
 
         if (filteredTransactions.isEmpty) {
           return _buildEmptyState(
-            selectedSegment == 0 ? "No recent stock orders" : "No recent F&O trades", 
-            cardColor, 
-            subTextColor
+            selectedSegment == 0
+                ? "No recent stock orders"
+                : "No recent F&O trades",
+            cardColor,
+            subTextColor,
           );
         }
 
@@ -827,7 +847,9 @@ class _PortfolioPageState extends State<PortfolioPage> {
             padding: EdgeInsets.zero,
             physics: const NeverScrollableScrollPhysics(),
             shrinkWrap: true,
-            itemCount: filteredTransactions.length > 10 ? 10 : filteredTransactions.length,
+            itemCount: filteredTransactions.length > 10
+                ? 10
+                : filteredTransactions.length,
             separatorBuilder: (ctx, idx) => Divider(
               height: 1,
               thickness: 0.5,
@@ -838,11 +860,13 @@ class _PortfolioPageState extends State<PortfolioPage> {
             itemBuilder: (context, index) {
               final txn = filteredTransactions[index];
               final bool isBuy = txn.transactionType.toUpperCase() == "BUY";
-              final String txnTime = DateFormat('d MMM, HH:mm').format(txn.transactionTime);
+              final String txnTime = DateFormat(
+                'd MMM, HH:mm',
+              ).format(txn.transactionTime);
 
               return InkWell(
                 onTap: () {
-                   Navigator.push(
+                  Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => OrderDetailsPage(
@@ -853,7 +877,10 @@ class _PortfolioPageState extends State<PortfolioPage> {
                   );
                 },
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -884,11 +911,15 @@ class _PortfolioPageState extends State<PortfolioPage> {
                                 ),
                                 const SizedBox(width: 6),
                                 Container(
-                                  width: 3, height: 3,
-                                  decoration: BoxDecoration(color: subTextColor, shape: BoxShape.circle),
+                                  width: 3,
+                                  height: 3,
+                                  decoration: BoxDecoration(
+                                    color: subTextColor,
+                                    shape: BoxShape.circle,
+                                  ),
                                 ),
                                 const SizedBox(width: 6),
-                                 Text(
+                                Text(
                                   txnTime,
                                   style: TextStyle(
                                     color: subTextColor,
@@ -921,13 +952,18 @@ class _PortfolioPageState extends State<PortfolioPage> {
                               children: [
                                 // Product Tag (CNC vs NRML)
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: subTextColor.withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
-                                    selectedSegment == 0 ? "CNC" : "NRML", // Mock tag
+                                    selectedSegment == 0
+                                        ? "CNC"
+                                        : "NRML", // Mock tag
                                     style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w600,
@@ -938,9 +974,14 @@ class _PortfolioPageState extends State<PortfolioPage> {
                                 const SizedBox(width: 6),
                                 // BUY/SELL Tag
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: (isBuy ? kGreen : kRed).withOpacity(0.1),
+                                    color: (isBuy ? kGreen : kRed).withOpacity(
+                                      0.1,
+                                    ),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
@@ -968,4 +1009,3 @@ class _PortfolioPageState extends State<PortfolioPage> {
     );
   }
 }
-
