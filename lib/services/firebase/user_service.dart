@@ -1,3 +1,4 @@
+import 'dart:math'; // Required for Random
 import 'package:bullxchange/models/order_model.dart';
 import 'package:bullxchange/models/stock_holding_model.dart';
 import 'package:bullxchange/models/option_holding_model.dart';
@@ -44,25 +45,109 @@ class UserService {
     return null;
   }
 
+  // ⭐️ UPDATED: Robust Referral Logic with Fallback
+  // If Referrer update fails (e.g. Permission Denied), it still creates the user.
   Future<void> addUserProfile({
     required String uid,
     required String name,
     required String emailId,
     required String mobileNo,
+    String? referralCode,
   }) async {
+    // 1. Define Defaults & Bonus Amounts
+    double startingFunds = 100000.0;
+    const double referrerBonus = 10000.0;
+    const double refereeBonus = 5000.0;
+
+    // 2. Generate Unique Referral Code (Name + Random)
+    String cleanName = name.replaceAll(RegExp(r'[^a-zA-Z]'), '').toUpperCase();
+    if (cleanName.length > 4) {
+      cleanName = cleanName.substring(0, 4);
+    } else if (cleanName.isEmpty) {
+      cleanName = "BULL";
+    }
+
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    Random rnd = Random();
+    String randomSuffix = String.fromCharCodes(
+      Iterable.generate(4, (_) => chars.codeUnitAt(rnd.nextInt(chars.length))),
+    );
+
+    String myNewReferralCode = "$cleanName$randomSuffix";
+
+    DocumentReference? referrerRef;
+
+    // 3. Pre-check: Find Referrer
+    if (referralCode != null && referralCode.isNotEmpty) {
+      try {
+        final querySnapshot = await usersRef
+            .where('myReferralCode', isEqualTo: referralCode)
+            .limit(1)
+            .get();
+
+        if (querySnapshot.docs.isNotEmpty) {
+          referrerRef = querySnapshot.docs.first.reference;
+        }
+      } catch (e) {
+        if (kDebugMode) print("Error finding referrer: $e");
+      }
+    }
+
+    // 4. PREPARE USER DATA
+    // We create the object first so we can reuse it in fallback
     final profile = UserProfileDataModel(
       uid: uid,
       name: name,
       emailId: emailId,
       mobileNo: mobileNo,
       accountCreationTime: DateTime.now(),
-      availableFunds: 100000.0,
+      availableFunds: startingFunds, // Default 100k
       stocks: const [],
       positions: const [],
       watchlist: const [],
       optionHoldings: const [],
     );
-    await usersRef.doc(uid).set(profile.toJson());
+
+    final Map<String, dynamic> userData = profile.toJson();
+    userData['myReferralCode'] = myNewReferralCode;
+
+    if (referrerRef != null) {
+      userData['referredBy'] = referralCode;
+    }
+
+    // 5. ATTEMPT TRANSACTION (With Bonus)
+    try {
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        if (referrerRef != null) {
+          final referrerDoc = await transaction.get(referrerRef!);
+          if (referrerDoc.exists) {
+            final data = referrerDoc.data() as Map<String, dynamic>;
+
+            // ⭐️ SAFE CAST: Handles if 'availableFunds' is int or missing
+            final double currentReferrerFunds =
+                (data['availableFunds'] as num? ?? 0.0).toDouble();
+
+            // Give Bonus to Referrer
+            transaction.update(referrerRef!, {
+              'availableFunds': currentReferrerFunds + referrerBonus,
+            });
+
+            // Give Bonus to New User (Update local map before saving)
+            userData['availableFunds'] = startingFunds + refereeBonus;
+          }
+        }
+        // Save New User
+        transaction.set(usersRef.doc(uid), userData);
+      });
+    } catch (e) {
+      if (kDebugMode) print("Transaction Failed (Likely Permission): $e");
+
+      // ⭐️ FALLBACK: If transaction failed (e.g. security rules blocked updating referrer),
+      // we MUST still create the new user so signup doesn't break.
+      // We just revert to default funds (no bonus for anyone) to be safe.
+      userData['availableFunds'] = startingFunds; // Reset to 100k
+      await usersRef.doc(uid).set(userData);
+    }
   }
 
   Future<bool> isMobileNumberRegistered(String mobileNo) async {
