@@ -1,5 +1,6 @@
 import 'package:bullxchange/models/stock_holding_model.dart';
 import 'package:bullxchange/services/firebase/user_service.dart';
+import 'package:bullxchange/themes/app_theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -9,7 +10,7 @@ import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
 import 'package:bullxchange/features/stock_market/screens/buy_stock_page.dart';
 import 'package:bullxchange/features/stock_market/screens/sell_stock_page.dart';
-import 'package:bullxchange/widgets/trade_action_buttons.dart';
+// Note: 'trade_action_buttons.dart' import removed as we are building custom buttons now
 
 // ---------------------------------------------------------------------------
 // 1. MAIN HOLDINGS PAGE
@@ -111,7 +112,7 @@ class _HoldingsPageState extends State<HoldingsPage> {
                         Text(
                           "Holdings (${userHoldings?.length ?? 0})",
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: 15,
                             fontWeight: FontWeight.w700,
                             color: colorScheme.onSurface,
                           ),
@@ -331,7 +332,7 @@ class _PortfolioStockItemState extends State<PortfolioStockItem> {
                     h.stockSymbol,
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      fontSize: 10,
+                      fontSize: 13,
                       color: colorScheme.onSurface,
                     ),
                   ),
@@ -340,7 +341,7 @@ class _PortfolioStockItemState extends State<PortfolioStockItem> {
                     "${h.quantity} shares • Avg. ${h.transactionPrice.toStringAsFixed(1)}",
                     style: TextStyle(
                       color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
-                      fontSize: 10,
+                      fontSize: 11,
                     ),
                   ),
                 ],
@@ -357,7 +358,7 @@ class _PortfolioStockItemState extends State<PortfolioStockItem> {
                     "₹${(val * h.quantity).toStringAsFixed(2)}",
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      fontSize: 10,
+                      fontSize: 11.5,
                       color: colorScheme.onSurface,
                     ),
                   ),
@@ -426,7 +427,7 @@ class PortfolioStockItemDetailsSheet extends StatelessWidget {
   }) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -434,13 +435,13 @@ class PortfolioStockItemDetailsSheet extends StatelessWidget {
             title,
             style: TextStyle(
               color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
-              fontSize: 10,
+              fontSize: 12.5,
             ),
           ),
           Text(
             value,
             style: TextStyle(
-              fontSize: 10,
+              fontSize: 12.5,
               fontWeight: FontWeight.w600,
               color: valueColor ?? theme.colorScheme.onSurface,
             ),
@@ -546,7 +547,7 @@ class PortfolioStockItemDetailsSheet extends StatelessWidget {
                         Text(
                           holding.stockName,
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: 12.5,
                             fontWeight: FontWeight.bold,
                             color: colorScheme.onSurface,
                           ),
@@ -557,7 +558,7 @@ class PortfolioStockItemDetailsSheet extends StatelessWidget {
                         Text(
                           holding.stockSymbol,
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: 11,
                             color:
                                 theme.textTheme.bodySmall?.color?.withOpacity(
                                   0.8,
@@ -608,12 +609,61 @@ class PortfolioStockItemDetailsSheet extends StatelessWidget {
 
               const SizedBox(height: 32),
 
-              TradeActionButtons(
-                onSell: () async => await _handleSell(context),
-                onBuy: () => _handleBuy(context),
-                sellLabel: 'SELL',
-                buyLabel: 'BUY MORE',
-                height: 56.0,
+              // CHANGED: Custom Row with increased font size
+              Row(
+                children: [
+                  // SELL BUTTON
+                  Expanded(
+                    child: SizedBox(
+                      height: 40,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.kBrandPink,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () async => await _handleSell(context),
+                        child: const Text(
+                          'SELL',
+                          style: TextStyle(
+                            fontSize: 14, // Increased Font
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // BUY BUTTON
+                  Expanded(
+                    child: SizedBox(
+                      height: 40,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.kPrimaryBlue,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () => _handleBuy(context),
+                        child: const Text(
+                          'BUY MORE',
+                          style: TextStyle(
+                            fontSize: 14, // Increased Font
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -734,7 +784,7 @@ class PortfolioSummaryCard extends StatelessWidget {
                       Text(
                         "Current Value",
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 12,
                           color: theme.textTheme.bodySmall?.color,
                         ),
                       ),
@@ -742,7 +792,7 @@ class PortfolioSummaryCard extends StatelessWidget {
                       Text(
                         "₹${currentValue.toStringAsFixed(2)}",
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 15,
                           fontWeight: FontWeight.bold,
                           color: colorScheme.onSurface,
                           letterSpacing: -0.5,
@@ -777,7 +827,7 @@ class PortfolioSummaryCard extends StatelessWidget {
                                 ? Colors.green
                                 : Colors.red,
                             fontWeight: FontWeight.bold,
-                            fontSize: 10,
+                            fontSize: 12,
                           ),
                         ),
                       ],
@@ -835,7 +885,7 @@ class PortfolioSummaryCard extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            fontSize: 10,
+            fontSize: 12,
             color: theme.textTheme.bodySmall?.color,
           ),
         ),
@@ -856,7 +906,7 @@ class PortfolioSummaryCard extends StatelessWidget {
             Text(
               value,
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 15,
                 fontWeight: FontWeight.w600,
                 color: valueColor ?? theme.colorScheme.onSurface,
               ),

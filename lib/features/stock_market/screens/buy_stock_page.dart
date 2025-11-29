@@ -474,6 +474,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
                     "Quantity",
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
+                      fontSize: 14
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -497,6 +498,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
                     "Price",
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
+                      fontSize: 14
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -595,7 +597,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
                         ? colorScheme.onSecondary
                         : theme.textTheme.bodyMedium?.color,
                     fontWeight: FontWeight.w600,
-                    fontSize: 10,
+                    fontSize: 12,
                   ),
                 ),
               ),
@@ -630,6 +632,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
                 "Order Estimate",
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.bold,
+                  fontSize: 13,
                   color: theme.disabledColor,
                 ),
               ),
@@ -780,7 +783,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
                         "Swipe to Buy",
                         style: TextStyle(
                           color: theme.disabledColor,
-                          fontSize: 10,
+                          fontSize: 15,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -1091,7 +1094,7 @@ class _SwipeToConfirmButtonState extends State<SwipeToConfirmButton> {
                     style: TextStyle(
                       color: widget.color,
                       fontWeight: FontWeight.bold,
-                      fontSize: 10,
+                      fontSize: 13,
                       letterSpacing: 0.5,
                     ),
                   ),

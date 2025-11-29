@@ -112,7 +112,7 @@ Widget _buildSectionHeader(BuildContext context, String title) {
         title,
         style: theme.textTheme.titleLarge?.copyWith(
           fontWeight: FontWeight.w800,
-          fontSize: 10,
+          fontSize: 15,
           color: colorScheme.onSurface,
           letterSpacing: -0.5,
         ),
@@ -147,7 +147,7 @@ Widget _buildSectionHeader(BuildContext context, String title) {
                     color: isDark
                         ? Colors.white.withOpacity(0.9)
                         : colorScheme.primary,
-                    fontSize: 10,
+                    fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -186,7 +186,7 @@ Widget _buildStockItem(Instrument instrument, BuildContext context) {
           builder: (context) => StockDetailPage(instrument: instrument),
         ),
       ),
-      fontSize: 10,
+      fontSize: 12,
       showChart: true,
     ),
   );

@@ -105,7 +105,7 @@ class TransactionSuccessPage extends StatelessWidget {
                 child: Text(
                   "Go to Home",
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
                     // --- ⭐️ MODIFIED: Theme text color ---
                     color: colorScheme.onPrimary,
@@ -128,7 +128,7 @@ class TransactionSuccessPage extends StatelessWidget {
                 child: Text(
                   "Order Details",
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 14,
                     fontWeight: FontWeight.w600,
                     // --- ⭐️ MODIFIED: Theme accent color (Pink) ---
                     color: colorScheme.secondary,

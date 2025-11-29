@@ -246,8 +246,7 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
                         ),
                       ),
                     ],
-                    const Spacer(),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 220),
                     SizedBox(
                       width: double.infinity,
                       height: 56,

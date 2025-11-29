@@ -102,7 +102,7 @@ class _FnoTransactionsPageState extends State<FnoTransactionsPage> {
                     dateKey.toUpperCase(),
                     style: TextStyle(
                       color: subTextColor,
-                      fontSize: 10,
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.5,
                     ),
@@ -210,7 +210,7 @@ class _FnoTransactionsPageState extends State<FnoTransactionsPage> {
                             style: TextStyle(
                               color: textColor,
                               fontWeight: FontWeight.w700,
-                              fontSize: 11,
+                              fontSize: 12,
                             ),
                             overflow: TextOverflow.ellipsis,
                             maxLines: 1,
@@ -230,7 +230,7 @@ class _FnoTransactionsPageState extends State<FnoTransactionsPage> {
                             child: Text(
                               txn.orderStatus,
                               style: const TextStyle(
-                                fontSize: 10,
+                                fontSize: 12,
                                 color: Colors.orange,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -289,7 +289,7 @@ class _FnoTransactionsPageState extends State<FnoTransactionsPage> {
                     style: TextStyle(
                       color: textColor,
                       fontWeight: FontWeight.w700,
-                      fontSize: 10,
+                      fontSize: 12,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -321,7 +321,7 @@ class _FnoTransactionsPageState extends State<FnoTransactionsPage> {
             "No Transactions Found",
             style: TextStyle(
               color: textColor,
-              fontSize: 10,
+              fontSize: 14,
               fontWeight: FontWeight.w600,
             ),
           ),

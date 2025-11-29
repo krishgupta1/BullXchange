@@ -128,7 +128,7 @@ class _OptionChainBodyState extends State<_OptionChainBody>
 
   void _startAutoRefresh() {
     _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 100), (_) => _fetchData());
+    _timer = Timer.periodic(const Duration(seconds: 1000), (_) => _fetchData());
   }
 
   void _stopAutoRefresh() => _timer?.cancel();
@@ -244,7 +244,7 @@ class _OptionChainBodyState extends State<_OptionChainBody>
                 "₹$ltp",
                 style: TextStyle(
                   color: type == "CE" ? Colors.greenAccent : Colors.redAccent,
-                  fontSize: 10,
+                  fontSize: 14,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -342,7 +342,7 @@ class _OptionChainBodyState extends State<_OptionChainBody>
               "Select Expiry",
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 10,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -396,7 +396,7 @@ class _OptionChainBodyState extends State<_OptionChainBody>
                 children: [
                   const Text(
                     "Call price",
-                    style: TextStyle(color: Colors.grey, fontSize: 10),
+                    style: TextStyle(color: Colors.grey, fontSize: 14),
                   ),
                   GestureDetector(
                     onTap: () => _showExpiryPicker(context, provider),
@@ -406,7 +406,7 @@ class _OptionChainBodyState extends State<_OptionChainBody>
                           expiryText,
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 10,
+                            fontSize: 13,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -421,7 +421,7 @@ class _OptionChainBodyState extends State<_OptionChainBody>
                   ),
                   const Text(
                     "Put price",
-                    style: TextStyle(color: Colors.grey, fontSize: 10),
+                    style: TextStyle(color: Colors.grey, fontSize: 14),
                   ),
                 ],
               ),
@@ -440,7 +440,7 @@ class _OptionChainBodyState extends State<_OptionChainBody>
                 child: Center(
                   child: Text(
                     "OI",
-                    style: TextStyle(fontSize: 10, color: Colors.grey),
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ),
               ),
@@ -449,7 +449,7 @@ class _OptionChainBodyState extends State<_OptionChainBody>
                 child: Center(
                   child: Text(
                     "LTP",
-                    style: TextStyle(fontSize: 10, color: Colors.grey),
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ),
               ),
@@ -458,7 +458,7 @@ class _OptionChainBodyState extends State<_OptionChainBody>
                 child: Center(
                   child: Text(
                     "Strike",
-                    style: TextStyle(fontSize: 10, color: Colors.grey),
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ),
               ),
@@ -467,7 +467,7 @@ class _OptionChainBodyState extends State<_OptionChainBody>
                 child: Center(
                   child: Text(
                     "LTP",
-                    style: TextStyle(fontSize: 10, color: Colors.grey),
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ),
               ),
@@ -476,7 +476,7 @@ class _OptionChainBodyState extends State<_OptionChainBody>
                 child: Center(
                   child: Text(
                     "OI",
-                    style: TextStyle(fontSize: 10, color: Colors.grey),
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ),
               ),
@@ -552,7 +552,7 @@ class _OptionChainBodyState extends State<_OptionChainBody>
                                       row.strikePrice.toStringAsFixed(0),
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 10,
+                                        fontSize: 13,
                                         color: Colors
                                             .grey
                                             .shade400, // Uniform Color
@@ -619,14 +619,14 @@ class _OptionChainBodyState extends State<_OptionChainBody>
             t,
             key: ValueKey(t),
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 13,
               fontWeight: FontWeight.w500,
               color: c ?? Colors.white,
             ),
           ),
         ),
         if (s.isNotEmpty)
-          Text(s, style: TextStyle(fontSize: 10, color: c ?? Colors.grey)),
+          Text(s, style: TextStyle(fontSize: 11, color: c ?? Colors.grey)),
       ],
     ),
   );
@@ -649,7 +649,7 @@ class _OptionChainBodyState extends State<_OptionChainBody>
             style: const TextStyle(
               color: Colors.black,
               fontWeight: FontWeight.bold,
-              fontSize: 10,
+              fontSize: 13,
             ),
           ),
         ),
@@ -677,7 +677,10 @@ class OverviewTab extends StatelessWidget {
     }
     if (data == null) {
       return const Center(
-        child: Text("No Overview Data", style: TextStyle(color: Colors.grey)),
+        child: Text(
+          "No Overview Data",
+          style: TextStyle(color: Colors.grey, fontSize: 14),
+        ),
       );
     }
 
@@ -692,7 +695,7 @@ class OverviewTab extends StatelessWidget {
             Text(
               provider.symbol,
               style: const TextStyle(
-                fontSize: 10,
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
@@ -703,7 +706,7 @@ class OverviewTab extends StatelessWidget {
                 Text(
                   _fmt(data.currentPrice),
                   style: const TextStyle(
-                    fontSize: 10,
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
@@ -712,7 +715,7 @@ class OverviewTab extends StatelessWidget {
                 Text(
                   "${isNeg ? '' : '+'}${_fmt(data.priceChange)} (${data.percentChange.toStringAsFixed(2)}%)",
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 12,
                     fontWeight: FontWeight.w500,
                     color: isNeg ? Colors.redAccent : Colors.greenAccent,
                   ),
@@ -723,7 +726,7 @@ class OverviewTab extends StatelessWidget {
             const Text(
               "Performance",
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
@@ -789,12 +792,13 @@ class _RangeLabels extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(l, style: TextStyle(color: Colors.grey[500], fontSize: 10)),
+            Text(l, style: TextStyle(color: Colors.grey[500], fontSize: 14)),
             Text(
               lv == 0 ? "-" : f.format(lv),
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
+                fontSize: 15,
               ),
             ),
           ],
@@ -802,12 +806,13 @@ class _RangeLabels extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(h, style: TextStyle(color: Colors.grey[500], fontSize: 10)),
+            Text(h, style: TextStyle(color: Colors.grey[500], fontSize: 14)),
             Text(
               hv == 0 ? "-" : f.format(hv),
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
+                fontSize: 15,
               ),
             ),
           ],
@@ -828,13 +833,13 @@ class _StatItem extends StatelessWidget {
           ? CrossAxisAlignment.end
           : CrossAxisAlignment.start,
       children: [
-        Text(l, style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+        Text(l, style: TextStyle(color: Colors.grey[500], fontSize: 14)),
         const SizedBox(height: 4),
         Text(
           v,
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 11,
+            fontSize: 15,
             fontWeight: FontWeight.w600,
           ),
         ),

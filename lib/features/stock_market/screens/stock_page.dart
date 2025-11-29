@@ -364,7 +364,7 @@ class _StockPageState extends State<StockPage>
       style: TextStyle(color: colorScheme.onSurface),
       decoration: InputDecoration(
         hintText: "Search company, stocks...",
-        hintStyle: TextStyle(color: textTheme.bodySmall?.color, fontSize: 10),
+        hintStyle: TextStyle(color: textTheme.bodySmall?.color, fontSize: 13),
         // --- ⭐️ FIX START: Added padding and constraints to fix overlap ---
         prefixIcon: Padding(
           padding: const EdgeInsets.only(left: 12.0, right: 8.0),

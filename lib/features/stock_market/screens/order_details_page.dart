@@ -45,7 +45,7 @@ class OrderDetailsPage extends StatelessWidget {
         title: Text(
           'Order details',
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontSize: 10,
+            fontSize: 14,
             fontWeight: FontWeight.w600,
             color: colorScheme.onSurface,
           ),
@@ -63,7 +63,7 @@ class OrderDetailsPage extends StatelessWidget {
             Text(
               '${transaction.quantity} Shares',
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
                 // --- ⭐️ MODIFIED: Theme text color ---
                 color: colorScheme.onSurface,
@@ -87,7 +87,7 @@ class OrderDetailsPage extends StatelessWidget {
                       Text(
                         transaction.companyName,
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
                           // --- ⭐️ MODIFIED: Theme text color ---
                           color: colorScheme.onSurface,
@@ -107,7 +107,7 @@ class OrderDetailsPage extends StatelessWidget {
                           style: TextStyle(
                             color: typeColor,
                             fontWeight: FontWeight.bold,
-                            fontSize: 10,
+                            fontSize: 12,
                           ),
                         ),
                       ),
@@ -117,7 +117,7 @@ class OrderDetailsPage extends StatelessWidget {
                   Text(
                     priceFormatter.format(transaction.totalAmount),
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 14,
                       // --- ⭐️ MODIFIED: Theme grey color ---
                       color: textTheme.bodySmall?.color,
                       fontWeight: FontWeight.w500,
@@ -152,7 +152,7 @@ class OrderDetailsPage extends StatelessWidget {
                         'Order ID: $nseOrderId',
                         style: TextStyle(
                           color: textTheme.bodySmall?.color,
-                          fontSize: 10,
+                          fontSize: 12,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -221,7 +221,7 @@ class OrderDetailsPage extends StatelessWidget {
                   // --- ⭐️ MODIFIED: Theme grey color ---
                   style: TextStyle(
                     color: textTheme.bodySmall?.color,
-                    fontSize: 10,
+                    fontSize: 13,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -230,7 +230,7 @@ class OrderDetailsPage extends StatelessWidget {
                   style: TextStyle(
                     // --- ⭐️ MODIFIED: Theme text color ---
                     color: colorScheme.onSurface,
-                    fontSize: 10,
+                    fontSize: 13,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -246,7 +246,7 @@ class OrderDetailsPage extends StatelessWidget {
                   // --- ⭐️ MODIFIED: Theme grey color ---
                   style: TextStyle(
                     color: textTheme.bodySmall?.color,
-                    fontSize: 10,
+                    fontSize: 13,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -255,7 +255,7 @@ class OrderDetailsPage extends StatelessWidget {
                   style: TextStyle(
                     // --- ⭐️ MODIFIED: Theme text color ---
                     color: colorScheme.onSurface,
-                    fontSize: 10,
+                    fontSize: 13,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -305,7 +305,7 @@ class OrderDetailsPage extends StatelessWidget {
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 13,
                     fontWeight: FontWeight.w500,
                     // --- ⭐️ MODIFIED: Theme text color ---
                     color: colorScheme.onSurface,
@@ -321,7 +321,7 @@ class OrderDetailsPage extends StatelessWidget {
                           style: TextStyle(
                             // --- ⭐️ MODIFIED: Theme grey color ---
                             color: textTheme.bodySmall?.color,
-                            fontSize: 10,
+                            fontSize: 12,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),

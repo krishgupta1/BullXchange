@@ -102,7 +102,7 @@ class FutureOptionExplorePage extends StatelessWidget {
         title,
         style: Theme.of(context).textTheme.headlineSmall?.copyWith(
           fontWeight: FontWeight.bold,
-          fontSize: 10,
+          fontSize: 14,
         ),
       ),
     );
@@ -178,9 +178,9 @@ class _IndexGridCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -188,7 +188,7 @@ class _IndexGridCard extends StatelessWidget {
                 Row(
                   children: [
                     SmartLogo(instrument: instrument, radius: 20),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -198,7 +198,7 @@ class _IndexGridCard extends StatelessWidget {
                             style: Theme.of(context).textTheme.titleSmall
                                 ?.copyWith(
                                   fontWeight: FontWeight.w700,
-                                  fontSize: 11,
+                                  fontSize: 14,
                                 ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -207,7 +207,7 @@ class _IndexGridCard extends StatelessWidget {
                           Text(
                             instrument.symbol.split('-').first,
                             style: TextStyle(
-                              fontSize: 10,
+                              fontSize: 11,
                               color: isDarkMode
                                   ? Colors.grey[500]
                                   : Colors.grey[600],
@@ -220,14 +220,14 @@ class _IndexGridCard extends StatelessWidget {
                   ],
                 ),
 
-                const Spacer(),
+                const SizedBox(height: 40,),
 
                 // 2. Price Section
                 Text(
                   ltp.toStringAsFixed(2),
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
-                    fontSize: 10,
+                    fontSize: 16,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -246,7 +246,7 @@ class _IndexGridCard extends StatelessWidget {
                     '$sign${change.toStringAsFixed(2)} ($sign${changePercent.toStringAsFixed(2)}%)',
                     style: TextStyle(
                       color: displayColor,
-                      fontSize: 11,
+                      fontSize: 12,
                       fontWeight: FontWeight.w700,
                     ),
                   ),

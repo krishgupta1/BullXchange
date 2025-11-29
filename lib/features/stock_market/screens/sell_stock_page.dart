@@ -563,7 +563,7 @@ class _SellStockPageState extends State<SellStockPage> {
                           // CHANGED: Use onSurface with opacity to ensure visibility in dark mode
                           // 'disabledColor' is often too dark on black backgrounds
                           color: colorScheme.onSurface.withOpacity(0.35),
-                          fontSize: 10,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -748,7 +748,7 @@ class _SwipeToConfirmButtonState extends State<SwipeToConfirmButton> {
                     style: TextStyle(
                       color: widget.color,
                       fontWeight: FontWeight.bold,
-                      fontSize: 10,
+                      fontSize: 14,
                       letterSpacing: 0.5,
                     ),
                   ),

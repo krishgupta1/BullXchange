@@ -332,7 +332,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
                 instrument.symbol.replaceAll('-EQ', ''),
                 style: textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  fontSize: 10,
+                  fontSize: 14,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -383,6 +383,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
                   "₹${priceParts[0]}",
                   style: textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.w800,
+                    fontSize: 17,
                     letterSpacing: -0.5,
                   ),
                 ),
@@ -390,6 +391,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
                   ".${priceParts.length > 1 ? priceParts[1] : '00'}",
                   style: textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w600,
+                    fontSize: 14,
                     color: textTheme.bodySmall?.color,
                   ),
                 ),
@@ -416,7 +418,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
                 style: TextStyle(
                   color: changeColor,
                   fontWeight: FontWeight.bold,
-                  fontSize: 10,
+                  fontSize: 12,
                 ),
               ),
             ],
@@ -485,7 +487,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
                   stat['label']!,
                   style: textTheme.bodySmall?.copyWith(
                     color: textTheme.bodySmall?.color?.withOpacity(0.7),
-                    fontSize: 10,
+                    fontSize: 14,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -498,7 +500,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
                     stat['value']!,
                     style: textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      fontSize: 10,
+                      fontSize: 13,
                     ),
                   ),
                 ),

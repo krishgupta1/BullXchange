@@ -105,7 +105,7 @@ class OrderPage extends StatelessWidget {
                       Text(
                         "Open orders (${openOrders.length})",
                         style: const TextStyle(
-                          fontSize: 10,
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -124,20 +124,23 @@ class OrderPage extends StatelessWidget {
                         ),
                         label: Text(
                           "Cancel all",
-                          style: TextStyle(color: Colors.grey[700]),
+                          style: TextStyle(
+                            color: Colors.grey[700],
+                            fontSize: 13,
+                          ),
                         ),
                         onPressed: () => _handleCancelAll(context),
                       ),
                       Text(
                         "Qty/Price",
-                        style: TextStyle(color: Colors.grey[600], fontSize: 10),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 13),
                       ),
                     ],
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 2),
             ...openOrders.map((order) {
               final instrument = provider.getInstrumentByToken(
                 order.instrumentToken,
@@ -229,7 +232,7 @@ Widget _buildOrderItem({
       );
     },
     child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Row(
         children: [
           instrument != null
@@ -247,7 +250,7 @@ Widget _buildOrderItem({
                         text: "$orderType ",
                         style: TextStyle(
                           color: orderType == 'BUY' ? Colors.green : Colors.red,
-                          fontSize: 10,
+                          fontSize: 11,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -259,14 +262,14 @@ Widget _buildOrderItem({
                   order.symbol,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 10,
+                    fontSize: 14,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
                 Text(
                   "Mkt ₹${ltp == 0.0 ? '--' : ltp.toStringAsFixed(2)}",
-                  style: TextStyle(color: Colors.grey[600], fontSize: 10),
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
                 ),
               ],
             ),
@@ -277,20 +280,20 @@ Widget _buildOrderItem({
             children: [
               Text(
                 order.productType,
-                style: TextStyle(color: Colors.grey[600], fontSize: 10),
+                style: TextStyle(color: Colors.grey[600], fontSize: 12),
               ),
               const SizedBox(height: 2),
               Text(
                 "$quantity",
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 10,
+                  fontSize: 12,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 priceText,
-                style: TextStyle(color: Colors.grey[600], fontSize: 10),
+                style: TextStyle(color: Colors.grey[600], fontSize: 12),
               ),
             ],
           ),

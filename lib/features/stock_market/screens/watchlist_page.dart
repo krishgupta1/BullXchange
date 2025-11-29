@@ -292,7 +292,7 @@ class _EmptyState extends StatelessWidget {
         Text(
           "Your Watchlist is Empty",
           style: TextStyle(
-            fontSize: 10,
+            fontSize: 14,
             fontWeight: FontWeight.bold,
             color: colorScheme.onSurface,
           ),
@@ -323,7 +323,7 @@ Widget _buildWatchlistHeader(
       Text(
         isEditMode ? "Select Stocks" : "$stockCount stocks",
         style: TextStyle(
-          fontSize: 10,
+          fontSize: 14,
           fontWeight: FontWeight.bold,
           color: colorScheme.onSurface,
         ),
@@ -410,7 +410,7 @@ Widget _buildSortHeader(BuildContext context) {
         style: TextStyle(
           color: textTheme.bodySmall?.color,
           fontWeight: FontWeight.w500,
-          fontSize: 10,
+          fontSize: 12,
         ),
       ),
     ],
@@ -472,7 +472,7 @@ class _WatchlistStockItem extends StatelessWidget {
                 child: StockCard(
                   instrument: instrument,
                   onTap: null,
-                  fontSize: 10,
+                  fontSize: 13,
                 ),
               ),
             ],

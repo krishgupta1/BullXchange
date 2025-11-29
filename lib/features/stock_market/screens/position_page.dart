@@ -6,6 +6,7 @@ import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
 import 'package:bullxchange/services/firebase/charge_calculator_service.dart';
 import 'package:bullxchange/services/firebase/user_service.dart';
+import 'package:bullxchange/themes/app_theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -13,7 +14,7 @@ import 'package:provider/provider.dart';
 
 import 'package:bullxchange/features/stock_market/screens/buy_stock_page.dart';
 import 'package:bullxchange/features/stock_market/screens/sell_stock_page.dart';
-import 'package:bullxchange/widgets/trade_action_buttons.dart';
+// Note: 'trade_action_buttons.dart' import removed as we are building custom buttons now
 
 // --- HELPER: Consistent Intraday Badge ---
 Widget _buildIntradayBadge(BuildContext context) {
@@ -334,7 +335,7 @@ class _PositionPageState extends State<PositionPage> {
                     "Total P&L",
                     style: TextStyle(
                       color: theme.textTheme.bodySmall?.color,
-                      fontSize: 10,
+                      fontSize: 13,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -347,7 +348,7 @@ class _PositionPageState extends State<PositionPage> {
                         "$sign₹${totalPnl.abs().toStringAsFixed(2)}",
                         style: TextStyle(
                           color: pnlColor,
-                          fontSize: 24,
+                          fontSize: 15,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.5,
                         ),
@@ -366,7 +367,7 @@ class _PositionPageState extends State<PositionPage> {
                   "$sign${totalPnlPercent.abs().toStringAsFixed(2)}%",
                   style: TextStyle(
                     color: pnlColor,
-                    fontSize: 10,
+                    fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -386,7 +387,7 @@ class _PositionPageState extends State<PositionPage> {
                     "Total Invested",
                     style: TextStyle(
                       color: theme.textTheme.bodySmall?.color,
-                      fontSize: 10,
+                      fontSize: 13,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -394,7 +395,7 @@ class _PositionPageState extends State<PositionPage> {
                     "₹${totalInvestment.toStringAsFixed(2)}",
                     style: TextStyle(
                       color: colorScheme.onSurface,
-                      fontSize: 10,
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -428,7 +429,7 @@ class _PositionPageState extends State<PositionPage> {
                         style: TextStyle(
                           color: colorScheme.error,
                           fontWeight: FontWeight.bold,
-                          fontSize: 10,
+                          fontSize: 13,
                         ),
                       ),
                     ],
@@ -467,7 +468,7 @@ class _EmptyState extends StatelessWidget {
         Text(
           "No Open Positions",
           style: TextStyle(
-            fontSize: 10,
+            fontSize: 14,
             fontWeight: FontWeight.bold,
             color: theme.colorScheme.onSurface,
           ),
@@ -582,7 +583,7 @@ class _PositionStockItemState extends State<PositionStockItem> {
             color: theme.brightness == Brightness.dark
                 ? color.withRed(255).withGreen(255)
                 : color,
-            fontSize: 10,
+            fontSize: 14,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -628,7 +629,7 @@ class _PositionStockItemState extends State<PositionStockItem> {
                     p.stockSymbol,
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      fontSize: 10,
+                      fontSize: 13,
                       color: colorScheme.onSurface,
                     ),
                   ),
@@ -674,7 +675,7 @@ class _PositionStockItemState extends State<PositionStockItem> {
                     priceFormatter.format(val * p.quantity),
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      fontSize: 10,
+                      fontSize: 14,
                       color: colorScheme.onSurface,
                     ),
                   ),
@@ -700,7 +701,7 @@ class _PositionStockItemState extends State<PositionStockItem> {
                         "$sign₹${plVal.abs().toStringAsFixed(2)} (${pctVal.abs().toStringAsFixed(2)}%)",
                         style: TextStyle(
                           color: color,
-                          fontSize: 10,
+                          fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
                       );
@@ -749,7 +750,7 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
             title,
             style: TextStyle(
               color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
-              fontSize: 10,
+              fontSize: 14,
             ),
           ),
           valueWidget,
@@ -777,7 +778,7 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
             color: theme.brightness == Brightness.dark
                 ? color.withRed(255).withGreen(255)
                 : color,
-            fontSize: 10,
+            fontSize: 14,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -914,7 +915,7 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
                         Text(
                           position.stockName,
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: 14,
                             fontWeight: FontWeight.bold,
                             color: colorScheme.onSurface,
                           ),
@@ -931,7 +932,7 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
                                 color:
                                     theme.textTheme.bodySmall?.color ??
                                     colorScheme.onSurface.withOpacity(0.7),
-                                fontSize: 10,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -954,7 +955,7 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
                 Text(
                   "${position.quantity} Shares",
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: colorScheme.onSurface,
                   ),
@@ -967,7 +968,7 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
                 Text(
                   priceFormatter.format(investedAmount),
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: colorScheme.onSurface,
                   ),
@@ -982,7 +983,7 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
                   builder: (_, ltpVal, __) => Text(
                     priceFormatter.format(ltpVal),
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: colorScheme.onSurface,
                     ),
@@ -1006,7 +1007,7 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
                         "$sign₹${plVal.abs().toStringAsFixed(2)} ($sign${pctVal.abs().toStringAsFixed(2)}%)",
                         style: TextStyle(
                           color: color,
-                          fontSize: 10,
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -1017,13 +1018,65 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
 
               const SizedBox(height: 32),
 
-              TradeActionButtons(
-                onSell: () async => await _handleSell(context),
-                onBuy: () => _handleBuy(context),
-                sellLabel: 'EXIT',
-                buyLabel: 'ADD MORE',
-                height: 56.0,
+              // -----------------------------------------------------------------
+              // CUSTOM BUTTONS (Increased Font, Solid Colors)
+              // -----------------------------------------------------------------
+              Row(
+                children: [
+                  // EXIT BUTTON (Sell)
+                  Expanded(
+                    child: SizedBox(
+                      height: 40,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.kBrandPink, // Solid RED
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () async => await _handleSell(context),
+                        child: const Text(
+                          'EXIT',
+                          style: TextStyle(
+                            fontSize: 14, // Font Size 16
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  // ADD MORE BUTTON (Buy)
+                  Expanded(
+                    child: SizedBox(
+                      height: 40,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.kPrimaryBlue, // Solid GREEN
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () => _handleBuy(context),
+                        child: const Text(
+                          'ADD MORE',
+                          style: TextStyle(
+                            fontSize: 14, // Font Size 16
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
+              // -----------------------------------------------------------------
             ],
           ),
         ),
