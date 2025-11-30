@@ -16,6 +16,9 @@ class UserService {
   final CollectionReference ordersRef = FirebaseFirestore.instance.collection(
     'orders',
   );
+  final CollectionReference fundsRef = FirebaseFirestore.instance.collection(
+    'fund_requests',
+  );
 
   // ---------------------------------------------------------------------------
   // 1. PROFILE & AUTH METHODS
@@ -45,8 +48,21 @@ class UserService {
     return null;
   }
 
-  // ⭐️ UPDATED: Robust Referral Logic with Fallback
-  // If Referrer update fails (e.g. Permission Denied), it still creates the user.
+  Future<bool> validateReferralCode(String code) async {
+    if (code.isEmpty) return true;
+    try {
+      final querySnapshot = await usersRef
+          .where('myReferralCode', isEqualTo: code)
+          .limit(1)
+          .get();
+      return querySnapshot.docs.isNotEmpty;
+    } catch (e) {
+      if (kDebugMode) print("Referral Validation Error: $e");
+      return false;
+    }
+  }
+
+  // ⭐️ UPDATED: Separated Logic to ensure History is always created
   Future<void> addUserProfile({
     required String uid,
     required String name,
@@ -59,7 +75,7 @@ class UserService {
     const double referrerBonus = 10000.0;
     const double refereeBonus = 5000.0;
 
-    // 2. Generate Unique Referral Code (Name + Random)
+    // 2. Generate Unique Referral Code
     String cleanName = name.replaceAll(RegExp(r'[^a-zA-Z]'), '').toUpperCase();
     if (cleanName.length > 4) {
       cleanName = cleanName.substring(0, 4);
@@ -72,12 +88,13 @@ class UserService {
     String randomSuffix = String.fromCharCodes(
       Iterable.generate(4, (_) => chars.codeUnitAt(rnd.nextInt(chars.length))),
     );
-
     String myNewReferralCode = "$cleanName$randomSuffix";
 
     DocumentReference? referrerRef;
+    String? referrerUid;
 
-    // 3. Pre-check: Find Referrer
+    // 3. Check if Referral Code is Valid
+    bool isReferralValid = false;
     if (referralCode != null && referralCode.isNotEmpty) {
       try {
         final querySnapshot = await usersRef
@@ -87,6 +104,10 @@ class UserService {
 
         if (querySnapshot.docs.isNotEmpty) {
           referrerRef = querySnapshot.docs.first.reference;
+          referrerUid = querySnapshot.docs.first.id;
+          isReferralValid = true;
+          // Apply Bonus to Starting Funds
+          startingFunds += refereeBonus;
         }
       } catch (e) {
         if (kDebugMode) print("Error finding referrer: $e");
@@ -94,14 +115,13 @@ class UserService {
     }
 
     // 4. PREPARE USER DATA
-    // We create the object first so we can reuse it in fallback
     final profile = UserProfileDataModel(
       uid: uid,
       name: name,
       emailId: emailId,
       mobileNo: mobileNo,
       accountCreationTime: DateTime.now(),
-      availableFunds: startingFunds, // Default 100k
+      availableFunds: startingFunds, // Includes 5000 bonus if valid
       stocks: const [],
       positions: const [],
       watchlist: const [],
@@ -110,43 +130,54 @@ class UserService {
 
     final Map<String, dynamic> userData = profile.toJson();
     userData['myReferralCode'] = myNewReferralCode;
-
-    if (referrerRef != null) {
+    if (isReferralValid) {
       userData['referredBy'] = referralCode;
     }
 
-    // 5. ATTEMPT TRANSACTION (With Bonus)
-    try {
-      await FirebaseFirestore.instance.runTransaction((transaction) async {
-        if (referrerRef != null) {
-          final referrerDoc = await transaction.get(referrerRef);
-          if (referrerDoc.exists) {
-            final data = referrerDoc.data() as Map<String, dynamic>;
+    // 5. ⭐️ STEP 1: CREATE USER PROFILE (Critical)
+    // We do this separately so the user account is GUARANTEED to exist
+    await usersRef.doc(uid).set(userData);
 
-            // ⭐️ SAFE CAST: Handles if 'availableFunds' is int or missing
-            final double currentReferrerFunds =
-                (data['availableFunds'] as num? ?? 0.0).toDouble();
+    // 6. ⭐️ STEP 2: CREATE HISTORY ENTRY FOR NEW USER
+    // Only if they used a referral code
+    if (isReferralValid) {
+      try {
+        await fundsRef.add({
+          'uid': uid,
+          'amount_rs': refereeBonus,
+          'utr_number': 'JOINING BONUS',
+          'status': 'approved',
+          'timestamp': FieldValue.serverTimestamp(),
+          'type': 'REFERRAL_BONUS',
+        });
+      } catch (e) {
+        if (kDebugMode) print("Failed to create user history: $e");
+      }
 
-            // Give Bonus to Referrer
-            transaction.update(referrerRef, {
-              'availableFunds': currentReferrerFunds + referrerBonus,
-            });
+      // 7. ⭐️ STEP 3: UPDATE REFERRER (Best Effort)
+      // We try this last. If it fails (due to permissions), it won't break the new user's experience.
+      if (referrerRef != null && referrerUid != null) {
+        try {
+          // Use FieldValue.increment for safety
+          await referrerRef!.update({
+            'availableFunds': FieldValue.increment(referrerBonus),
+          });
 
-            // Give Bonus to New User (Update local map before saving)
-            userData['availableFunds'] = startingFunds + refereeBonus;
-          }
+          // Add Referrer History
+          await fundsRef.add({
+            'uid': referrerUid,
+            'amount_rs': referrerBonus,
+            'utr_number': 'REF: $name',
+            'status': 'approved',
+            'timestamp': FieldValue.serverTimestamp(),
+            'type': 'REFERRAL_BONUS',
+          });
+        } catch (e) {
+          // This typically fails if Firestore rules block User A from updating User B
+          if (kDebugMode)
+            print("Referrer update skipped (Permission/Error): $e");
         }
-        // Save New User
-        transaction.set(usersRef.doc(uid), userData);
-      });
-    } catch (e) {
-      if (kDebugMode) print("Transaction Failed (Likely Permission): $e");
-
-      // ⭐️ FALLBACK: If transaction failed (e.g. security rules blocked updating referrer),
-      // we MUST still create the new user so signup doesn't break.
-      // We just revert to default funds (no bonus for anyone) to be safe.
-      userData['availableFunds'] = startingFunds; // Reset to 100k
-      await usersRef.doc(uid).set(userData);
+      }
     }
   }
 
@@ -261,7 +292,7 @@ class UserService {
   }
 
   // ---------------------------------------------------------------------------
-  // 3. OPTION TRADING (F&O) - This saves to Transactions Collection
+  // 3. OPTION TRADING (F&O)
   // ---------------------------------------------------------------------------
 
   Future<String> executeOptionTrade({
@@ -270,7 +301,6 @@ class UserService {
     required OptionHoldingModel optionUpdate,
   }) async {
     final userDocRef = usersRef.doc(uid);
-    // 1. Create a new Document Reference for the transaction
     final newTransactionRef = transactionsRef.doc();
 
     try {
@@ -285,7 +315,6 @@ class UserService {
           userSnapshot.data() as Map<String, dynamic>,
         );
 
-        // Check Funds
         if (transaction.transactionType == 'BUY' &&
             userProfile.availableFunds < transaction.totalAmount) {
           throw Exception("Insufficient funds.");
@@ -295,7 +324,6 @@ class UserService {
             ? userProfile.availableFunds - transaction.totalAmount
             : userProfile.availableFunds + transaction.totalAmount;
 
-        // Update Option Holdings
         List<OptionHoldingModel> currentOptions = List.from(
           userProfile.optionHoldings,
         );
@@ -336,16 +364,11 @@ class UserService {
           currentOptions.add(optionUpdate);
         }
 
-        // Update User Funds & Holdings
         firestoreTransaction.update(userDocRef, {
           'availableFunds': newFunds,
           'optionHoldings': currentOptions.map((o) => o.toJson()).toList(),
         });
 
-        // 2. ⭐️ THIS SAVES THE TRANSACTION HISTORY ⭐️
-        if (kDebugMode) {
-          print("Saving Transaction: ${transaction.toJson()}");
-        }
         firestoreTransaction.set(newTransactionRef, transaction.toJson());
       });
 
@@ -360,31 +383,24 @@ class UserService {
   // 4. ORDERS & WATCHLIST & TRANSACTIONS (READING)
   // ---------------------------------------------------------------------------
 
-  // ⭐️ UPDATED: Added Error Logging so you can see why data might be hidden
   Stream<List<TransactionModel>> streamRecentTransactions(String uid) {
     return transactionsRef.where('userId', isEqualTo: uid).snapshots().map((
       snapshot,
     ) {
       try {
-        // Map each document individually to catch specific errors
         List<TransactionModel> transactions = [];
-
         for (var doc in snapshot.docs) {
           try {
             transactions.add(TransactionModel.fromSnapshot(doc));
           } catch (e) {
-            // 🔴 If a transaction is failing to load, this will print WHY
             if (kDebugMode) {
               print("Error parsing transaction doc ${doc.id}: $e");
             }
           }
         }
-
-        // Sort by time (Newest first)
         transactions.sort(
           (a, b) => b.transactionTime.compareTo(a.transactionTime),
         );
-
         if (transactions.length > 10) return transactions.sublist(0, 10);
         return transactions;
       } catch (e) {

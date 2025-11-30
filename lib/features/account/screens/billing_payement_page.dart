@@ -5,13 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
-// --- Local Model mapped to your 'fund_requests' collection ---
 class FundRequestModel {
   final String id;
   final double amount;
   final String utrNumber;
   final String status; // 'pending', 'approved', 'rejected'
   final DateTime timestamp;
+  final String type; // ⭐️ New field to identify Referral vs Normal
 
   FundRequestModel({
     required this.id,
@@ -19,6 +19,7 @@ class FundRequestModel {
     required this.utrNumber,
     required this.status,
     required this.timestamp,
+    required this.type,
   });
 
   factory FundRequestModel.fromFirestore(DocumentSnapshot doc) {
@@ -35,6 +36,7 @@ class FundRequestModel {
       utrNumber: data['utr_number'] ?? 'N/A',
       status: data['status']?.toString().toLowerCase() ?? 'pending',
       timestamp: date,
+      type: data['type']?.toString() ?? 'DEPOSIT', // Default to deposit
     );
   }
 }
@@ -62,7 +64,7 @@ class FundsHistoryPage extends StatelessWidget {
           title: Text(
             "Funds History",
             style: theme.textTheme.titleMedium?.copyWith(
-              fontSize: 18, // ⭐️ Matched size
+              fontSize: 18,
               fontWeight: FontWeight.bold,
               color: colorScheme.onSurface,
             ),
@@ -81,7 +83,7 @@ class FundsHistoryPage extends StatelessWidget {
         title: Text(
           "Wallet History",
           style: theme.textTheme.titleMedium?.copyWith(
-            fontSize: 18, // ⭐️ Increased from default to 18
+            fontSize: 18,
             fontWeight: FontWeight.bold,
             color: colorScheme.onSurface,
           ),
@@ -92,7 +94,6 @@ class FundsHistoryPage extends StatelessWidget {
         scrolledUnderElevation: 0,
       ),
       body: StreamBuilder<QuerySnapshot>(
-        // Streaming data without ordering to avoid index errors
         stream: FirebaseFirestore.instance
             .collection('fund_requests')
             .where('uid', isEqualTo: uid)
@@ -175,12 +176,22 @@ class FundsHistoryPage extends StatelessWidget {
         iconData = Icons.access_time_rounded;
     }
 
+    // ⭐️ DISPLAY LOGIC: Check Type
+    String displayTitle = "Add Funds";
+    IconData displayIcon = iconData;
+
+    if (req.type == 'REFERRAL_BONUS') {
+      displayTitle = "Referral Bonus";
+      displayIcon = Icons.card_giftcard_rounded; // Gift Icon for bonus
+      statusColor = const Color(0xFF1EAB58); // Ensure green
+      iconData = displayIcon;
+    }
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
-        // Subtle shadow for depth
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
@@ -205,7 +216,7 @@ class FundsHistoryPage extends StatelessWidget {
                     color: theme.dividerColor.withOpacity(0.1),
                   ),
                 ),
-                child: Icon(iconData, size: 20, color: statusColor),
+                child: Icon(displayIcon, size: 20, color: statusColor),
               ),
               const SizedBox(width: 12),
               // Title and Date
@@ -214,7 +225,7 @@ class FundsHistoryPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Add Funds",
+                      displayTitle, // ⭐️ Uses "Referral Bonus" or "Add Funds"
                       style: theme.textTheme.bodyLarge?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: colorScheme.onSurface,
@@ -301,10 +312,10 @@ class FundsHistoryPage extends StatelessWidget {
                 child: Row(
                   children: [
                     Text(
-                      "UTR: ${req.utrNumber}",
+                      "Details: ${req.utrNumber}",
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.disabledColor,
-                        fontFamily: 'monospace', // Makes it look like a code
+                        fontFamily: 'monospace',
                         fontSize: 10,
                       ),
                     ),
@@ -349,7 +360,6 @@ class _EmptyFundsState extends StatelessWidget {
         const SizedBox(height: 24),
         Text(
           "No Transactions Found",
-          // ⭐️ Changed from titleLarge to headlineSmall to match 'Refer & Earn' style
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.bold,
             color: colorScheme.onSurface,

@@ -9,7 +9,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:bullxchange/widgets/custom_back_button.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter/services.dart'; // Required for Clipboard
+import 'package:flutter/services.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -42,21 +42,16 @@ class _SignupPageState extends State<SignupPage> {
     super.dispose();
   }
 
-  // ⭐️ MODIFIED: Restored API Validation with Safety Checks
   Future<bool> validateEmailWithAPI(String email) async {
-    // 1. Basic Regex Check First (Saves API Credits)
     final bool emailValid = RegExp(
-      r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
+      r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
     ).hasMatch(email);
 
     if (!emailValid) return false;
 
-    // 2. Real API Check
     try {
       final dio = Dio();
       final apiKey = dotenv.env['ABSTRACT_API_KEY'];
-
-      // If key is missing, don't block user, just assume true
       if (apiKey == null || apiKey.isEmpty) return true;
 
       final response = await dio.get(
@@ -65,18 +60,16 @@ class _SignupPageState extends State<SignupPage> {
       );
 
       if (response.statusCode == 200) {
-        // Only block if explicitly undeliverable
         return response.data['deliverability'] == 'DELIVERABLE';
       }
-      return true; // Fallback to true if API status is not 200
+      return true;
     } catch (_) {
-      return true; // Fallback to true if Network/API fails
+      return true;
     }
   }
 
   Future<void> _showErrorDialog(String message) async {
     if (!mounted) return;
-
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -108,6 +101,98 @@ class _SignupPageState extends State<SignupPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // ⭐️ NEW: Success Popup for Referrals
+  Future<void> _showReferralSuccessDialog(String code) async {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: colorScheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        contentPadding: const EdgeInsets.all(24),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1EAB58).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.check_circle_rounded,
+                color: Color(0xFF1EAB58),
+                size: 48,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              "Account Created!",
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 8),
+            RichText(
+              textAlign: TextAlign.center,
+              text: TextSpan(
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.textTheme.bodySmall?.color,
+                  height: 1.5,
+                ),
+                children: [
+                  const TextSpan(text: "You were referred by "),
+                  TextSpan(
+                    text: code,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.primary,
+                    ),
+                  ),
+                  const TextSpan(text: ".\n"),
+                  TextSpan(
+                    text: "₹5,000",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const TextSpan(text: " has been credited to your wallet!"),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context); // Close Dialog
+                  Navigator.pushReplacement(
+                    context,
+                    slideRightToLeft(const SetupPinScreen()),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colorScheme.primary,
+                  foregroundColor: colorScheme.onPrimary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text("Awesome!"),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -145,6 +230,18 @@ class _SignupPageState extends State<SignupPage> {
     setState(() => _isSubmitting = true);
 
     try {
+      // 1. ⭐️ VALIDATE REFERRAL CODE (If entered)
+      if (referralCode.isNotEmpty) {
+        bool isValid = await _usersService.validateReferralCode(referralCode);
+        if (!isValid) {
+          setState(() => _isSubmitting = false);
+          _showErrorDialog(
+            "Invalid Referral Code. Please check or leave empty.",
+          );
+          return;
+        }
+      }
+
       // 2. CHECK MOBILE UNIQUENESS
       final bool mobileExists = await _usersService.isMobileNumberRegistered(
         mobileNo,
@@ -158,7 +255,7 @@ class _SignupPageState extends State<SignupPage> {
         return;
       }
 
-      // 3. Validate Email with API
+      // 3. Validate Email
       final isRealEmail = await validateEmailWithAPI(email);
       if (!isRealEmail) {
         setState(() => _isSubmitting = false);
@@ -174,7 +271,7 @@ class _SignupPageState extends State<SignupPage> {
 
       final user = credential.user;
       if (user != null) {
-        // 5. Add user details to Firestore
+        // 5. Add user details (Handles Bonus Backend)
         await _usersService.addUserProfile(
           uid: user.uid,
           name: fullName,
@@ -185,10 +282,15 @@ class _SignupPageState extends State<SignupPage> {
 
         if (!mounted) return;
 
-        Navigator.pushReplacement(
-          context,
-          slideRightToLeft(const SetupPinScreen()),
-        );
+        // 6. ⭐️ Show Popup if Referral Used, else navigate directly
+        if (referralCode.isNotEmpty) {
+          await _showReferralSuccessDialog(referralCode);
+        } else {
+          Navigator.pushReplacement(
+            context,
+            slideRightToLeft(const SetupPinScreen()),
+          );
+        }
       }
     } on FirebaseAuthException catch (e) {
       String errorMessage;
@@ -228,7 +330,6 @@ class _SignupPageState extends State<SignupPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-
               SizedBox(
                 width: 56,
                 height: 56,
@@ -241,7 +342,6 @@ class _SignupPageState extends State<SignupPage> {
                 ),
               ),
               const SizedBox(height: 30),
-
               Row(
                 children: [
                   Container(
@@ -267,7 +367,6 @@ class _SignupPageState extends State<SignupPage> {
                 ],
               ),
               const SizedBox(height: 30),
-
               Text(
                 "Getting Started",
                 style: textTheme.displayMedium?.copyWith(
@@ -276,7 +375,6 @@ class _SignupPageState extends State<SignupPage> {
                 ),
               ),
               const SizedBox(height: 8),
-
               Text(
                 "Create an account to continue!",
                 style: textTheme.bodyMedium?.copyWith(
@@ -285,7 +383,6 @@ class _SignupPageState extends State<SignupPage> {
                 ),
               ),
               const SizedBox(height: 40),
-
               _buildTextFieldWithLabel(
                 context: context,
                 label: 'Full Name',
@@ -294,7 +391,6 @@ class _SignupPageState extends State<SignupPage> {
                 keyboardType: TextInputType.name,
               ),
               const SizedBox(height: 16),
-
               _buildTextFieldWithLabel(
                 context: context,
                 label: 'Email Address',
@@ -303,7 +399,6 @@ class _SignupPageState extends State<SignupPage> {
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 16),
-
               _buildTextFieldWithLabel(
                 context: context,
                 label: 'Mobile Number',
@@ -312,7 +407,6 @@ class _SignupPageState extends State<SignupPage> {
                 keyboardType: TextInputType.phone,
               ),
               const SizedBox(height: 16),
-
               _buildTextFieldWithLabel(
                 context: context,
                 label: 'Password',
@@ -332,8 +426,6 @@ class _SignupPageState extends State<SignupPage> {
                 ),
               ),
               const SizedBox(height: 16),
-
-              // ⭐️ Referral Code UI
               _buildTextFieldWithLabel(
                 context: context,
                 label: 'Referral Code (Optional)',
@@ -359,7 +451,6 @@ class _SignupPageState extends State<SignupPage> {
                 ),
               ),
               const SizedBox(height: 24),
-
               Row(
                 children: [
                   Checkbox(
@@ -403,7 +494,6 @@ class _SignupPageState extends State<SignupPage> {
                 ],
               ),
               const SizedBox(height: 32),
-
               SizedBox(
                 width: double.infinity,
                 height: 56,
@@ -431,7 +521,6 @@ class _SignupPageState extends State<SignupPage> {
                 ),
               ),
               const SizedBox(height: 15),
-
               Center(
                 child: RichText(
                   text: TextSpan(
