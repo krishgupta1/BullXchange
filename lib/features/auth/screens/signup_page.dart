@@ -426,6 +426,7 @@ class _SignupPageState extends State<SignupPage> {
                 ),
               ),
               const SizedBox(height: 16),
+              // ⭐️ UPDATED: Referral Code Field
               _buildTextFieldWithLabel(
                 context: context,
                 label: 'Referral Code (Optional)',
@@ -444,8 +445,9 @@ class _SignupPageState extends State<SignupPage> {
                   },
                   icon: Icon(
                     Icons.content_paste_rounded,
-                    color: colorScheme.primary.withOpacity(0.7),
-                    size: 20,
+                    color: textTheme
+                        .bodySmall
+                        ?.color, // Fixed: Matches Password Eye
                   ),
                   tooltip: "Paste Code",
                 ),
