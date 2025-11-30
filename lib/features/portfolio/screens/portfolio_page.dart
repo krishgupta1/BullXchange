@@ -2,10 +2,12 @@ import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:bullxchange/models/user_profile_data_model.dart';
 import 'package:bullxchange/models/transaction_model.dart';
+import 'package:bullxchange/models/stock_holding_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:bullxchange/features/stock_market/screens/order_details_page.dart';
 
@@ -17,6 +19,22 @@ class PortfolioPage extends StatefulWidget {
 }
 
 class _PortfolioPageState extends State<PortfolioPage> {
+  List<String> _lastHoldingSymbols = [];
+
+  void _updateHoldingsLiveData(List<StockHoldingModel> holdings) {
+    final symbols = holdings.map((h) => h.stockSymbol).toList();
+    if (listEquals(symbols, _lastHoldingSymbols)) {
+      return;
+    }
+
+    _lastHoldingSymbols = symbols;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<InstrumentProvider>().fetchLiveDataForHoldings(holdings);
+    });
+  }
+
   final UserService _userService = UserService();
   late Stream<List<TransactionModel>> _transactionStream;
   String _currentUid = "";
@@ -93,13 +111,9 @@ class _PortfolioPageState extends State<PortfolioPage> {
         final allHoldings = userProfile.stocks;
         final availableCash = userProfile.availableFunds;
 
-        // Fetch live data for all holdings
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          Provider.of<InstrumentProvider>(
-            context,
-            listen: false,
-          ).fetchLiveDataForHoldings(allHoldings);
-        });
+        if (allHoldings.isNotEmpty) {
+          _updateHoldingsLiveData(allHoldings);
+        }
 
         return Consumer<InstrumentProvider>(
           builder: (context, instrumentProvider, child) {

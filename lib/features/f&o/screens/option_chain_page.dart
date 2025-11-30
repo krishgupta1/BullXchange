@@ -146,13 +146,15 @@ class _OptionChainBodyState extends State<_OptionChainBody>
     return d == 0 ? "-" : "${d > 0 ? '+' : ''}${d.toStringAsFixed(2)}%";
   }
 
+  final NumberFormat _lotsFormat = NumberFormat("#,##0", "en_US");
+
   String _formatOI(dynamic oiVal, dynamic lotSizeVal) {
     if (oiVal == null) return "-";
     double oi = double.tryParse(oiVal.toString()) ?? 0.0;
     if (oi == 0) return "-";
     int lotSize = int.tryParse(lotSizeVal?.toString() ?? "1") ?? 1;
     double lots = oi / lotSize;
-    return NumberFormat("#,##0", "en_US").format(lots);
+    return _lotsFormat.format(lots);
   }
 
   Color _col(dynamic v) {

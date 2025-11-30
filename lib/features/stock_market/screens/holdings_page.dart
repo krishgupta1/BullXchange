@@ -3,6 +3,7 @@ import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:bullxchange/themes/app_theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:bullxchange/models/instrument_model.dart';
@@ -23,6 +24,25 @@ class HoldingsPage extends StatefulWidget {
 }
 
 class _HoldingsPageState extends State<HoldingsPage> {
+  List<String> _lastHoldingSymbols = [];
+
+  void _updateHoldingsLiveData(
+    List<StockHoldingModel> holdings,
+    InstrumentProvider instrumentProvider,
+  ) {
+    final symbols = holdings.map((h) => h.stockSymbol).toList();
+    if (listEquals(symbols, _lastHoldingSymbols)) {
+      return;
+    }
+
+    _lastHoldingSymbols = symbols;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      instrumentProvider.fetchLiveDataForHoldings(holdings);
+    });
+  }
+
   final UserService _userService = UserService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   Stream<List<StockHoldingModel>?>? _holdingsStream;
@@ -88,7 +108,7 @@ class _HoldingsPageState extends State<HoldingsPage> {
                 snapshot.connectionState == ConnectionState.waiting;
 
             if (!isLoading && userHoldings != null && userHoldings.isNotEmpty) {
-              instrumentProvider.fetchLiveDataForHoldings(userHoldings);
+              _updateHoldingsLiveData(userHoldings, instrumentProvider);
             }
 
             return SingleChildScrollView(
