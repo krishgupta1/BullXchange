@@ -2,7 +2,6 @@ import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:bullxchange/widgets/custom_back_button.dart';
 import 'package:bullxchange/models/user_profile_data_model.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
 
 class EditProfilePage extends StatefulWidget {
   final String userId;
@@ -41,15 +40,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
     super.dispose();
   }
 
-  // --- (Helper functions _getInitials, _loadUserData, _saveProfile unchanged) ---
   String _getInitials(String name) {
     if (name.isEmpty) return '?';
     final parts = name.trim().split(' ');
     if (parts.isEmpty) return '?';
 
-    String initials = parts[0][0]; // First letter of the first name
+    String initials = parts[0][0];
     if (parts.length > 1) {
-      initials += parts.last[0]; // First letter of the last name
+      initials += parts.last[0];
     }
     return initials.toUpperCase();
   }
@@ -67,7 +65,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
         _nameController.text = userProfile.name;
         _emailController.text = userProfile.emailId;
         _phoneController.text = userProfile.mobileNo;
-        // This triggers a rebuild to show initials in the avatar
         setState(() {});
       } else {
         setState(() {
@@ -131,25 +128,24 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    // --- ⭐️ Theme se colors lo ---
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      // --- ⭐️ MODIFIED: Theme background color ---
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        leading: const CustomBackButton(),
-        title: Text(
-          'Edit Profile',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(color: colorScheme.onSurface),
-        ),
-        centerTitle: true,
         backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         scrolledUnderElevation: 0,
+        centerTitle: true,
+        leading: const CustomBackButton(),
+        title: Text(
+          'Edit Profile',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          ),
+        ),
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator(color: colorScheme.primary))
@@ -157,79 +153,87 @@ class _EditProfilePageState extends State<EditProfilePage> {
           ? Center(
               child: Text(
                 _errorMessage,
-                // --- ⭐️ MODIFIED: Theme error color ---
                 style: TextStyle(color: colorScheme.error),
               ),
             )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    _buildProfileAvatar(),
-                    const SizedBox(height: 40),
-                    _buildStyledTextField(
-                      controller: _nameController,
-                      label: 'Full name',
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your full name';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 24),
-                    _buildStyledTextField(
-                      controller: _emailController,
-                      label: 'Email address',
-                      keyboardType: TextInputType.emailAddress,
-                      validator: (value) {
-                        if (value == null || !value.contains('@')) {
-                          return 'Please enter a valid email';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 24),
-                    _buildStyledTextField(
-                      controller: _phoneController,
-                      label: 'Phone number',
-                      keyboardType: TextInputType.phone,
-                      enabled: false, // Field is not editable
-                      validator: (value) {
-                        if (value == null || value.length < 10) {
-                          return 'Please enter a valid phone number';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 40),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 55,
-                      child: ElevatedButton(
-                        onPressed: _saveProfile,
-                        style: ElevatedButton.styleFrom(
-                          // --- ⭐️ MODIFIED: Theme button color ---
-                          backgroundColor: colorScheme.primary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
+          : SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20.0),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 10),
+                      _buildProfileAvatar(),
+                      const SizedBox(height: 30),
+
+                      // Name Field
+                      _buildStyledTextField(
+                        controller: _nameController,
+                        label: 'Full Name',
+                        hint: 'Enter your full name',
+                        validator: (value) => (value == null || value.isEmpty)
+                            ? 'Please enter your name'
+                            : null,
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Email Field
+                      _buildStyledTextField(
+                        controller: _emailController,
+                        label: 'Email Address',
+                        hint: 'Enter your email',
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (value) =>
+                            (value == null || !value.contains('@'))
+                            ? 'Please enter a valid email'
+                            : null,
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Phone Field (Disabled visual style)
+                      _buildStyledTextField(
+                        controller: _phoneController,
+                        label: 'Phone Number',
+                        hint: 'Your phone number',
+                        keyboardType: TextInputType.phone,
+                        enabled: false,
+                        validator: (value) =>
+                            (value == null || value.length < 10)
+                            ? 'Invalid phone number'
+                            : null,
+                      ),
+
+                      const SizedBox(height: 40),
+
+                      // Save Button (Matched to Add Fund Button)
+                      SizedBox(
+                        width: double.infinity,
+                        height: 55,
+                        child: ElevatedButton(
+                          onPressed: _saveProfile,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: colorScheme.primary,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            elevation: 0,
                           ),
-                        ),
-                        child: Text(
-                          'Save',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            // --- ⭐️ MODIFIED: Theme text color ---
-                            color: colorScheme.onPrimary,
+                          child: Text(
+                            'Save Changes',
+                            style: Theme.of(context).textTheme.titleMedium!
+                                .copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                  ],
+                      const SizedBox(height: 20),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -237,55 +241,48 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Widget _buildProfileAvatar() {
-    // --- ⭐️ Theme se colors lo ---
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
+    final colorScheme = Theme.of(context).colorScheme;
     final initials = _getInitials(_nameController.text);
 
     return Stack(
       children: [
-        CircleAvatar(
-          radius: 60,
-          // --- ⭐️ MODIFIED: Theme color ---
-          backgroundColor: colorScheme.primary.withOpacity(0.1),
-          child: Text(
-            initials,
-            style: TextStyle(
-              fontSize: 40,
-              fontWeight: FontWeight.bold,
-              // --- ⭐️ MODIFIED: Theme color ---
-              color: colorScheme.primary,
+        Container(
+          width: 120,
+          height: 120,
+          decoration: BoxDecoration(
+            color: colorScheme.primary.withOpacity(0.1),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: colorScheme.primary.withOpacity(0.2),
+              width: 2,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              initials,
+              style: TextStyle(
+                fontSize: 40,
+                fontWeight: FontWeight.bold,
+                color: colorScheme.primary,
+              ),
             ),
           ),
         ),
         Positioned(
           bottom: 0,
           right: 0,
-          child: GestureDetector(
-            onTap: () {
-              // TODO: Add logic to pick/upload a new image
-            },
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                // --- ⭐️ MODIFIED: Theme color ---
-                color: colorScheme.secondary,
-                // --- ⭐️ MODIFIED: Theme border color ---
-                border: Border.all(
-                  color: theme.scaffoldBackgroundColor,
-                  width: 3,
-                ),
-              ),
-              child: Icon(
-                Icons.camera_alt,
-                // --- ⭐️ MODIFIED: Theme text color ---
-                color: colorScheme.onSecondary,
-                size: 24,
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: colorScheme.primary,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                width: 3,
               ),
             ),
+            child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
           ),
         ),
       ],
@@ -295,81 +292,54 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Widget _buildStyledTextField({
     required TextEditingController controller,
     required String label,
+    required String hint,
     TextInputType keyboardType = TextInputType.text,
     bool enabled = true,
     String? Function(String?)? validator,
   }) {
-    // --- ⭐️ Theme se colors lo ---
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 20.0, bottom: 8.0),
-          child: Text(
-            label,
-            style: TextStyle(
-              // --- ⭐️ MODIFIED: Theme text/grey color ---
-              color: enabled
-                  ? colorScheme.secondary
-                  : textTheme.bodySmall?.color,
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 10),
         TextFormField(
           controller: controller,
           keyboardType: keyboardType,
           enabled: enabled,
-          // --- ⭐️ MODIFIED: Theme text/grey color ---
           style: TextStyle(
-            color: enabled ? colorScheme.onSurface : textTheme.bodySmall?.color,
+            fontWeight: FontWeight.bold,
+            color: enabled
+                ? colorScheme.onSurface
+                : colorScheme.onSurface.withOpacity(0.5),
           ),
           validator: validator,
           decoration: InputDecoration(
-            contentPadding: const EdgeInsets.symmetric(
-              vertical: 18,
-              horizontal: 25,
-            ),
-            filled: !enabled,
-            // --- ⭐️ MODIFIED: Theme fill color ---
-            fillColor: theme.dividerColor.withOpacity(0.1),
+            hintText: hint,
+            filled: true,
+            // Visually distinguish disabled fields slightly
+            fillColor: enabled
+                ? Theme.of(context).inputDecorationTheme.fillColor ??
+                      Colors.grey.withOpacity(0.05)
+                : Colors.grey.withOpacity(0.1),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(30),
-              borderSide: BorderSide(
-                // --- ⭐️ MODIFIED: Theme border color ---
-                color: enabled
-                    ? colorScheme.primary.withOpacity(0.4)
-                    : theme.dividerColor,
-                width: 1.5,
-              ),
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none, // Cleaner look like Add Funds
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(30),
+              borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide(
-                // --- ⭐️ MODIFIED: Theme border color ---
-                color: enabled
-                    ? colorScheme.primary.withOpacity(0.4)
-                    : theme.dividerColor,
-                width: 1.5,
+                color: colorScheme.outline.withOpacity(0.2),
               ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(30),
-              borderSide: BorderSide(
-                // --- ⭐️ MODIFIED: Theme border color ---
-                color: enabled ? colorScheme.primary : theme.dividerColor,
-                width: 2,
-              ),
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
             ),
-            disabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(30),
-              // --- ⭐️ MODIFIED: Theme border color ---
-              borderSide: BorderSide(color: theme.dividerColor, width: 1.5),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 18,
             ),
           ),
         ),

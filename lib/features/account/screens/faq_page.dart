@@ -27,6 +27,7 @@ class _FaqPageState extends State<FaqPage> {
         backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         scrolledUnderElevation: 0,
+        // Optional: Add title if needed, otherwise kept empty as per design
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -51,6 +52,11 @@ class _FaqPageState extends State<FaqPage> {
                         height: 70,
                         width: 70,
                         fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) => Icon(
+                          Icons.help_outline_rounded,
+                          size: 60,
+                          color: colorScheme.primary,
+                        ),
                       ),
                     ),
                   ),
@@ -62,9 +68,9 @@ class _FaqPageState extends State<FaqPage> {
               Center(
                 child: Text(
                   'How can we help you?',
+                  // ⭐️ UPDATED: Standard Headline Size
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    // --- ⭐️ MODIFIED: Theme text color ---
                     color: colorScheme.onSurface,
                   ),
                 ),
@@ -159,13 +165,12 @@ class _FaqPageState extends State<FaqPage> {
                 children: [
                   Text(
                     'Top Questions',
+                    // ⭐️ UPDATED: Standard Section Header
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
-                      // --- ⭐️ MODIFIED: Theme text color ---
                       color: colorScheme.onSurface,
                     ),
                   ),
-                  // ⭐️ REMOVED: "View all" TextButton
                 ],
               ),
               const SizedBox(height: 10),
@@ -211,7 +216,7 @@ class _FaqPageState extends State<FaqPage> {
                 text,
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  fontSize: 10,
+                  fontSize: 12, // ⭐️ UPDATED: 10 -> 12
                   // --- ⭐️ MODIFIED: Theme text color ---
                   color: colorScheme.onSurface,
                   height: 1.3,
@@ -300,7 +305,7 @@ class _FaqPageState extends State<FaqPage> {
           title,
           style: TextStyle(
             fontWeight: FontWeight.w600,
-            fontSize: 10,
+            fontSize: 16, // ⭐️ UPDATED: 10 -> 16 (Standard List Title)
             // --- ⭐️ MODIFIED: Theme text color ---
             color: colorScheme.onSurface,
           ),
@@ -321,7 +326,7 @@ class _FaqPageState extends State<FaqPage> {
                       ? colorScheme
                             .secondary // Pink
                       : textTheme.bodySmall?.color, // Grey
-                  size: 20,
+                  size: 24, // ⭐️ UPDATED: 20 -> 24
                 );
               },
             );
@@ -339,8 +344,8 @@ class _FaqPageState extends State<FaqPage> {
             answer,
             style: TextStyle(
               // --- ⭐️ MODIFIED: Theme text color (thoda halka) ---
-              color: colorScheme.onSurface.withOpacity(0.7),
-              fontSize: 10,
+              color: colorScheme.onSurface.withOpacity(0.8),
+              fontSize: 14, // ⭐️ UPDATED: 10 -> 14 (Standard Body)
               height: 1.5,
             ),
           ),

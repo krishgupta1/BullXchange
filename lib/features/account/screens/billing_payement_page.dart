@@ -59,7 +59,14 @@ class FundsHistoryPage extends StatelessWidget {
         backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
           leading: const CustomBackButton(),
-          title: const Text("Funds History"),
+          title: Text(
+            "Funds History",
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontSize: 18, // ⭐️ Matched size
+              fontWeight: FontWeight.bold,
+              color: colorScheme.onSurface,
+            ),
+          ),
           centerTitle: true,
           backgroundColor: theme.scaffoldBackgroundColor,
         ),
@@ -74,6 +81,7 @@ class FundsHistoryPage extends StatelessWidget {
         title: Text(
           "Wallet History",
           style: theme.textTheme.titleMedium?.copyWith(
+            fontSize: 18, // ⭐️ Increased from default to 18
             fontWeight: FontWeight.bold,
             color: colorScheme.onSurface,
           ),
@@ -341,9 +349,11 @@ class _EmptyFundsState extends StatelessWidget {
         const SizedBox(height: 24),
         Text(
           "No Transactions Found",
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+          // ⭐️ Changed from titleLarge to headlineSmall to match 'Refer & Earn' style
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.bold,
             color: colorScheme.onSurface,
+            fontSize: 24,
           ),
         ),
         const SizedBox(height: 8),

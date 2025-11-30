@@ -19,8 +19,10 @@ class ContactUsPage extends StatelessWidget {
         leading: const CustomBackButton(),
         title: Text(
           'Contact Us',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontSize: 10,
+          // ⭐️ Standardized AppBar Title (18px Bold)
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
             color: colorScheme.onSurface,
           ),
         ),
@@ -54,8 +56,9 @@ class ContactUsPage extends StatelessWidget {
             // --- Title & Subtitle ---
             Text(
               "We're here to help!",
-              style: TextStyle(
-                fontSize: 10,
+              textAlign: TextAlign.center,
+              // ⭐️ Increased size for main headline
+              style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: colorScheme.onSurface,
               ),
@@ -64,8 +67,8 @@ class ContactUsPage extends StatelessWidget {
             Text(
               "Have questions or need support? Reach out to us anytime.",
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 10,
+              // ⭐️ Standard body text size
+              style: theme.textTheme.bodyMedium?.copyWith(
                 color: textTheme.bodySmall?.color, // Grey
                 height: 1.5,
               ),
@@ -110,8 +113,7 @@ class ContactUsPage extends StatelessWidget {
             // --- Social Media Footer ---
             Text(
               "Follow us",
-              style: TextStyle(
-                fontSize: 10,
+              style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: textTheme.bodySmall?.color,
               ),
@@ -178,9 +180,9 @@ class ContactUsPage extends StatelessWidget {
         ),
         title: Text(
           title,
-          style: TextStyle(
+          // ⭐️ Standardized list title size
+          style: theme.textTheme.bodyLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            fontSize: 10,
             color: colorScheme.onSurface,
           ),
         ),
@@ -188,7 +190,10 @@ class ContactUsPage extends StatelessWidget {
           padding: const EdgeInsets.only(top: 4.0),
           child: Text(
             subtitle,
-            style: TextStyle(color: textTheme.bodySmall?.color, fontSize: 10),
+            // ⭐️ Standardized subtitle size
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: textTheme.bodySmall?.color,
+            ),
           ),
         ),
         trailing: Icon(

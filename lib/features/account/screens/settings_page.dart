@@ -37,8 +37,10 @@ class _SettingsPageState extends State<SettingsPage> {
         leading: const CustomBackButton(),
         title: Text(
           'Settings',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
+          // ⭐️ Updated to match other pages (18px Bold)
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
             color: colorScheme.onSurface,
           ),
         ),
@@ -211,7 +213,8 @@ class _SettingsPageState extends State<SettingsPage> {
         alignment: Alignment.centerLeft,
         child: Text(
           title,
-          style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+          // ⭐️ Upgraded to titleSmall for better section visibility
+          style: Theme.of(context).textTheme.titleSmall!.copyWith(
             fontWeight: FontWeight.w600,
             color: textTheme.bodySmall?.color,
             letterSpacing: 0.5,
@@ -282,7 +285,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
       title: Text(
         title,
-        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+        // ⭐️ Upgraded from bodyMedium to bodyLarge (approx 16px) for standard list feel
+        style: Theme.of(context).textTheme.bodyLarge!.copyWith(
           fontWeight: FontWeight.w500,
           color: colorScheme.onSurface,
         ),
@@ -294,7 +298,7 @@ class _SettingsPageState extends State<SettingsPage> {
               child: Text(
                 subtitle,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 12, // Slightly bumped from 11
                   color: textTheme.bodySmall?.color,
                 ),
               ),

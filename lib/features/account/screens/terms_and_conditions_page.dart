@@ -19,8 +19,10 @@ class TermsAndConditionsPage extends StatelessWidget {
         leading: const CustomBackButton(),
         title: Text(
           'Terms & Conditions',
-          style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-            fontWeight: FontWeight.w700,
+          // ⭐️ UPDATED: Standard AppBar size
+          style: Theme.of(context).textTheme.titleMedium!.copyWith(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
             color: colorScheme.onSurface,
           ),
         ),
@@ -162,8 +164,10 @@ class TermsAndConditionsPage extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 "Legal Information",
-                style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                // ⭐️ UPDATED: Standard section title
+                style: Theme.of(context).textTheme.titleMedium!.copyWith(
                   fontWeight: FontWeight.bold,
+                  fontSize: 18,
                   color: colorScheme.onSurface,
                 ),
               ),
@@ -191,18 +195,22 @@ class TermsAndConditionsPage extends StatelessWidget {
             width: 100,
             child: Text(
               '$label:',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              // ⭐️ UPDATED: bodySmall -> bodyMedium
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: textTheme.bodySmall?.color,
                 fontWeight: FontWeight.w600,
+                fontSize: 14,
               ),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              // ⭐️ UPDATED: bodySmall -> bodyMedium
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurface,
                 fontWeight: FontWeight.w500,
+                fontSize: 14,
               ),
             ),
           ),
@@ -253,9 +261,10 @@ class TermsAndConditionsPage extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: TextStyle(
+                  // ⭐️ UPDATED: 14 -> 18 (titleMedium)
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: colorScheme.onSurface,
-                    fontSize: 14,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -272,11 +281,13 @@ class TermsAndConditionsPage extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 8.0),
               child: Text(
                 cleanText,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                // ⭐️ UPDATED: bodySmall -> bodyMedium
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: isBold
                       ? colorScheme.onSurface
                       : colorScheme.onSurfaceVariant,
                   height: 1.5,
+                  fontSize: 14,
                   fontWeight: isBold ? FontWeight.w700 : FontWeight.normal,
                 ),
               ),
@@ -317,9 +328,11 @@ class TermsAndConditionsPage extends StatelessWidget {
               SizedBox(width: 12),
               Text(
                 'Acceptance',
-                style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                // ⭐️ UPDATED: Standard header size inside summary
+                style: Theme.of(context).textTheme.titleLarge!.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w800,
+                  fontSize: 20,
                 ),
               ),
             ],
@@ -327,9 +340,11 @@ class TermsAndConditionsPage extends StatelessWidget {
           SizedBox(height: 12),
           Text(
             'By using BullXChange, you acknowledge that all trading is simulated and involves NO real money. Happy Learning! 🚀',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            // ⭐️ UPDATED: Readable text size
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Colors.white,
               height: 1.5,
+              fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
           ),

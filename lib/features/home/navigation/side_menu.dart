@@ -221,20 +221,20 @@ class _SideMenuState extends State<SideMenu> {
                             maxLines: 1,
                           ),
                           const SizedBox(height: 3),
-                          // Responsive Full Email
-                          Text(
-                            userProfile?.emailId ?? "Welcome back",
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.textTheme.bodySmall?.color
-                                  ?.withOpacity(0.8),
-                              // Dynamic font size logic: slightly smaller on very small screens
-                              fontSize: drawerWidth < 280 ? 11 : 12,
-                              height: 1.2,
-                              fontWeight: FontWeight.w500,
+                          // Responsive Full Email with Auto-Scaling
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              userProfile?.emailId ?? "Welcome back",
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.textTheme.bodySmall?.color
+                                    ?.withOpacity(0.8),
+                                fontSize: 12,
+                                height: 1.2,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
-                            softWrap: true,
-                            maxLines: 3, // Allow up to 3 lines
-                            overflow: TextOverflow.visible,
                           ),
                         ],
                       ),

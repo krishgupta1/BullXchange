@@ -5,6 +5,7 @@ import 'package:bullxchange/features/account/screens/faq_page.dart';
 import 'package:bullxchange/features/account/screens/referralcodepage.dart';
 import 'package:bullxchange/features/account/screens/settings_page.dart';
 import 'package:bullxchange/features/auth/screens/login_page.dart';
+// import 'package:bullxchange/features/account/screens/my_rewards_page.dart'; // Uncomment when page exists
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -158,6 +159,8 @@ class AccountScreen extends StatelessWidget {
                   const SizedBox(height: 24),
                   _buildWalletCard(context, balance),
                   const SizedBox(height: 16),
+
+                  // Referral Card
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
@@ -169,6 +172,7 @@ class AccountScreen extends StatelessWidget {
                     },
                     child: _buildReferralCard(context),
                   ),
+
                   const SizedBox(height: 24),
                   _buildOptionList(context),
                   const SizedBox(height: 24),
@@ -400,10 +404,11 @@ class AccountScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Share your friend get \$20 of free stocks',
+                  'Refer friends & earn 10,000 Points!',
                   style: TextStyle(
                     fontSize: 11,
                     color: textTheme.bodySmall?.color,
+                    fontWeight: FontWeight.w500,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),

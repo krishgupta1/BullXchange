@@ -220,7 +220,7 @@ class _IndexGridCard extends StatelessWidget {
                   ],
                 ),
 
-                const SizedBox(height: 40,),
+                const SizedBox(height: 40),
 
                 // 2. Price Section
                 Text(

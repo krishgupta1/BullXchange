@@ -474,7 +474,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
                     "Quantity",
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
-                      fontSize: 14
+                      fontSize: 14,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -498,7 +498,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
                     "Price",
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
-                      fontSize: 14
+                      fontSize: 14,
                     ),
                   ),
                   const SizedBox(height: 10),

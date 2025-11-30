@@ -103,7 +103,8 @@ class _ReferralCodePageState extends State<ReferralCodePage> {
         title: Text(
           'Referral Code',
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontSize: 14,
+            fontSize: 18, // ⭐️ Increased from 14 to 18 to match standard pages
+            fontWeight: FontWeight.bold,
             color: colorScheme.onSurface,
           ),
         ),
@@ -145,7 +146,8 @@ class _ReferralCodePageState extends State<ReferralCodePage> {
             Text(
               'Refer & Earn',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.displayMedium?.copyWith(
+              // ⭐️ Changed from displayMedium (huge) to headlineSmall (standard header)
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: colorScheme.onSurface,
               ),
@@ -156,9 +158,11 @@ class _ReferralCodePageState extends State<ReferralCodePage> {
             Text(
               'Share this code with your friend.\nThey get 5,000 and you get 10,000 Points!',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+              // ⭐️ Changed to bodyMedium for cleaner look
+              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                 color: textTheme.bodySmall?.color,
                 height: 1.5,
+                fontSize: 15,
               ),
             ),
             const SizedBox(height: 32),
@@ -166,25 +170,30 @@ class _ReferralCodePageState extends State<ReferralCodePage> {
             // --- Referral Code Box ---
             DottedBorder(
               color: colorScheme.secondary,
-              strokeWidth: 3.0,
+              strokeWidth: 2.0, // Slightly reduced stroke for elegance
               borderType: BorderType.RRect,
-              radius: const Radius.circular(24),
+              radius: const Radius.circular(16), // Slightly tighter radius
               dashPattern: const [8, 4],
               padding: EdgeInsets.zero,
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 20,
-                  vertical: 20,
+                  vertical: 16, // Slightly reduced padding
                 ),
                 decoration: BoxDecoration(
                   color: colorScheme.surface,
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: _isLoading
                     ? Center(
-                        child: CircularProgressIndicator(
-                          color: colorScheme.primary,
+                        child: SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: colorScheme.primary,
+                          ),
                         ),
                       )
                     : Row(
@@ -192,11 +201,12 @@ class _ReferralCodePageState extends State<ReferralCodePage> {
                         children: [
                           Text(
                             _referralCode,
-                            style: Theme.of(context).textTheme.bodyLarge!
+                            style: Theme.of(context).textTheme.titleMedium!
                                 .copyWith(
                                   fontWeight: FontWeight.bold,
+                                  fontSize: 16, // Standard input text size
                                   color: colorScheme.onSurface,
-                                  letterSpacing: 1.1,
+                                  letterSpacing: 1.0,
                                 ),
                           ),
                           InkWell(
@@ -215,20 +225,23 @@ class _ReferralCodePageState extends State<ReferralCodePage> {
                             },
                             borderRadius: BorderRadius.circular(20),
                             child: Padding(
-                              padding: const EdgeInsets.all(4.0),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               child: Row(
                                 children: [
                                   Icon(
                                     Icons.content_copy,
                                     color: colorScheme.secondary,
-                                    size: 22,
+                                    size: 20, // slightly smaller icon
                                   ),
-                                  const SizedBox(width: 8),
+                                  const SizedBox(width: 6),
                                   Text(
-                                    'Copy Code',
+                                    'Copy',
                                     style: Theme.of(context)
                                         .textTheme
-                                        .bodyLarge!
+                                        .labelLarge! // Using labelLarge for action text
                                         .copyWith(
                                           fontWeight: FontWeight.bold,
                                           color: colorScheme.secondary,
@@ -247,7 +260,7 @@ class _ReferralCodePageState extends State<ReferralCodePage> {
             // --- "Refer friend" Button ---
             SizedBox(
               width: double.infinity,
-              height: 56,
+              height: 52, // Standard button height (usually 48-56)
               child: ElevatedButton(
                 onPressed: _isLoading
                     ? null
@@ -268,8 +281,9 @@ class _ReferralCodePageState extends State<ReferralCodePage> {
                 ),
                 child: Text(
                   'Refer friend',
-                  style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                  style: Theme.of(context).textTheme.titleMedium!.copyWith(
                     fontWeight: FontWeight.bold,
+                    fontSize: 16,
                     color: colorScheme.onPrimary,
                   ),
                 ),

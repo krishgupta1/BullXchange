@@ -233,7 +233,7 @@ class AngelOneOptionChainService {
               liveDataMap[item['symbolToken'] ?? item['token'] ?? ""] = item;
             }
           }
-                } catch (_) {}
+        } catch (_) {}
       }
 
       return _buildOptionChainResponse(

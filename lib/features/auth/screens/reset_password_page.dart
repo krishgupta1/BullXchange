@@ -91,8 +91,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
               // Title
               Text(
                 'Password Recovery',
-                style: textTheme.displayMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
+                // ⭐️ UPDATED: displayMedium -> headlineSmall to match other pages
+                style: textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
                   color: colorScheme.onSurface,
                 ),
               ),
@@ -111,7 +112,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 child: Text(
                   'Email address',
                   style: textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.bold,
                     color: colorScheme.onSurface,
                   ),
                 ),
@@ -158,7 +159,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
               // Reset Password button
               SizedBox(
                 width: double.infinity,
-                height: 64,
+                height: 56, // Standard height
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _sendResetEmail,
                   style: ElevatedButton.styleFrom(
@@ -176,8 +177,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                           'Send Reset Password Link',
                           style: TextStyle(
                             fontFamily: 'EudoxusSans',
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
+                            fontSize: 16, // ⭐️ UPDATED: 12 -> 16
+                            fontWeight: FontWeight.bold,
                             // --- ⭐️ MODIFIED: Theme text color ---
                             color: colorScheme.onPrimary,
                           ),

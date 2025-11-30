@@ -19,8 +19,10 @@ class PrivacyPolicyPage extends StatelessWidget {
         leading: const CustomBackButton(),
         title: Text(
           'Privacy Policy',
-          style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-            fontWeight: FontWeight.w700,
+          // ⭐️ UPDATED: Standard AppBar size
+          style: Theme.of(context).textTheme.titleMedium!.copyWith(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
             color: colorScheme.onSurface,
           ),
         ),
@@ -196,9 +198,11 @@ class PrivacyPolicyPage extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 "About Policy",
-                style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                // ⭐️ UPDATED: Larger section title
+                style: Theme.of(context).textTheme.titleMedium!.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: colorScheme.onSurface, // Fixed visibility
+                  fontSize: 18,
+                  color: colorScheme.onSurface,
                 ),
               ),
             ],
@@ -226,18 +230,22 @@ class PrivacyPolicyPage extends StatelessWidget {
             width: 100,
             child: Text(
               '$label:',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              // ⭐️ UPDATED: bodySmall -> bodyMedium
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: textTheme.bodySmall?.color,
                 fontWeight: FontWeight.w600,
+                fontSize: 14,
               ),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              // ⭐️ UPDATED: bodySmall -> bodyMedium
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurface,
                 fontWeight: FontWeight.w500,
+                fontSize: 14,
               ),
             ),
           ),
@@ -282,15 +290,16 @@ class PrivacyPolicyPage extends StatelessWidget {
                   color: iconColor.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, size: 20, color: iconColor),
+                child: Icon(icon, size: 24, color: iconColor),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   title,
-                  style: TextStyle(
+                  // ⭐️ UPDATED: 14 -> 18 (titleMedium)
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: colorScheme.onSurface,
-                    fontSize: 14,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -307,11 +316,13 @@ class PrivacyPolicyPage extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 8.0),
               child: Text(
                 cleanText,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                // ⭐️ UPDATED: bodySmall -> bodyMedium
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: isBold
                       ? colorScheme.onSurface
                       : colorScheme.onSurfaceVariant,
                   height: 1.5,
+                  fontSize: 14,
                   fontWeight: isBold ? FontWeight.w700 : FontWeight.normal,
                 ),
               ),
@@ -352,9 +363,11 @@ class PrivacyPolicyPage extends StatelessWidget {
               SizedBox(width: 12),
               Text(
                 'Our Commitment',
-                style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                // ⭐️ UPDATED: Standard header size inside summary
+                style: Theme.of(context).textTheme.titleLarge!.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w800,
+                  fontSize: 20,
                 ),
               ),
             ],
@@ -362,9 +375,11 @@ class PrivacyPolicyPage extends StatelessWidget {
           SizedBox(height: 12),
           Text(
             'BullXchange is dedicated to user privacy. We respect your data and only use it to enhance your paper trading experience. Your trust is our asset.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            // ⭐️ UPDATED: Readable text size
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Colors.white,
               height: 1.5,
+              fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
           ),
