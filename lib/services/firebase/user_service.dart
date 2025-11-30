@@ -119,7 +119,7 @@ class UserService {
     try {
       await FirebaseFirestore.instance.runTransaction((transaction) async {
         if (referrerRef != null) {
-          final referrerDoc = await transaction.get(referrerRef!);
+          final referrerDoc = await transaction.get(referrerRef);
           if (referrerDoc.exists) {
             final data = referrerDoc.data() as Map<String, dynamic>;
 
@@ -128,7 +128,7 @@ class UserService {
                 (data['availableFunds'] as num? ?? 0.0).toDouble();
 
             // Give Bonus to Referrer
-            transaction.update(referrerRef!, {
+            transaction.update(referrerRef, {
               'availableFunds': currentReferrerFunds + referrerBonus,
             });
 

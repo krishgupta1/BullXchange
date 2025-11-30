@@ -210,7 +210,7 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
                     "Total P&L (F&O)",
                     style: TextStyle(
                       color: theme.textTheme.bodySmall?.color,
-                      fontSize: 11,
+                      fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -223,7 +223,7 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
                         "$sign₹${totalPnl.abs().toStringAsFixed(2)}",
                         style: TextStyle(
                           color: pnlColor,
-                          fontSize: 11,
+                          fontSize: 15,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.5,
                         ),
@@ -242,7 +242,7 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
                   "$sign${totalPnlPercent.abs().toStringAsFixed(2)}%",
                   style: TextStyle(
                     color: pnlColor,
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -264,7 +264,7 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
                     "Total Invested",
                     style: TextStyle(
                       color: theme.textTheme.bodySmall?.color,
-                      fontSize: 10,
+                      fontSize: 14,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -272,7 +272,7 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
                     "₹${totalInvestment.toStringAsFixed(2)}",
                     style: TextStyle(
                       color: colorScheme.onSurface,
-                      fontSize: 11,
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -306,7 +306,7 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
                         style: TextStyle(
                           color: colorScheme.error,
                           fontWeight: FontWeight.bold,
-                          fontSize: 11,
+                          fontSize: 12,
                         ),
                       ),
                     ],
@@ -425,7 +425,7 @@ class _FnoBottomPnlBarState extends State<_FnoBottomPnlBar> {
                             "P&L",
                             style: TextStyle(
                               color: Colors.grey.shade400,
-                              fontSize: 11,
+                              fontSize: 12,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -434,7 +434,7 @@ class _FnoBottomPnlBarState extends State<_FnoBottomPnlBar> {
                             "${isProfit ? '+' : ''}${formatter.format(widget.totalPnl)}",
                             style: TextStyle(
                               color: pnlColor,
-                              fontSize: 11,
+                              fontSize: 12,
                               fontWeight: FontWeight.w700,
                               letterSpacing: 0.3,
                             ),
@@ -449,7 +449,7 @@ class _FnoBottomPnlBarState extends State<_FnoBottomPnlBar> {
                             "${widget.totalPnlPercent.abs().toStringAsFixed(2)}%",
                             style: TextStyle(
                               color: pnlColor,
-                              fontSize: 11,
+                              fontSize: 12,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -504,13 +504,13 @@ class _FnoBottomPnlBarState extends State<_FnoBottomPnlBar> {
       children: [
         Text(
           "$label: ",
-          style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
         ),
         Text(
           formatter.format(value),
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 10,
+            fontSize: 14,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -642,7 +642,7 @@ class _FnoPositionItemState extends State<FnoPositionItem> {
                     widget.position.contractSymbol,
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
-                      fontSize: 10,
+                      fontSize: 14,
                       color: theme.colorScheme.onSurface,
                     ),
                     overflow: TextOverflow.ellipsis,
@@ -673,7 +673,7 @@ class _FnoPositionItemState extends State<FnoPositionItem> {
                         "${widget.position.quantity} Qty",
                         style: TextStyle(
                           color: theme.textTheme.bodySmall?.color,
-                          fontSize: 10,
+                          fontSize: 12,
                         ),
                       ),
                     ],
@@ -692,7 +692,7 @@ class _FnoPositionItemState extends State<FnoPositionItem> {
                     formatter.format(ltp * widget.position.quantity),
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 11,
+                      fontSize: 14,
                     ),
                   ),
                 ),
@@ -716,7 +716,7 @@ class _FnoPositionItemState extends State<FnoPositionItem> {
                         style: TextStyle(
                           color: pnlColor,
                           fontWeight: FontWeight.w600,
-                          fontSize: 10,
+                          fontSize: 12,
                         ),
                       ),
                     );
