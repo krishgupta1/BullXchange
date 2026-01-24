@@ -123,7 +123,7 @@ class _SignupPageState extends State<SignupPage> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF1EAB58).withOpacity(0.1),
+                color: const Color(0xFF1EAB58).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -600,7 +600,7 @@ class _SignupPageState extends State<SignupPage> {
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
-                color: theme.dividerColor.withOpacity(0.5),
+                color: theme.dividerColor.withValues(alpha: 0.5),
               ),
             ),
             focusedBorder: OutlineInputBorder(

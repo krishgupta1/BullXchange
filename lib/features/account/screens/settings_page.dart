@@ -29,7 +29,7 @@ class _SettingsPageState extends State<SettingsPage> {
     final tileColor = theme.cardColor;
 
     // Common background color for icons
-    final iconBgColor = colorScheme.surfaceContainerHighest.withOpacity(0.4);
+    final iconBgColor = colorScheme.surfaceContainerHighest.withValues(alpha: 0.4);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -191,7 +191,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 Text(
                   'Version 1.0.0',
                   style: TextStyle(
-                    color: textTheme.bodySmall?.color?.withOpacity(0.7),
+                    color: textTheme.bodySmall?.color?.withValues(alpha: 0.7),
                     fontSize: 12,
                   ),
                 ),
@@ -235,7 +235,7 @@ class _SettingsPageState extends State<SettingsPage> {
         // Subtle shadow for better separation
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -251,7 +251,7 @@ class _SettingsPageState extends State<SettingsPage> {
       thickness: 1,
       indent: 60, // Indent to align with text start
       endIndent: 0,
-      color: theme.dividerColor.withOpacity(0.1),
+      color: theme.dividerColor.withValues(alpha: 0.1),
     );
   }
 
@@ -309,7 +309,7 @@ class _SettingsPageState extends State<SettingsPage> {
           trailing ??
           Icon(
             Icons.arrow_forward_ios_rounded,
-            color: textTheme.bodySmall?.color?.withOpacity(0.4),
+            color: textTheme.bodySmall?.color?.withValues(alpha: 0.4),
             size: 16,
           ),
     );

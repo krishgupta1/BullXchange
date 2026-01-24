@@ -141,10 +141,8 @@ class _HoldingsPageState extends State<HoldingsPage> {
                           Icons.filter_list_rounded,
                           size: 20,
                           color:
-                              theme.textTheme.bodySmall?.color?.withOpacity(
-                                0.8,
-                              ) ??
-                              colorScheme.onSurface.withOpacity(0.6),
+                              theme.textTheme.bodySmall?.color?.withValues(alpha: 0.8) ??
+                              colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ],
                     ),
@@ -193,7 +191,7 @@ class HoldingsList extends StatelessWidget {
           thickness: 0.5,
           indent: 72, // Indent to bypass logo
           endIndent: 16,
-          color: theme.dividerColor.withOpacity(0.15),
+          color: theme.dividerColor.withValues(alpha: 0.15),
         ),
         itemBuilder: (context, index) {
           final holding = holdings[index];
@@ -296,8 +294,8 @@ class _PortfolioStockItemState extends State<PortfolioStockItem> {
       decoration: BoxDecoration(
         // Subtle background in dark mode, distinct in light mode
         color: theme.brightness == Brightness.dark
-            ? color.withOpacity(0.2)
-            : color.withOpacity(0.1),
+            ? color.withValues(alpha: 0.2)
+            : color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Center(
@@ -360,7 +358,7 @@ class _PortfolioStockItemState extends State<PortfolioStockItem> {
                   Text(
                     "${h.quantity} shares • Avg. ${h.transactionPrice.toStringAsFixed(1)}",
                     style: TextStyle(
-                      color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
+                      color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
                       fontSize: 11,
                     ),
                   ),
@@ -374,8 +372,8 @@ class _PortfolioStockItemState extends State<PortfolioStockItem> {
               children: [
                 ValueListenableBuilder<double>(
                   valueListenable: _ltpNotifier,
-                  builder: (_, val, __) => Text(
-                    "₹${(val * h.quantity).toStringAsFixed(2)}",
+                  builder: (context, value, child) => Text(
+                    "₹${(value * h.quantity).toStringAsFixed(2)}",
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 11.5,
@@ -386,10 +384,10 @@ class _PortfolioStockItemState extends State<PortfolioStockItem> {
                 const SizedBox(height: 4),
                 ValueListenableBuilder<double>(
                   valueListenable: _plNotifier,
-                  builder: (_, plVal, __) => ValueListenableBuilder<double>(
+                  builder: (context, plValue, child) => ValueListenableBuilder<double>(
                     valueListenable: _percentNotifier,
-                    builder: (_, pctVal, __) {
-                      final isPositive = plVal >= 0;
+                    builder: (context, percentValue, child) {
+                      final isPositive = plValue >= 0;
                       // Brighter green/red for Dark mode visibility
                       final color = isPositive
                           ? (theme.brightness == Brightness.dark
@@ -400,7 +398,7 @@ class _PortfolioStockItemState extends State<PortfolioStockItem> {
                                 : const Color(0xFFFF3D00));
 
                       return Text(
-                        "₹${plVal.abs().toStringAsFixed(2)} (${pctVal.abs().toStringAsFixed(2)}%)",
+                        "₹${plValue.abs().toStringAsFixed(2)} (${percentValue.abs().toStringAsFixed(2)}%)",
                         style: TextStyle(
                           color: color,
                           fontSize: 10,
@@ -454,7 +452,7 @@ class PortfolioStockItemDetailsSheet extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
+              color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
               fontSize: 12.5,
             ),
           ),
@@ -529,7 +527,7 @@ class PortfolioStockItemDetailsSheet extends StatelessWidget {
         // Soft glow for dark mode, shadow for light mode
         boxShadow: [
           BoxShadow(
-            color: theme.shadowColor.withOpacity(0.1),
+            color: theme.shadowColor.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, -5),
           ),
@@ -548,7 +546,7 @@ class PortfolioStockItemDetailsSheet extends StatelessWidget {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
-                    color: theme.dividerColor.withOpacity(0.4),
+                    color: theme.dividerColor.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -580,10 +578,8 @@ class PortfolioStockItemDetailsSheet extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 11,
                             color:
-                                theme.textTheme.bodySmall?.color?.withOpacity(
-                                  0.8,
-                                ) ??
-                                colorScheme.onSurface.withOpacity(0.6),
+                                theme.textTheme.bodySmall?.color?.withValues(alpha: 0.8) ??
+                                colorScheme.onSurface.withValues(alpha: 0.6),
                           ),
                         ),
                       ],
@@ -592,7 +588,7 @@ class PortfolioStockItemDetailsSheet extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 24),
-              Divider(height: 1, color: theme.dividerColor.withOpacity(0.1)),
+              Divider(height: 1, color: theme.dividerColor.withValues(alpha: 0.1)),
               const SizedBox(height: 16),
 
               _buildDetailRow(context, "Quantity", "${holding.quantity}"),
@@ -608,20 +604,20 @@ class PortfolioStockItemDetailsSheet extends StatelessWidget {
               ),
               ValueListenableBuilder<double>(
                 valueListenable: ltpNotifier,
-                builder: (_, ltp, __) => _buildDetailRow(
+                builder: (context, ltpValue, child) => _buildDetailRow(
                   context,
                   "LTP",
-                  "₹${ltp.toStringAsFixed(2)}",
+                  "₹${ltpValue.toStringAsFixed(2)}",
                 ),
               ),
               ValueListenableBuilder<double>(
                 valueListenable: plNotifier,
-                builder: (_, pl, __) {
-                  final color = pl >= 0 ? primaryColor : sellColor;
+                builder: (context, plValue, child) {
+                  final color = plValue >= 0 ? primaryColor : sellColor;
                   return _buildDetailRow(
                     context,
                     "Total Returns",
-                    "₹${pl.abs().toStringAsFixed(2)}",
+                    "₹${plValue.abs().toStringAsFixed(2)}",
                     valueColor: color,
                   );
                 },
@@ -769,14 +765,14 @@ class PortfolioSummaryCard extends StatelessWidget {
             : Colors.white;
 
         final borderColor = isDark
-            ? Colors.white.withOpacity(0.1)
-            : Colors.grey.withOpacity(0.2);
+            ? Colors.white.withValues(alpha: 0.1)
+            : Colors.grey.withValues(alpha: 0.2);
 
         final List<BoxShadow> shadow = isDark
             ? <BoxShadow>[]
             : <BoxShadow>[
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -828,7 +824,7 @@ class PortfolioSummaryCard extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: (totalReturns >= 0 ? Colors.green : Colors.red)
-                          .withOpacity(0.1),
+                          .withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Row(
@@ -856,7 +852,7 @@ class PortfolioSummaryCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 20),
-              Divider(height: 1, color: theme.dividerColor.withOpacity(0.1)),
+              Divider(height: 1, color: theme.dividerColor.withValues(alpha: 0.1)),
               const SizedBox(height: 16),
 
               // Bottom Grid
@@ -954,13 +950,13 @@ class HoldingsEmptyState extends StatelessWidget {
           Icon(
             Icons.bar_chart_rounded,
             size: 64,
-            color: theme.disabledColor.withOpacity(0.3),
+            color: theme.disabledColor.withValues(alpha: 0.3),
           ),
           const SizedBox(height: 16),
           Text(
             "No holdings found",
             style: theme.textTheme.titleMedium?.copyWith(
-              color: theme.textTheme.bodySmall?.color?.withOpacity(0.8),
+              color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.8),
             ),
           ),
         ],

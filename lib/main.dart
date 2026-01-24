@@ -14,6 +14,7 @@ import 'package:bullxchange/features/auth/navigation/auth_wrapper.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:bullxchange/models/user_profile_data_model.dart';
+import 'package:bullxchange/services/expiry_service.dart';
 
 // --- main() function ---
 Future<void> main() async {
@@ -23,6 +24,9 @@ Future<void> main() async {
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await dotenv.load(fileName: ".env");
+
+  // 🆓 FREE: Check expired positions on app startup (no paid services)
+  await ExpiryService.checkAndCleanExpiredPositions();
 
   runApp(
     MultiProvider(
@@ -41,7 +45,7 @@ Future<void> main() async {
               : const Stream.empty(), // Return empty stream if not logged in
           initialData: null,
           // 🔴 IMPORTANT: This catchError prevents the "Permission Denied" crash
-          catchError: (_, __) => null,
+          catchError: (error, stackTrace) => null,
         ),
       ],
       child: const MainApp(),
@@ -78,8 +82,8 @@ class _MainAppState extends State<MainApp> {
 
     // --- ⭐️ Determine which theme to use ---
     final ThemeData currentTheme = themeNotifier.themeMode == ThemeMode.dark
-        ? AppTheme.darkTheme
-        : AppTheme.lightTheme;
+        ? AppTheme.getDarkTheme(context)
+        : AppTheme.getLightTheme(context);
 
     return MaterialApp(
       title: 'BullXchange',

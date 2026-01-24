@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:bullxchange/widgets/custom_back_button.dart';
 
-// --- ⭐️ FIX: Class ka naam file se match kiya ---
+// --- ⭐️ FIX: Class name matched with file ---
 class FaqPage extends StatefulWidget {
   const FaqPage({super.key});
 
@@ -9,11 +9,11 @@ class FaqPage extends StatefulWidget {
   State<FaqPage> createState() => _FaqPageState();
 }
 
-// --- ⭐️ FIX: Class ka naam file se match kiya ---
+// --- ⭐️ FIX: Class name matched with file ---
 class _FaqPageState extends State<FaqPage> {
   @override
   Widget build(BuildContext context) {
-    // --- ⭐️ Theme se colors lo ---
+    // --- ⭐️ Get theme colors ---
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
@@ -114,7 +114,7 @@ class _FaqPageState extends State<FaqPage> {
                       // --- ⭐️ MODIFIED: Dynamic colors ---
                       color: theme.brightness == Brightness.light
                           ? const Color(0xFFF0F5FF)
-                          : colorScheme.primary.withOpacity(0.1),
+                          : colorScheme.primary.withValues(alpha: 0.1),
                       iconColor: theme.brightness == Brightness.light
                           ? const Color(0xFF5B71DA)
                           : colorScheme.primary,
@@ -130,7 +130,7 @@ class _FaqPageState extends State<FaqPage> {
                       // --- ⭐️ MODIFIED: Dynamic colors ---
                       color: theme.brightness == Brightness.light
                           ? const Color(0xFFE6FFF2)
-                          : Colors.green.withOpacity(0.1),
+                          : Colors.green.withValues(alpha: 0.1),
                       iconColor: theme.brightness == Brightness.light
                           ? const Color(0xFF1E8D5F)
                           : Colors.green,
@@ -146,7 +146,7 @@ class _FaqPageState extends State<FaqPage> {
                       // --- ⭐️ MODIFIED: Dynamic colors ---
                       color: theme.brightness == Brightness.light
                           ? const Color(0xFFFFF0F5)
-                          : colorScheme.secondary.withOpacity(0.1),
+                          : colorScheme.secondary.withValues(alpha: 0.1),
                       iconColor: theme.brightness == Brightness.light
                           ? const Color(0xFFDA5B71)
                           : colorScheme.secondary,
@@ -194,7 +194,7 @@ class _FaqPageState extends State<FaqPage> {
     required Color iconColor,
     VoidCallback? onTap, // ⭐️ Added onTap callback
   }) {
-    // --- ⭐️ Theme se colors lo ---
+    // --- ⭐️ Get theme colors ---
     final colorScheme = Theme.of(context).colorScheme;
 
     return GestureDetector(
@@ -237,47 +237,47 @@ class _FaqPageState extends State<FaqPage> {
         _buildExpansionTile(
           context, // ⭐️ Pass context
           'What is BullXChange?',
-          'BullXChange ek paper trading simulation app hai jisme users stock market trading ka practice kar sakte hain using virtual currency.',
+          'BullXChange is a paper trading simulation app where users can practice stock market trading using virtual currency.',
         ),
         _buildExpansionTile(
           context, // ⭐️ Pass context
           'Is this real trading?',
-          'Nahi. App me real trading, demat linking, ya brokerage operations nahi hote.',
+          'No. The app does not have real trading, DEMAT linking, or brokerage operations.',
         ),
         _buildExpansionTile(
           context, // ⭐️ Pass context
           'What is virtual currency?',
-          'App ke andar jo funds milte hain woh 100% virtual hote hain. Inka koi real monetary value nahi hota.',
+          'The funds you get in the app are 100% virtual. They have no real monetary value.',
         ),
         _buildExpansionTile(
           context, // ⭐️ Pass context
           'Can I top-up virtual currency?',
-          'Haan. Jab balance khatam ho jaye, users UPI ke through virtual credits top-up kar sakte hain. \n\n⚠️ Virtual currency non-withdrawable, non-refundable, aur non-convertible hoti hai.',
+          'Yes. When balance runs out, users can top-up virtual credits through UPI. \n\n⚠️ Virtual currency is non-withdrawable, non-refundable, and non-convertible.',
         ),
         _buildExpansionTile(
           context, // ⭐️ Pass context
           'Are stock prices real?',
-          'Real Indian stock market data par based price simulation use hota hai (slight delay possible).',
+          'Price simulation based on real Indian stock market data is used (slight delay possible).',
         ),
         _buildExpansionTile(
           context, // ⭐️ Pass context
-          'Do I need a Demat account?',
-          'Nahi. Ye sirf educational purpose ke liye hai.',
+          'Do I need a DEMAT account?',
+          'No. This is only for educational purposes.',
         ),
         _buildExpansionTile(
           context, // ⭐️ Pass context
           'Can I withdraw my virtual profits?',
-          'Nahi. Saare profits/losses virtual hote hain.',
+          'No. All profits/losses are virtual.',
         ),
         _buildExpansionTile(
           context, // ⭐️ Pass context
           'Is BullXChange linked to any broker?',
-          'Nahi. App Groww, Angel One, Zerodha, Upstox ya kisi broker se affiliated nahi hai.',
+          'No. The app is not affiliated with any brokerage firms or trading platforms.',
         ),
         _buildExpansionTile(
           context, // ⭐️ Pass context
           'Is my data safe?',
-          'Haan. Hum personal data ko secure rakhte hain aur third parties ko sell nahi karte.',
+          'Yes. We keep personal data secure and do not sell it to third parties.',
         ),
       ],
     );
@@ -290,14 +290,14 @@ class _FaqPageState extends State<FaqPage> {
     String answer,
   ) {
     // ⭐️ Added context
-    // --- ⭐️ Theme se colors lo ---
+    // --- ⭐️ Get theme colors ---
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
 
     return Theme(
       data: theme.copyWith(
-        dividerColor: Colors.transparent, // Theme ka divider color use kiya
+        dividerColor: Colors.transparent, // Use theme divider color
       ),
       child: ExpansionTile(
         key: PageStorageKey(title),
@@ -343,8 +343,8 @@ class _FaqPageState extends State<FaqPage> {
           Text(
             answer,
             style: TextStyle(
-              // --- ⭐️ MODIFIED: Theme text color (thoda halka) ---
-              color: colorScheme.onSurface.withOpacity(0.8),
+              // --- ⭐️ MODIFIED: Theme text color (slightly lighter) ---
+              color: colorScheme.onSurface.withValues(alpha: 0.8),
               fontSize: 14, // ⭐️ UPDATED: 10 -> 14 (Standard Body)
               height: 1.5,
             ),

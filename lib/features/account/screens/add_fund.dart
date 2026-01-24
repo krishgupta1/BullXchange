@@ -13,7 +13,7 @@ class AddFundPage extends StatefulWidget {
 
 class _AddFundPageState extends State<AddFundPage> {
   // --- CONFIGURATION ---
-  // REPLACE THIS WITH YOUR ACTUAL UPI ID (e.g., merchant@okicici, 9876543210@paytm)
+  // REPLACE THIS WITH YOUR ACTUAL UPI ID (e.g., merchant@bank, 9876543210@paytm)
   final String _myUpiId = "9336772455-6@ybl";
   final String _myName = "Bullxchange";
 
@@ -199,9 +199,11 @@ class _AddFundPageState extends State<AddFundPage> {
         setState(() => _calculatedPrice = 0.0);
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Error: $e")));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Error: $e")));
+      }
     } finally {
       setState(() => _isSubmitting = false);
     }
@@ -238,10 +240,10 @@ class _AddFundPageState extends State<AddFundPage> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: colorScheme.primary.withOpacity(0.1),
+                  color: colorScheme.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: colorScheme.primary.withOpacity(0.3),
+                    color: colorScheme.primary.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(
@@ -306,7 +308,7 @@ class _AddFundPageState extends State<AddFundPage> {
                   Text(
                     "Total Payable:",
                     style: TextStyle(
-                      color: colorScheme.onSurface.withOpacity(0.7),
+                      color: colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                   Text(

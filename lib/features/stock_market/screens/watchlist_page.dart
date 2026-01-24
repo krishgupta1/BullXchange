@@ -1,4 +1,4 @@
-import 'package:bullxchange/features/stock_market/screens/StockDetailPage.dart';
+import 'package:bullxchange/features/stock_market/screens/stock_detail_page.dart';
 import 'package:bullxchange/features/stock_market/screens/view_all_page.dart';
 import 'package:bullxchange/features/stock_market/widgets/stock_card.dart';
 import 'package:bullxchange/models/user_profile_data_model.dart';
@@ -163,7 +163,7 @@ class _WatchListPageState extends State<WatchListPage> {
         Divider(
           height: 1,
           thickness: 1,
-          color: theme.dividerColor.withOpacity(0.1),
+          color: theme.dividerColor.withValues(alpha: 0.1),
         ),
 
         StreamBuilder<UserProfileDataModel?>(
@@ -456,7 +456,7 @@ class _WatchlistStockItem extends StatelessWidget {
 
         return Container(
           color: isSelected
-              ? colorScheme.primary.withOpacity(0.1)
+              ? colorScheme.primary.withValues(alpha: 0.1)
               : theme.scaffoldBackgroundColor,
           child: Row(
             children: [

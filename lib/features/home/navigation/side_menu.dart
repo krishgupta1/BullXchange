@@ -1,7 +1,7 @@
 import 'dart:math'; // Import math for min function
 import 'package:bullxchange/features/auth/screens/onboarding_page_1.1.dart';
 import 'package:bullxchange/features/account/screens/faq_page.dart';
-import 'package:bullxchange/features/account/screens/referralcodepage.dart';
+import 'package:bullxchange/features/account/screens/referral_code_page.dart';
 import 'package:bullxchange/features/account/screens/settings_page.dart';
 import 'package:bullxchange/models/user_profile_data_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -75,7 +75,7 @@ class _SideMenuState extends State<SideMenu> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: colorScheme.error.withOpacity(0.1),
+                color: colorScheme.error.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -147,7 +147,7 @@ class _SideMenuState extends State<SideMenu> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 24,
             offset: const Offset(4, 0),
           ),
@@ -171,11 +171,11 @@ class _SideMenuState extends State<SideMenu> {
                   color: theme.cardColor,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: theme.dividerColor.withOpacity(0.08),
+                    color: theme.dividerColor.withValues(alpha: 0.08),
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
+                      color: Colors.black.withValues(alpha: 0.03),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -188,13 +188,13 @@ class _SideMenuState extends State<SideMenu> {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: colorScheme.primary.withOpacity(0.1),
+                          color: colorScheme.primary.withValues(alpha: 0.1),
                           width: 2,
                         ),
                       ),
                       child: CircleAvatar(
                         radius: 22, // Slightly smaller for better proportions
-                        backgroundColor: colorScheme.primary.withOpacity(0.1),
+                        backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
                         child: Icon(
                           Icons.person_rounded,
                           size: 24,
@@ -229,7 +229,7 @@ class _SideMenuState extends State<SideMenu> {
                               userProfile?.emailId ?? "Welcome back",
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: theme.textTheme.bodySmall?.color
-                                    ?.withOpacity(0.8),
+                                    ?.withValues(alpha: 0.8),
                                 fontSize: 12,
                                 height: 1.2,
                                 fontWeight: FontWeight.w800,
@@ -247,7 +247,7 @@ class _SideMenuState extends State<SideMenu> {
             // --- Divider ---
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Divider(color: theme.dividerColor.withOpacity(0.1)),
+              child: Divider(color: theme.dividerColor.withValues(alpha: 0.1)),
             ),
             const SizedBox(height: 16),
 
@@ -302,7 +302,7 @@ class _SideMenuState extends State<SideMenu> {
                           color: theme.cardColor,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: theme.dividerColor.withOpacity(0.05),
+                            color: theme.dividerColor.withValues(alpha: 0.05),
                           ),
                         ),
                         child: Consumer<ThemeNotifier>(
@@ -315,8 +315,8 @@ class _SideMenuState extends State<SideMenu> {
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
                                     color: isDarkMode
-                                        ? Colors.amber.withOpacity(0.15)
-                                        : Colors.orange.withOpacity(0.1),
+                                        ? Colors.amber.withValues(alpha: 0.15)
+                                        : Colors.orange.withValues(alpha: 0.1),
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(
@@ -482,7 +482,7 @@ class MenuRow extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: colorScheme.primary.withOpacity(0.3),
+                  color: colorScheme.primary.withValues(alpha: 0.3),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -505,7 +505,7 @@ class MenuRow extends StatelessWidget {
                     size: 24,
                     color: isSelected
                         ? Colors.white
-                        : theme.iconTheme.color?.withOpacity(0.7),
+                        : theme.iconTheme.color?.withValues(alpha: 0.7),
                   ),
                   const SizedBox(width: 14),
                   // Flexible text to prevent overflow

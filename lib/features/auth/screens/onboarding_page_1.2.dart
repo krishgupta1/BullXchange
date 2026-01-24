@@ -199,7 +199,7 @@ class _Dot extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     final Color activeColor = colorScheme.primary;
-    final Color inactiveColor = theme.dividerColor.withOpacity(0.5);
+    final Color inactiveColor = theme.dividerColor.withValues(alpha: 0.5);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),

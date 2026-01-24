@@ -41,7 +41,7 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
   final UserService _userService = UserService();
   final ChargeCalculatorService _calculator = ChargeCalculatorService();
 
-  final String _productType = 'NRML';
+  final String _productType = 'NORMAL';
   int _lotSize = 25;
   int _totalQty = 25;
   double _totalAmount = 0.0;
@@ -180,9 +180,11 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Error: $e")));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Error: $e")));
+      }
     } finally {
       if (mounted) setState(() => _isPlacingOrder = false);
     }
@@ -285,7 +287,7 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                         borderSide: BorderSide(
-                          color: theme.dividerColor.withOpacity(0.2),
+                          color: theme.dividerColor.withValues(alpha: 0.2),
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
@@ -317,7 +319,7 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     alignment: Alignment.centerLeft,
                     decoration: BoxDecoration(
-                      color: theme.dividerColor.withOpacity(0.05),
+                      color: theme.dividerColor.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Text(
@@ -371,7 +373,7 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide(
-                      color: theme.dividerColor.withOpacity(0.2),
+                      color: theme.dividerColor.withValues(alpha: 0.2),
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
@@ -412,7 +414,7 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide(
-                      color: theme.dividerColor.withOpacity(0.2),
+                      color: theme.dividerColor.withValues(alpha: 0.2),
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
@@ -440,7 +442,7 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.1)),
       ),
       child: Column(
         children: [
@@ -570,7 +572,7 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
         color: theme.scaffoldBackgroundColor,
         boxShadow: [
           BoxShadow(
-            color: theme.shadowColor.withOpacity(0.05),
+            color: theme.shadowColor.withValues(alpha: 0.05),
             offset: const Offset(0, -4),
             blurRadius: 16,
           ),
@@ -625,7 +627,7 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: theme.dividerColor.withOpacity(0.3),
+                  color: theme.dividerColor.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -692,7 +694,7 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1),
+                color: Colors.orange.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -785,7 +787,7 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: theme.shadowColor.withOpacity(0.05),
+            color: theme.shadowColor.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -802,7 +804,7 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: colorScheme.outline.withOpacity(0.1),
+                      color: colorScheme.outline.withValues(alpha: 0.1),
                     ),
                   ),
                   child: SmartLogo(instrument: widget.instrument, radius: 24),

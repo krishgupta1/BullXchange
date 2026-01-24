@@ -17,8 +17,7 @@ class ChargesApp extends StatelessWidget {
         scaffoldBackgroundColor: const Color(0xFFF2F4F7), // Premium Light Grey
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF2962FF),
-          surface: Colors.white,
-          background: const Color(0xFFF2F4F7),
+          surface: const Color(0xFFF2F4F7),
           brightness: Brightness.light,
         ),
         appBarTheme: AppBarTheme(
@@ -62,7 +61,6 @@ class ChargesApp extends StatelessWidget {
         scaffoldBackgroundColor: const Color(0xFF071022),
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF00D09C),
-          background: const Color(0xFF071022),
           surface: const Color(0xFF0B1622),
           brightness: Brightness.dark,
         ),
@@ -341,7 +339,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                                   hintStyle: TextStyle(
                                     color: Theme.of(
                                       context,
-                                    ).colorScheme.onSurface.withOpacity(0.35),
+                                    ).colorScheme.onSurface.withValues(alpha: 0.35),
                                   ),
                                   border: InputBorder.none,
                                   enabledBorder: InputBorder.none,
@@ -376,7 +374,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                             backgroundColor: _activeColor,
                             foregroundColor: Colors.white,
                             elevation: 0,
-                            shadowColor: _activeColor.withOpacity(0.4),
+                            shadowColor: _activeColor.withValues(alpha: 0.4),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
                             ),
@@ -407,7 +405,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                               size: 60,
                               color: Theme.of(
                                 context,
-                              ).colorScheme.onSurface.withOpacity(0.28),
+                              ).colorScheme.onSurface.withValues(alpha: 0.28),
                             ),
                           ),
                         ),
@@ -433,7 +431,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         border: Border.all(color: Theme.of(context).dividerColor),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).shadowColor.withOpacity(0.04),
+            color: Theme.of(context).shadowColor.withValues(alpha: 0.04),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -454,7 +452,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                 duration: const Duration(milliseconds: 200),
                 decoration: BoxDecoration(
                   color: _selectedType == TradeType.buy
-                      ? _bullColor.withOpacity(0.1)
+                      ? _bullColor.withValues(alpha: 0.1)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
@@ -472,7 +470,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                         ? _bullColor
                         : Theme.of(
                             context,
-                          ).colorScheme.onSurface.withOpacity(0.65),
+                          ).colorScheme.onSurface.withValues(alpha: 0.65),
                     fontWeight: FontWeight.w700,
                     fontSize: 11,
                   ),
@@ -494,7 +492,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                 duration: const Duration(milliseconds: 200),
                 decoration: BoxDecoration(
                   color: _selectedType == TradeType.sell
-                      ? _bearColor.withOpacity(0.1)
+                      ? _bearColor.withValues(alpha: 0.1)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
@@ -512,7 +510,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                         ? _bearColor
                         : Theme.of(
                             context,
-                          ).colorScheme.onSurface.withOpacity(0.65),
+                          ).colorScheme.onSurface.withValues(alpha: 0.65),
                     fontWeight: FontWeight.w700,
                     fontSize: 11,
                   ),
@@ -532,7 +530,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).shadowColor.withOpacity(0.08),
+            color: Theme.of(context).shadowColor.withValues(alpha: 0.08),
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),
@@ -550,7 +548,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Theme.of(context).shadowColor.withOpacity(0.08),
+                  color: Theme.of(context).shadowColor.withValues(alpha: 0.08),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -567,7 +565,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                       style: TextStyle(
                         color: Theme.of(
                           context,
-                        ).colorScheme.onPrimary.withOpacity(0.9),
+                        ).colorScheme.onPrimary.withValues(alpha: 0.9),
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
                       ),
@@ -589,7 +587,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                   decoration: BoxDecoration(
                     color: Theme.of(
                       context,
-                    ).colorScheme.onPrimary.withOpacity(0.08),
+                    ).colorScheme.onPrimary.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -639,7 +637,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
           Text(
             label,
             style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.85),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.85),
               fontSize: 10,
               fontWeight: isBold ? FontWeight.w600 : FontWeight.w400,
             ),

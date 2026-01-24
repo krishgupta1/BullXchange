@@ -150,9 +150,11 @@ class _SellStockPageState extends State<SellStockPage> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to place order: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to place order: $e')));
+      }
     } finally {
       if (mounted) setState(() => _isPlacingOrder = false);
     }
@@ -248,7 +250,7 @@ class _SellStockPageState extends State<SellStockPage> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: theme.shadowColor.withOpacity(0.05),
+            color: theme.shadowColor.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -260,7 +262,7 @@ class _SellStockPageState extends State<SellStockPage> {
             padding: const EdgeInsets.all(2),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+              border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
             ),
             child: SmartLogo(instrument: widget.instrument, radius: 24),
           ),
@@ -291,7 +293,7 @@ class _SellStockPageState extends State<SellStockPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: _sellColor.withOpacity(0.1), // Updated background
+              color: _sellColor.withValues(alpha: 0.1), // Updated background
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
@@ -326,7 +328,7 @@ class _SellStockPageState extends State<SellStockPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: theme.dividerColor.withOpacity(0.1),
+                color: theme.dividerColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -354,7 +356,7 @@ class _SellStockPageState extends State<SellStockPage> {
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide(
-                color: theme.dividerColor.withOpacity(0.2),
+                color: theme.dividerColor.withValues(alpha: 0.2),
               ),
             ),
             focusedBorder: OutlineInputBorder(
@@ -384,7 +386,7 @@ class _SellStockPageState extends State<SellStockPage> {
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.1)),
       ),
       child: Column(
         children: [
@@ -525,7 +527,7 @@ class _SellStockPageState extends State<SellStockPage> {
         color: theme.scaffoldBackgroundColor,
         boxShadow: [
           BoxShadow(
-            color: theme.shadowColor.withOpacity(0.05),
+            color: theme.shadowColor.withValues(alpha: 0.05),
             offset: const Offset(0, -4),
             blurRadius: 16,
           ),
@@ -545,7 +547,7 @@ class _SellStockPageState extends State<SellStockPage> {
               child: ElevatedButton(
                 onPressed: null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.disabledColor.withOpacity(0.1),
+                  backgroundColor: theme.disabledColor.withValues(alpha: 0.1),
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
@@ -562,7 +564,7 @@ class _SellStockPageState extends State<SellStockPage> {
                         style: TextStyle(
                           // CHANGED: Use onSurface with opacity to ensure visibility in dark mode
                           // 'disabledColor' is often too dark on black backgrounds
-                          color: colorScheme.onSurface.withOpacity(0.35),
+                          color: colorScheme.onSurface.withValues(alpha: 0.35),
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -597,7 +599,7 @@ class _SellStockPageState extends State<SellStockPage> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: theme.dividerColor.withOpacity(0.3),
+                    color: theme.dividerColor.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -733,7 +735,7 @@ class _SwipeToConfirmButtonState extends State<SwipeToConfirmButton> {
           height: _height,
           width: maxWidth,
           decoration: BoxDecoration(
-            color: widget.color.withOpacity(0.15),
+            color: widget.color.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(30),
           ),
           child: Stack(
@@ -812,7 +814,7 @@ class _SwipeToConfirmButtonState extends State<SwipeToConfirmButton> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: widget.color.withOpacity(0.4),
+                          color: widget.color.withValues(alpha: 0.4),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),

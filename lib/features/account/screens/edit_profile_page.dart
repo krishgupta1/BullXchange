@@ -250,10 +250,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
           width: 120,
           height: 120,
           decoration: BoxDecoration(
-            color: colorScheme.primary.withOpacity(0.1),
+            color: colorScheme.primary.withValues(alpha: 0.1),
             shape: BoxShape.circle,
             border: Border.all(
-              color: colorScheme.primary.withOpacity(0.2),
+              color: colorScheme.primary.withValues(alpha: 0.2),
               width: 2,
             ),
           ),
@@ -312,7 +312,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             fontWeight: FontWeight.bold,
             color: enabled
                 ? colorScheme.onSurface
-                : colorScheme.onSurface.withOpacity(0.5),
+                : colorScheme.onSurface.withValues(alpha: 0.5),
           ),
           validator: validator,
           decoration: InputDecoration(
@@ -321,8 +321,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
             // Visually distinguish disabled fields slightly
             fillColor: enabled
                 ? Theme.of(context).inputDecorationTheme.fillColor ??
-                      Colors.grey.withOpacity(0.05)
-                : Colors.grey.withOpacity(0.1),
+                      Colors.grey.withValues(alpha: 0.05)
+                : Colors.grey.withValues(alpha: 0.1),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide.none, // Cleaner look like Add Funds
@@ -330,7 +330,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide(
-                color: colorScheme.outline.withOpacity(0.2),
+                color: colorScheme.outline.withValues(alpha: 0.2),
               ),
             ),
             focusedBorder: OutlineInputBorder(

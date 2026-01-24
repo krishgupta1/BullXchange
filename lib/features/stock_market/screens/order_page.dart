@@ -18,9 +18,9 @@ Widget _buildTransactionBadge(BuildContext context, String type) {
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
     decoration: BoxDecoration(
-      color: color.withOpacity(0.15),
+      color: color.withValues(alpha: 0.15),
       borderRadius: BorderRadius.circular(4),
-      border: Border.all(color: color.withOpacity(0.3), width: 1),
+      border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
     ),
     child: Text(
       type,
@@ -40,9 +40,9 @@ Widget _buildProductBadge(BuildContext context, String productType) {
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
     decoration: BoxDecoration(
-      color: Colors.blue.withOpacity(0.15),
+      color: Colors.blue.withValues(alpha: 0.15),
       borderRadius: BorderRadius.circular(4),
-      border: Border.all(color: Colors.blue.withOpacity(0.3), width: 1),
+      border: Border.all(color: Colors.blue.withValues(alpha: 0.3), width: 1),
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
@@ -206,7 +206,7 @@ class OrderPage extends StatelessWidget {
                   thickness: 0.5,
                   indent: 72,
                   endIndent: 16,
-                  color: theme.dividerColor.withOpacity(0.15),
+                  color: theme.dividerColor.withValues(alpha: 0.15),
                 ),
                 itemBuilder: (context, index) {
                   final order = openOrders[index];
@@ -239,8 +239,8 @@ class OrderPage extends StatelessWidget {
         ? Colors.blueAccent.shade100
         : Colors.blue.shade700;
     final activeBgColor = isDark
-        ? Colors.blueAccent.withOpacity(0.2)
-        : Colors.blue.withOpacity(0.1);
+        ? Colors.blueAccent.withValues(alpha: 0.2)
+        : Colors.blue.withValues(alpha: 0.1);
 
     return Container(
       margin: const EdgeInsets.all(16),
@@ -252,13 +252,13 @@ class OrderPage extends StatelessWidget {
             ? []
             : [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 15,
                   offset: const Offset(0, 4),
                 ),
               ],
         border: Border.all(
-          color: theme.dividerColor.withOpacity(isDark ? 0.1 : 0.05),
+          color: theme.dividerColor.withValues(alpha: isDark ? 0.1 : 0.05),
         ),
       ),
       child: Column(
@@ -313,7 +313,7 @@ class OrderPage extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 24),
-          Divider(height: 1, color: theme.dividerColor.withOpacity(0.1)),
+          Divider(height: 1, color: theme.dividerColor.withValues(alpha: 0.1)),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -339,10 +339,10 @@ class OrderPage extends StatelessWidget {
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: colorScheme.error.withOpacity(0.1),
+                    color: colorScheme.error.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: colorScheme.error.withOpacity(0.3),
+                      color: colorScheme.error.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
@@ -508,8 +508,8 @@ class _OrderListItem extends StatelessWidget {
       height: 40,
       decoration: BoxDecoration(
         color: theme.brightness == Brightness.dark
-            ? color.withOpacity(0.2)
-            : color.withOpacity(0.1),
+            ? color.withValues(alpha: 0.2)
+            : color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Center(
@@ -539,7 +539,7 @@ class _EmptyState extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
             shape: BoxShape.circle,
           ),
           child: Icon(
@@ -561,7 +561,7 @@ class _EmptyState extends StatelessWidget {
         Text(
           "Your open orders will appear here.",
           style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.textTheme.bodySmall?.color?.withOpacity(0.8),
+            color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.8),
           ),
           textAlign: TextAlign.center,
         ),

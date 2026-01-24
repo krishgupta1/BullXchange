@@ -159,19 +159,19 @@ class FundsHistoryPage extends StatelessWidget {
     switch (req.status) {
       case 'approved':
         statusColor = const Color(0xFF1EAB58); // Success Green
-        statusBg = const Color(0xFF1EAB58).withOpacity(0.1);
+        statusBg = const Color(0xFF1EAB58).withValues(alpha: 0.1);
         label = "Approved";
         iconData = Icons.arrow_downward_rounded;
         break;
       case 'rejected':
         statusColor = colorScheme.error;
-        statusBg = colorScheme.error.withOpacity(0.1);
+        statusBg = colorScheme.error.withValues(alpha: 0.1);
         label = "Rejected";
         iconData = Icons.close_rounded;
         break;
       default:
         statusColor = Colors.orange;
-        statusBg = Colors.orange.withOpacity(0.1);
+        statusBg = Colors.orange.withValues(alpha: 0.1);
         label = "Pending";
         iconData = Icons.access_time_rounded;
     }
@@ -194,7 +194,7 @@ class FundsHistoryPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -213,7 +213,7 @@ class FundsHistoryPage extends StatelessWidget {
                   color: theme.scaffoldBackgroundColor,
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: theme.dividerColor.withOpacity(0.1),
+                    color: theme.dividerColor.withValues(alpha: 0.1),
                   ),
                 ),
                 child: Icon(displayIcon, size: 20, color: statusColor),
@@ -259,7 +259,7 @@ class FundsHistoryPage extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           // Divider
-          Divider(height: 1, color: theme.dividerColor.withOpacity(0.1)),
+          Divider(height: 1, color: theme.dividerColor.withValues(alpha: 0.1)),
           const SizedBox(height: 12),
           // Footer: Status and UTR
           Row(
@@ -348,13 +348,13 @@ class _EmptyFundsState extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+            color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
             shape: BoxShape.circle,
           ),
           child: Icon(
             Icons.account_balance_wallet_outlined,
             size: 48,
-            color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
           ),
         ),
         const SizedBox(height: 24),

@@ -32,8 +32,8 @@ class ComingSoonPage extends StatelessWidget {
             fontSize: 22,
             fontWeight: FontWeight.w800,
             color: isDark
-                ? Colors.white.withOpacity(0.9)
-                : Colors.black.withOpacity(0.85),
+                ? Colors.white.withValues(alpha: 0.9)
+                : Colors.black.withValues(alpha: 0.85),
           ),
         ),
       ),

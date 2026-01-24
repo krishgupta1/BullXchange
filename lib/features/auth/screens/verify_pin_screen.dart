@@ -92,7 +92,7 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.dividerColor.withOpacity(0.5)),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.5)),
       ),
     );
 
@@ -145,7 +145,7 @@ class _VerifyPinScreenState extends State<VerifyPinScreen> {
                         height: 150,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: colorScheme.primary.withOpacity(0.1),
+                          color: colorScheme.primary.withValues(alpha: 0.1),
                         ),
                         child: Padding(
                           padding: const EdgeInsets.all(28.0),

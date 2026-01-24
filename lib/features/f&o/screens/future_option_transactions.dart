@@ -72,15 +72,15 @@ class _FnoTransactionsPageState extends State<FnoTransactionsPage> {
 
         // 1. Filter F&O
         final allTransactions = snapshot.data!;
-        final FnoTransactionsPage = allTransactions.where(_isFno).toList();
+        final fnoTransactionsPage = allTransactions.where(_isFno).toList();
 
-        if (FnoTransactionsPage.isEmpty) {
+        if (fnoTransactionsPage.isEmpty) {
           return _buildEmptyState(textColor, subTextColor);
         }
 
         // 2. Group by Date
         final groupedTransactions = _groupTransactionsByDate(
-          FnoTransactionsPage,
+          fnoTransactionsPage,
         );
 
         return ListView.builder(
@@ -125,7 +125,7 @@ class _FnoTransactionsPageState extends State<FnoTransactionsPage> {
                       height: 1,
                       thickness: 0.5,
                       indent: 60,
-                      color: subTextColor.withOpacity(0.1),
+                      color: subTextColor.withValues(alpha: 0.1),
                     ),
                     itemBuilder: (ctx, idx) {
                       return _buildTransactionItem(
@@ -183,7 +183,7 @@ class _FnoTransactionsPageState extends State<FnoTransactionsPage> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: (isBuy ? kGreen : kRed).withOpacity(0.15),
+                  color: (isBuy ? kGreen : kRed).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
@@ -224,7 +224,7 @@ class _FnoTransactionsPageState extends State<FnoTransactionsPage> {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.orange.withOpacity(0.15),
+                              color: Colors.orange.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
@@ -314,7 +314,7 @@ class _FnoTransactionsPageState extends State<FnoTransactionsPage> {
           Icon(
             Icons.receipt_long_rounded,
             size: 48,
-            color: subTextColor.withOpacity(0.3),
+            color: subTextColor.withValues(alpha: 0.3),
           ),
           const SizedBox(height: 16),
           Text(

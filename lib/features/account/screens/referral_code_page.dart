@@ -214,13 +214,15 @@ class _ReferralCodePageState extends State<ReferralCodePage> {
                               Clipboard.setData(
                                 ClipboardData(text: _referralCode),
                               ).then((_) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Referral code copied!'),
-                                    backgroundColor: Colors.green,
-                                    duration: Duration(seconds: 2),
-                                  ),
-                                );
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Referral code copied!'),
+                                      backgroundColor: Colors.green,
+                                      duration: Duration(seconds: 2),
+                                    ),
+                                  );
+                                }
                               });
                             },
                             borderRadius: BorderRadius.circular(20),
@@ -266,10 +268,12 @@ class _ReferralCodePageState extends State<ReferralCodePage> {
                     ? null
                     : () {
                         // ⭐️ Share Logic
-                        Share.share(
-                          'Hey! Join BullXchange and start trading. '
-                          'Use my code $_referralCode to get 5,000 Bonus Points! '
-                          'Download here: https://bullxchange.com/app',
+                        SharePlus.instance.share(
+                          ShareParams(
+                            text: 'Hey! Join BullXchange and start trading. '
+                            'Use my code $_referralCode to get 5,000 Bonus Points! '
+                            'Download here: https://bullxchange.com/app',
+                          ),
                         );
                       },
                 style: ElevatedButton.styleFrom(

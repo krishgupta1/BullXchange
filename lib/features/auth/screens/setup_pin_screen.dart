@@ -69,7 +69,7 @@ class _SetupPinScreenState extends State<SetupPinScreen> {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         // --- ⭐️ MODIFIED: Theme border color ---
-        border: Border.all(color: theme.dividerColor.withOpacity(0.5)),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.5)),
       ),
     );
 
@@ -121,7 +121,7 @@ class _SetupPinScreenState extends State<SetupPinScreen> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           // --- ⭐️ MODIFIED: Theme color ---
-                          color: colorScheme.primary.withOpacity(0.1),
+                          color: colorScheme.primary.withValues(alpha: 0.1),
                         ),
                         child: Padding(
                           padding: const EdgeInsets.all(28.0),

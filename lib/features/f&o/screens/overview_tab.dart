@@ -281,7 +281,7 @@ class _ListRow extends StatelessWidget {
             ],
           ),
         ),
-        Divider(color: Colors.grey.withOpacity(0.2), height: 1),
+        Divider(color: Colors.grey.withValues(alpha: 0.2), height: 1),
       ],
     );
   }

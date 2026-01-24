@@ -4,6 +4,7 @@ import 'package:bullxchange/models/stock_holding_model.dart';
 import 'package:bullxchange/models/option_holding_model.dart';
 import 'package:bullxchange/models/user_profile_data_model.dart';
 import 'package:bullxchange/models/transaction_model.dart';
+import 'package:bullxchange/utils/option_calculator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart'; // Import for kDebugMode
 
@@ -159,7 +160,7 @@ class UserService {
       if (referrerRef != null && referrerUid != null) {
         try {
           // Use FieldValue.increment for safety
-          await referrerRef!.update({
+          await referrerRef.update({
             'availableFunds': FieldValue.increment(referrerBonus),
           });
 
@@ -174,8 +175,9 @@ class UserService {
           });
         } catch (e) {
           // This typically fails if Firestore rules block User A from updating User B
-          if (kDebugMode)
+          if (kDebugMode) {
             print("Referrer update skipped (Permission/Error): $e");
+          }
         }
       }
     }
@@ -360,8 +362,20 @@ class UserService {
               currentLtp: optionUpdate.currentLtp,
             );
           }
-        } else if (optionUpdate.quantity > 0) {
-          currentOptions.add(optionUpdate);
+        } else {
+          // Add new position (both long and short positions)
+          // Calculate time decay data
+          final daysToExpiry = OptionCalculator.getDaysToExpiry(optionUpdate.expiryDate);
+          final theta = OptionCalculator.calculateThetaImpact(optionUpdate.averagePrice, daysToExpiry);
+          final thetaPercent = OptionCalculator.getTimeDecayPercent(optionUpdate.averagePrice, daysToExpiry);
+          
+          final enrichedOptionUpdate = optionUpdate.copyWith(
+            theta: theta,
+            thetaPercent: thetaPercent,
+            daysToExpiry: daysToExpiry,
+          );
+          
+          currentOptions.add(enrichedOptionUpdate);
         }
 
         firestoreTransaction.update(userDocRef, {

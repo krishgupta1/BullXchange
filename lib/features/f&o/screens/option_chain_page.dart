@@ -289,7 +289,7 @@ class _OptionChainBodyState extends State<_OptionChainBody>
                 ),
               ),
               const SizedBox(width: 15),
-              Expanded(
+              Expanded( 
                 child: SizedBox(
                   height: 50,
                   child: ElevatedButton(
@@ -529,7 +529,7 @@ class _OptionChainBodyState extends State<_OptionChainBody>
                         return Divider(
                           height: 1,
                           thickness: 0.5,
-                          color: Colors.grey.withOpacity(0.2),
+                          color: Colors.grey.withValues(alpha: 0.2),
                         );
                       },
                       itemBuilder: (ctx, i) {

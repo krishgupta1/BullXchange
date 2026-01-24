@@ -7,250 +7,381 @@ class AppTheme {
   static const Color kSecondaryGrey = Colors.grey;
   static const Color kButtonPurple = Color(0xFFC7B8F5);
 
-  // --- TYPOGRAPHY CONSTANTS ---
+  // --- TYPOGRAPHY CONSTANTS (Updated to use ResponsiveHelper) ---
   static const String _fontFamily = 'EudoxusSans';
-  static const double _appBarFontSize = 22;
-  static const double _h1FontSize = 21;
-  static const double _h2FontSize = 18;
-  static const double _bodyFontSize = 16;
-  static const double _captionFontSize = 14;
+  
+  // Font sizes will now be dynamically calculated using ResponsiveHelper
+  // This ensures consistency across all screen sizes
 
-  // --- LIGHT TEXT THEME ---
-  static final TextTheme _lightTextTheme = TextTheme(
-    displayLarge: const TextStyle(
-      fontFamily: _fontFamily,
-      fontSize: 32,
-      fontWeight: FontWeight.bold,
-      color: kPrimaryBlue,
-    ),
-    displayMedium: const TextStyle(
-      fontFamily: _fontFamily,
-      fontSize: 28,
-      fontWeight: FontWeight.bold,
-      color: kPrimaryBlue,
-    ),
-    headlineSmall: const TextStyle(
-      fontFamily: _fontFamily,
-      fontSize: _h1FontSize,
-      fontWeight: FontWeight.bold,
-      color: Colors.black,
-    ),
-    titleLarge: const TextStyle(
-      fontFamily: _fontFamily,
-      fontSize: _h2FontSize,
-      fontWeight: FontWeight.w700,
-      color: Colors.black,
-    ),
-    titleMedium: const TextStyle(
-      fontFamily: _fontFamily,
-      fontSize: _bodyFontSize,
-      fontWeight: FontWeight.w600,
-      color: Colors.black,
-    ),
-    titleSmall: const TextStyle(
-      fontFamily: _fontFamily,
-      fontSize: _captionFontSize,
-      fontWeight: FontWeight.w600,
-      color: Colors.black87,
-    ),
-    bodyLarge: const TextStyle(
-      fontFamily: _fontFamily,
-      fontSize: _bodyFontSize,
-      fontWeight: FontWeight.w500,
-      color: Colors.black,
-    ),
-    bodyMedium: const TextStyle(
-      fontFamily: _fontFamily,
-      fontSize: _captionFontSize,
-      fontWeight: FontWeight.normal,
-      color: Colors.black87,
-    ),
-    bodySmall: const TextStyle(
-      fontFamily: _fontFamily,
-      fontSize: 13,
-      fontWeight: FontWeight.normal,
-      color: Colors.grey,
-    ),
-    labelLarge: const TextStyle(
-      fontFamily: _fontFamily,
-      fontSize: _bodyFontSize,
-      fontWeight: FontWeight.w600,
-      color: Colors.black,
-    ),
-    labelSmall: const TextStyle(
-      fontFamily: _fontFamily,
-      fontSize: _captionFontSize,
-      fontWeight: FontWeight.normal,
-      color: Colors.grey,
-    ),
-  );
+  // --- MODERN LIGHT TEXT THEME ---
+  static TextTheme getLightTextTheme(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final screenWidth = screenSize.width;
+    final scaleFactor = screenWidth < 600 ? 1.0 : screenWidth < 1200 ? 1.1 : 1.2;
+    
+    // Helper function for scaling font sizes
+    double scaleFontSize(double fontSize) {
+      final scaled = fontSize * scaleFactor;
+      return scaled.clamp(fontSize * 0.95, fontSize * 1.2);
+    }
+    
+    return TextTheme(
+      // Display styles (for hero sections, splash screens)
+      displayLarge: TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: scaleFontSize(32.0),
+        fontWeight: FontWeight.bold,
+        color: kPrimaryBlue,
+        height: 1.2,
+      ),
+      displayMedium: TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: scaleFontSize(28.0),
+        fontWeight: FontWeight.bold,
+        color: kPrimaryBlue,
+        height: 1.2,
+      ),
+      
+      // Headline styles (for section headers)
+      headlineLarge: TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: scaleFontSize(24.0),
+        fontWeight: FontWeight.bold,
+        color: Colors.black,
+        height: 1.3,
+      ),
+      headlineMedium: TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: scaleFontSize(20.0),
+        fontWeight: FontWeight.w700,
+        color: Colors.black,
+        height: 1.3,
+      ),
+      headlineSmall: TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: scaleFontSize(18.0),
+        fontWeight: FontWeight.w600,
+        color: Colors.black,
+        height: 1.3,
+      ),
+      
+      // Title styles (for card titles, list items)
+      titleLarge: TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: scaleFontSize(22.0),
+        fontWeight: FontWeight.w600,
+        color: Colors.black,
+        height: 1.4,
+      ),
+      titleMedium: TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: scaleFontSize(16.0),
+        fontWeight: FontWeight.w600,
+        color: Colors.black,
+        height: 1.4,
+      ),
+      titleSmall: TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: scaleFontSize(14.0),
+        fontWeight: FontWeight.w600,
+        color: Colors.black87,
+        height: 1.4,
+      ),
+      
+      // Body styles (for content text)
+      bodyLarge: TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: scaleFontSize(16.0),
+        fontWeight: FontWeight.w500,
+        color: Colors.black,
+        height: 1.5,
+      ),
+      bodyMedium: TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: scaleFontSize(14.0),
+        fontWeight: FontWeight.normal,
+        color: Colors.black87,
+        height: 1.5,
+      ),
+      bodySmall: TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: scaleFontSize(12.0),
+        fontWeight: FontWeight.normal,
+        color: Colors.grey,
+        height: 1.4,
+      ),
+      
+      // Label styles (for buttons, tags, captions)
+      labelLarge: TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: scaleFontSize(16.0),
+        fontWeight: FontWeight.w600,
+        color: Colors.black,
+        height: 1.3,
+      ),
+      labelMedium: TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: scaleFontSize(14.0),
+        fontWeight: FontWeight.w500,
+        color: Colors.black87,
+        height: 1.3,
+      ),
+      labelSmall: TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: scaleFontSize(10.0),
+        fontWeight: FontWeight.normal,
+        color: Colors.grey,
+        height: 1.3,
+      ),
+    );
+  }
 
-  // --- DARK TEXT THEME ---
-  static final TextTheme _darkTextTheme = TextTheme(
-    displayLarge: const TextStyle(
-      fontFamily: _fontFamily,
-      fontSize: 32,
-      fontWeight: FontWeight.bold,
-      color: kPrimaryBlue,
-    ),
-    displayMedium: const TextStyle(
-      fontFamily: _fontFamily,
-      fontSize: 28,
-      fontWeight: FontWeight.bold,
-      color: kPrimaryBlue,
-    ),
-    headlineSmall: const TextStyle(
-      fontFamily: _fontFamily,
-      fontSize: _h1FontSize,
-      fontWeight: FontWeight.bold,
-      color: Colors.white,
-    ),
-    titleLarge: const TextStyle(
-      fontFamily: _fontFamily,
-      fontSize: _h2FontSize,
-      fontWeight: FontWeight.w700,
-      color: Colors.white,
-    ),
-    titleMedium: const TextStyle(
-      fontFamily: _fontFamily,
-      fontSize: _bodyFontSize,
-      fontWeight: FontWeight.w600,
-      color: Colors.white,
-    ),
-    titleSmall: const TextStyle(
-      fontFamily: _fontFamily,
-      fontSize: _captionFontSize,
-      fontWeight: FontWeight.w600,
-      color: Colors.white70,
-    ),
-    bodyLarge: const TextStyle(
-      fontFamily: _fontFamily,
-      fontSize: _bodyFontSize,
-      fontWeight: FontWeight.w500,
-      color: Colors.white,
-    ),
-    bodyMedium: const TextStyle(
-      fontFamily: _fontFamily,
-      fontSize: _captionFontSize,
-      fontWeight: FontWeight.normal,
-      color: Colors.white70,
-    ),
-    bodySmall: const TextStyle(
-      fontFamily: _fontFamily,
-      fontSize: 13,
-      fontWeight: FontWeight.normal,
-      color: Colors.grey,
-    ),
-    labelLarge: const TextStyle(
-      fontFamily: _fontFamily,
-      fontSize: _bodyFontSize,
-      fontWeight: FontWeight.w600,
-      color: Colors.white,
-    ),
-    labelSmall: const TextStyle(
-      fontFamily: _fontFamily,
-      fontSize: _captionFontSize,
-      fontWeight: FontWeight.normal,
-      color: Colors.grey,
-    ),
-  );
+  // --- MODERN DARK TEXT THEME ---
+  static TextTheme getDarkTextTheme(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final screenWidth = screenSize.width;
+    final scaleFactor = screenWidth < 600 ? 1.0 : screenWidth < 1200 ? 1.1 : 1.2;
+    
+    // Helper function for scaling font sizes
+    double scaleFontSize(double fontSize) {
+      final scaled = fontSize * scaleFactor;
+      return scaled.clamp(fontSize * 0.95, fontSize * 1.2);
+    }
+    
+    return TextTheme(
+      // Display styles (for hero sections, splash screens)
+      displayLarge: TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: scaleFontSize(32.0),
+        fontWeight: FontWeight.bold,
+        color: kPrimaryBlue,
+        height: 1.2,
+      ),
+      displayMedium: TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: scaleFontSize(28.0),
+        fontWeight: FontWeight.bold,
+        color: kPrimaryBlue,
+        height: 1.2,
+      ),
+      
+      // Headline styles (for section headers)
+      headlineLarge: TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: scaleFontSize(24.0),
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
+        height: 1.3,
+      ),
+      headlineMedium: TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: scaleFontSize(20.0),
+        fontWeight: FontWeight.w700,
+        color: Colors.white,
+        height: 1.3,
+      ),
+      headlineSmall: TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: scaleFontSize(18.0),
+        fontWeight: FontWeight.w600,
+        color: Colors.white,
+        height: 1.3,
+      ),
+      
+      // Title styles (for card titles, list items)
+      titleLarge: TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: scaleFontSize(22.0),
+        fontWeight: FontWeight.w600,
+        color: Colors.white,
+        height: 1.4,
+      ),
+      titleMedium: TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: scaleFontSize(16.0),
+        fontWeight: FontWeight.w600,
+        color: Colors.white,
+        height: 1.4,
+      ),
+      titleSmall: TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: scaleFontSize(14.0),
+        fontWeight: FontWeight.w600,
+        color: Colors.white70,
+        height: 1.4,
+      ),
+      
+      // Body styles (for content text)
+      bodyLarge: TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: scaleFontSize(16.0),
+        fontWeight: FontWeight.w500,
+        color: Colors.white,
+        height: 1.5,
+      ),
+      bodyMedium: TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: scaleFontSize(14.0),
+        fontWeight: FontWeight.normal,
+        color: Colors.white70,
+        height: 1.5,
+      ),
+      bodySmall: TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: scaleFontSize(12.0),
+        fontWeight: FontWeight.normal,
+        color: Colors.grey,
+        height: 1.4,
+      ),
+      
+      // Label styles (for buttons, tags, captions)
+      labelLarge: TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: scaleFontSize(16.0),
+        fontWeight: FontWeight.w600,
+        color: Colors.white,
+        height: 1.3,
+      ),
+      labelMedium: TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: scaleFontSize(14.0),
+        fontWeight: FontWeight.w500,
+        color: Colors.white70,
+        height: 1.3,
+      ),
+      labelSmall: TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: scaleFontSize(10.0),
+        fontWeight: FontWeight.normal,
+        color: Colors.grey,
+        height: 1.3,
+      ),
+    );
+  }
 
   // --- LIGHT THEME ---
-  static final ThemeData lightTheme = ThemeData(
-    useMaterial3: true,
-    brightness: Brightness.light,
-    fontFamily: _fontFamily,
-    shadowColor: Colors.grey.withOpacity(0.5),
-    colorScheme: ColorScheme.light(
-      primary: kPrimaryBlue,
-      secondary: kBrandPink,
-      surface: Colors.white,
-      onSurface: Colors.black,
-      secondaryContainer: kButtonPurple,
-      onSecondaryContainer: Colors.white,
-      error: Colors.red,
-      onPrimary: Colors.white,
-      onSecondary: Colors.white,
-    ),
-    appBarTheme: const AppBarTheme(
-      backgroundColor: Colors.white,
-      elevation: 0,
-      iconTheme: IconThemeData(color: kBrandPink),
-      titleTextStyle: TextStyle(
-        fontFamily: _fontFamily,
-        color: kPrimaryBlue,
-        fontWeight: FontWeight.bold,
-        fontSize: _appBarFontSize,
+  static ThemeData getLightTheme(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final screenWidth = screenSize.width;
+    final scaleFactor = screenWidth < 600 ? 1.0 : screenWidth < 1200 ? 1.1 : 1.2;
+    
+    // Helper function for scaling font sizes
+    double scaleFontSize(double fontSize) {
+      final scaled = fontSize * scaleFactor;
+      return scaled.clamp(fontSize * 0.95, fontSize * 1.2);
+    }
+    
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.light,
+      fontFamily: _fontFamily,
+      shadowColor: Colors.grey.withValues(alpha: 0.5),
+      colorScheme: ColorScheme.light(
+        primary: kPrimaryBlue,
+        secondary: kBrandPink,
+        surface: Colors.white,
+        onSurface: Colors.black,
+        secondaryContainer: kButtonPurple,
+        onSecondaryContainer: Colors.white,
+        error: Colors.red,
+        onPrimary: Colors.white,
+        onSecondary: Colors.white,
       ),
-    ),
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      backgroundColor: Colors.white,
-      elevation: 0,
-    ),
-    switchTheme: SwitchThemeData(
-      thumbColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) {
-          return kBrandPink;
-        }
-        return Colors.grey.shade400;
-      }),
-      trackColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) {
-          return kBrandPink.withOpacity(0.5);
-        }
-        return Colors.grey.shade200;
-      }),
-    ),
-    textTheme: _lightTextTheme,
-  );
+      appBarTheme: AppBarTheme(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: kBrandPink),
+        titleTextStyle: TextStyle(
+          fontFamily: _fontFamily,
+          color: kPrimaryBlue,
+          fontWeight: FontWeight.bold,
+          fontSize: scaleFontSize(28.0),
+        ),
+      ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: Colors.white,
+        elevation: 0,
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return kBrandPink;
+          }
+          return Colors.grey.shade400;
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return kBrandPink.withValues(alpha: 0.5);
+          }
+          return Colors.grey.shade200;
+        }),
+      ),
+      textTheme: getLightTextTheme(context),
+    );
+  }
 
   // --- DARK THEME ---
-  static final ThemeData darkTheme = ThemeData(
-    useMaterial3: true,
-    brightness: Brightness.dark,
-    fontFamily: _fontFamily,
-    scaffoldBackgroundColor: Colors.black,
-    shadowColor: Colors.black.withOpacity(0.5),
-    colorScheme: ColorScheme.dark(
-      primary: kPrimaryBlue,
-      secondary: kBrandPink,
-      surface: const Color(0xFF1E1E1E),
-      onSurface: Colors.white,
-      secondaryContainer: kButtonPurple,
-      onSecondaryContainer: Colors.white,
-      error: Colors.redAccent,
-      onPrimary: Colors.white,
-      onSecondary: Colors.white,
-    ),
-    appBarTheme: const AppBarTheme(
-      backgroundColor: Colors.black,
-      elevation: 0,
-      iconTheme: IconThemeData(color: kBrandPink),
-      titleTextStyle: TextStyle(
-        fontFamily: _fontFamily,
-        color: Colors.white,
-        fontWeight: FontWeight.bold,
-        fontSize: _appBarFontSize,
+  static ThemeData getDarkTheme(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final screenWidth = screenSize.width;
+    final scaleFactor = screenWidth < 600 ? 1.0 : screenWidth < 1200 ? 1.1 : 1.2;
+    
+    // Helper function for scaling font sizes
+    double scaleFontSize(double fontSize) {
+      final scaled = fontSize * scaleFactor;
+      return scaled.clamp(fontSize * 0.95, fontSize * 1.2);
+    }
+    
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      fontFamily: _fontFamily,
+      shadowColor: Colors.black.withValues(alpha: 0.5),
+      colorScheme: ColorScheme.dark(
+        primary: kPrimaryBlue,
+        secondary: kBrandPink,
+        surface: const Color(0xFF121212),
+        onSurface: Colors.white,
+        secondaryContainer: kButtonPurple,
+        onSecondaryContainer: Colors.white,
+        error: Colors.red,
+        onPrimary: Colors.white,
+        onSecondary: Colors.white,
       ),
-    ),
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      backgroundColor: Color(0xFF1E1E1E),
-      elevation: 0,
-    ),
-    switchTheme: SwitchThemeData(
-      thumbColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) {
-          return kBrandPink;
-        }
-        return Colors.grey.shade400;
-      }),
-      trackColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) {
-          return kBrandPink.withOpacity(0.5);
-        }
-        return Colors.grey.shade800;
-      }),
-    ),
-    textTheme: _darkTextTheme,
-  );
+      appBarTheme: AppBarTheme(
+        backgroundColor: const Color(0xFF121212),
+        elevation: 0,
+        iconTheme: const IconThemeData(color: kBrandPink),
+        titleTextStyle: TextStyle(
+          fontFamily: _fontFamily,
+          color: kPrimaryBlue,
+          fontWeight: FontWeight.bold,
+          fontSize: scaleFontSize(28.0),
+        ),
+      ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: Color(0xFF121212),
+        elevation: 0,
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return kBrandPink;
+          }
+          return Colors.grey.shade400;
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return kBrandPink.withValues(alpha: 0.5);
+          }
+          return Colors.grey.shade200;
+        }),
+      ),
+      textTheme: getDarkTextTheme(context),
+    );
+  }
+
+  // Convenience getters for backward compatibility
+  static ThemeData getLightThemeCompat(BuildContext context) => getLightTheme(context);
+  static ThemeData getDarkThemeCompat(BuildContext context) => getDarkTheme(context);
 }

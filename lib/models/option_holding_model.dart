@@ -18,6 +18,11 @@ class OptionHoldingModel {
   final double? target;
   final double? stopLoss;
 
+  // ⭐️ NEW: TIME DECAY FIELDS
+  final double? theta; // Daily time decay value
+  final double? thetaPercent; // Time decay percentage
+  final int? daysToExpiry; // Days remaining to expiry
+
   OptionHoldingModel({
     required this.symbol,
     required this.contractSymbol,
@@ -33,6 +38,9 @@ class OptionHoldingModel {
     required this.exchange,
     this.target,
     this.stopLoss,
+    this.theta,
+    this.thetaPercent,
+    this.daysToExpiry,
   });
 
   OptionHoldingModel copyWith({
@@ -42,6 +50,9 @@ class OptionHoldingModel {
     double? currentLtp,
     double? target,
     double? stopLoss,
+    double? theta,
+    double? thetaPercent,
+    int? daysToExpiry,
   }) {
     return OptionHoldingModel(
       symbol: symbol,
@@ -59,6 +70,9 @@ class OptionHoldingModel {
       // ⭐️ UPDATE OR KEEP EXISTING
       target: target ?? this.target,
       stopLoss: stopLoss ?? this.stopLoss,
+      theta: theta ?? this.theta,
+      thetaPercent: thetaPercent ?? this.thetaPercent,
+      daysToExpiry: daysToExpiry ?? this.daysToExpiry,
     );
   }
 
@@ -78,6 +92,9 @@ class OptionHoldingModel {
     // ⭐️ SAVE NEW FIELDS
     'target': target,
     'stopLoss': stopLoss,
+    'theta': theta,
+    'thetaPercent': thetaPercent,
+    'daysToExpiry': daysToExpiry,
   };
 
   factory OptionHoldingModel.fromJson(Map<String, dynamic> json) {
@@ -97,6 +114,9 @@ class OptionHoldingModel {
       // ⭐️ LOAD NEW FIELDS
       target: (json['target'] as num?)?.toDouble(),
       stopLoss: (json['stopLoss'] as num?)?.toDouble(),
+      theta: (json['theta'] as num?)?.toDouble(),
+      thetaPercent: (json['thetaPercent'] as num?)?.toDouble(),
+      daysToExpiry: json['daysToExpiry'],
     );
   }
 }

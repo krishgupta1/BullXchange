@@ -230,7 +230,7 @@ class _LoginPageState extends State<LoginPage> {
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         // --- ⭐️ MODIFIED: Theme divider color ---
-        borderSide: BorderSide(color: theme.dividerColor.withOpacity(0.5)),
+        borderSide: BorderSide(color: theme.dividerColor.withValues(alpha: 0.5)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),

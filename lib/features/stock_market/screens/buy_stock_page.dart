@@ -351,7 +351,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: theme.shadowColor.withOpacity(0.05),
+            color: theme.shadowColor.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -368,7 +368,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: colorScheme.outline.withOpacity(0.1),
+                      color: colorScheme.outline.withValues(alpha: 0.1),
                     ),
                   ),
                   child: SmartLogo(instrument: widget.instrument, radius: 24),
@@ -519,7 +519,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
                       hint: '0.00',
                       fillColor: isLimit
                           ? theme.cardColor
-                          : theme.dividerColor.withOpacity(0.05),
+                          : theme.dividerColor.withValues(alpha: 0.05),
                     ),
                   ),
                 ],
@@ -543,7 +543,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
       contentPadding: const EdgeInsets.all(16),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: theme.dividerColor.withOpacity(0.2)),
+        borderSide: BorderSide(color: theme.dividerColor.withValues(alpha: 0.2)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
@@ -570,7 +570,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.1)),
       ),
       child: Row(
         children: options.map((option) {
@@ -616,7 +616,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.1)),
       ),
       child: Column(
         children: [
@@ -748,7 +748,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
         color: theme.scaffoldBackgroundColor,
         boxShadow: [
           BoxShadow(
-            color: theme.shadowColor.withOpacity(0.05),
+            color: theme.shadowColor.withValues(alpha: 0.05),
             offset: const Offset(0, -4),
             blurRadius: 16,
           ),
@@ -767,7 +767,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
               child: ElevatedButton(
                 onPressed: null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.disabledColor.withOpacity(0.1),
+                  backgroundColor: theme.disabledColor.withValues(alpha: 0.1),
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
@@ -815,7 +815,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: theme.dividerColor.withOpacity(0.3),
+                    color: theme.dividerColor.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -930,7 +930,7 @@ class _BuyStockPageState extends State<BuyStockPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
+                  color: Colors.orange.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -1079,7 +1079,7 @@ class _SwipeToConfirmButtonState extends State<SwipeToConfirmButton> {
           height: _height,
           width: maxWidth,
           decoration: BoxDecoration(
-            color: widget.color.withOpacity(0.15),
+            color: widget.color.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(30),
           ),
           child: Stack(
@@ -1158,7 +1158,7 @@ class _SwipeToConfirmButtonState extends State<SwipeToConfirmButton> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: widget.color.withOpacity(0.4),
+                          color: widget.color.withValues(alpha: 0.4),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),

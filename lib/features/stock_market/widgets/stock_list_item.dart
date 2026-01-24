@@ -1,5 +1,5 @@
 import 'dart:math';
-import 'package:bullxchange/features/stock_market/screens/StockDetailPage.dart';
+import 'package:bullxchange/features/stock_market/screens/stock_detail_page.dart';
 import 'package:bullxchange/features/stock_market/widgets/mini_chart.dart';
 import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
 import 'package:bullxchange/models/instrument_model.dart';

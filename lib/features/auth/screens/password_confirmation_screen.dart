@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'setup_pin_screen.dart';
 
 // --- Custom Route Transition Function ---
-// (Yeh function maine yahaan se hata diya hai, yeh aapki `route_transitions.dart` file mein hona chahiye)
+// (This function has been moved from here, it should be in your `route_transitions.dart` file)
 // PageRouteBuilder slideRightToLeft(Widget page) { ... }
 // ----------------------------------------
 
@@ -95,11 +95,11 @@ class _PasswordConfirmationScreenState
         scrolledUnderElevation: 0,
       ),
       body: SafeArea(
-        // --- ⭐️⭐️ FIX: Column ko SingleChildScrollView mein wrap kiya ⭐️⭐️ ---
+        // --- ⭐️⭐️ FIX: Wrapped Column in SingleChildScrollView ---
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            // --- ⭐️⭐️ FIX: IntrinsicHeight use kiya taaki page poori height le ⭐️⭐️ ---
+            // --- ⭐️⭐️ FIX: Used IntrinsicHeight so page takes full height ---
             child: ConstrainedBox(
               constraints: BoxConstraints(
                 minHeight:
@@ -118,7 +118,7 @@ class _PasswordConfirmationScreenState
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           // --- ⭐️ MODIFIED: Theme color ---
-                          color: colorScheme.primary.withOpacity(0.1),
+                          color: colorScheme.primary.withValues(alpha: 0.1),
                         ),
                         child: Padding(
                           padding: const EdgeInsets.all(28.0),
@@ -162,7 +162,7 @@ class _PasswordConfirmationScreenState
                           borderRadius: BorderRadius.circular(12),
                           // --- ⭐️ MODIFIED: Theme border color ---
                           borderSide: BorderSide(
-                            color: theme.dividerColor.withOpacity(0.5),
+                            color: theme.dividerColor.withValues(alpha: 0.5),
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
@@ -199,7 +199,7 @@ class _PasswordConfirmationScreenState
                       child: TextButton(
                         onPressed: () => Navigator.pushReplacement(
                           context,
-                          // slideRightToLeft(const ResetPasswordPage()), // Yeh aapki transitions file se aana chahiye
+                          // slideRightToLeft(const ResetPasswordPage()), // This should come from your transitions file
                           MaterialPageRoute(
                             builder: (context) => const ResetPasswordPage(),
                           ),
@@ -220,7 +220,7 @@ class _PasswordConfirmationScreenState
                           fontSize: 12,
                         ),
                       ),
-                    // --- ⭐️⭐️ FIX: Spacer() ko SizedBox se replace kiya ⭐️⭐️ ---
+                    // --- ⭐️⭐️ FIX: Replaced Spacer() with SizedBox ---
                     const Spacer(),
                     const SizedBox(height: 32),
                     SizedBox(

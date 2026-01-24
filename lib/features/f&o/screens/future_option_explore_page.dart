@@ -156,9 +156,14 @@ class _IndexGridCard extends StatelessWidget {
     final cardColor = isDarkMode ? const Color(0xFF1C1C1E) : Colors.white;
 
     final borderColor = isDarkMode
-        ? Colors.white.withOpacity(0.08)
-        : Colors.grey.withOpacity(0.15);
+        ? Colors.white.withValues(alpha: 0.08)
+        : Colors.grey.withValues(alpha: 0.15);
 
+    // --- Responsive calculations ---
+    final screenSize = MediaQuery.of(context).size;
+    final screenWidth = screenSize.width;
+    final scaleFactor = screenWidth < 600 ? 0.85 : screenWidth < 1200 ? 0.95 : 1.0;
+    
     return Container(
       decoration: BoxDecoration(
         color: cardColor,
@@ -168,7 +173,7 @@ class _IndexGridCard extends StatelessWidget {
             ? []
             : [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.06),
+                  color: Colors.grey.withValues(alpha: 0.06),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -180,39 +185,43 @@ class _IndexGridCard extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12.0 * scaleFactor),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 // 1. Header
                 Row(
                   children: [
-                    SmartLogo(instrument: instrument, radius: 20),
-                    const SizedBox(width: 8),
+                    SmartLogo(instrument: instrument, radius: (20 * scaleFactor).round()),
+                    SizedBox(width: 8 * scaleFactor),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             instrument.name.toUpperCase(),
                             style: Theme.of(context).textTheme.titleSmall
                                 ?.copyWith(
                                   fontWeight: FontWeight.w700,
-                                  fontSize: 14,
+                                  fontSize: (14.0 * scaleFactor).clamp(10.0, 14.0),
                                 ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 2),
+                          SizedBox(height: 2 * scaleFactor),
                           Text(
                             instrument.symbol.split('-').first,
                             style: TextStyle(
-                              fontSize: 11,
+                              fontSize: (11.0 * scaleFactor).clamp(9.0, 11.0),
                               color: isDarkMode
                                   ? Colors.grey[500]
                                   : Colors.grey[600],
                               fontWeight: FontWeight.w500,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
@@ -220,34 +229,40 @@ class _IndexGridCard extends StatelessWidget {
                   ],
                 ),
 
-                const SizedBox(height: 40),
+                SizedBox(height: 40 * scaleFactor),
 
                 // 2. Price Section
                 Text(
                   ltp.toStringAsFixed(2),
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                    fontSize: (16.0 * scaleFactor).clamp(12.0, 16.0),
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 6),
+                SizedBox(height: 6 * scaleFactor),
 
                 // 3. Change Badge
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: displayColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    '$sign${change.toStringAsFixed(2)} ($sign${changePercent.toStringAsFixed(2)}%)',
-                    style: TextStyle(
-                      color: displayColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+                Flexible(
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 8.0 * scaleFactor,
+                      vertical: 4.0 * scaleFactor,
+                    ),
+                    decoration: BoxDecoration(
+                      color: displayColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      '$sign${change.toStringAsFixed(2)} ($sign${changePercent.toStringAsFixed(2)}%)',
+                      style: TextStyle(
+                        color: displayColor,
+                        fontSize: (12.0 * scaleFactor).clamp(10.0, 12.0),
+                        fontWeight: FontWeight.w700,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ),

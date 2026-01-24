@@ -1,4 +1,4 @@
-import 'package:bullxchange/features/stock_market/screens/StockDetailPage.dart';
+import 'package:bullxchange/features/stock_market/screens/stock_detail_page.dart';
 import 'package:bullxchange/features/stock_market/widgets/shimmer_loading.dart';
 import 'package:bullxchange/features/stock_market/widgets/stock_card.dart';
 import 'package:bullxchange/models/instrument_model.dart';
@@ -207,12 +207,12 @@ class _ViewAllPageState extends State<ViewAllPage> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: theme.shadowColor.withOpacity(0.05),
+            color: theme.shadowColor.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.1)),
       ),
       child: TextField(
         controller: searchController,
@@ -252,7 +252,7 @@ Widget _buildShimmerLoadingList(BuildContext context) {
     child: ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: 10,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) => const StockShimmerItem(),
     ),
   );

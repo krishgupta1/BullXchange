@@ -10,6 +10,7 @@ import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:bullxchange/utils/responsive_helper.dart';
 
 class FutureOptionPage extends StatefulWidget {
   const FutureOptionPage({super.key});
@@ -28,10 +29,59 @@ class _FutureOptionPageState extends State<FutureOptionPage>
   @override
   bool get wantKeepAlive => true;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadUserData();
+  // --- Refresh Index Data ---
+  Future<void> _refreshIndexData(InstrumentProvider provider) async {
+    try {
+      // Show loading indicator
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              SizedBox(width: 12),
+              Text("Refreshing index data..."),
+            ],
+          ),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      
+      // Refresh NIFTY data
+      final indices = [
+        if (provider.nifty50 != null) provider.nifty50!,
+        if (provider.bankNifty != null) provider.bankNifty!,
+      ];
+      
+      if (indices.isNotEmpty) {
+        await provider.fetchLiveDataFor(indices);
+      }
+      
+      // Hide loading and show success
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Index data refreshed!"),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 1),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Failed to refresh: $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _loadUserData() async {
@@ -69,6 +119,12 @@ class _FutureOptionPageState extends State<FutureOptionPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    
+    // Initialize responsive helper
+    ResponsiveHelper.init(context, BoxConstraints.tightFor(
+      width: MediaQuery.of(context).size.width,
+      height: MediaQuery.of(context).size.height,
+    ));
 
     return Consumer<InstrumentProvider>(
       builder: (context, provider, child) {
@@ -77,10 +133,10 @@ class _FutureOptionPageState extends State<FutureOptionPage>
         return Scaffold(
           body: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              padding: EdgeInsets.symmetric(horizontal: ResponsiveHelper.horizontalPadding),
               child: Column(
                 children: [
-                  const SizedBox(height: 16),
+                  SizedBox(height: ResponsiveHelper.smallSpacing),
                   MainPageHeader(
                     userName: _userName,
                     defaultUserName: 'User',
@@ -89,27 +145,33 @@ class _FutureOptionPageState extends State<FutureOptionPage>
                       Scaffold.of(context).openDrawer();
                     },
                   ),
-                  const SizedBox(height: 30),
+                  SizedBox(height: ResponsiveHelper.sectionSpacing * 1.25),
 
-                  // ✨ Index Cards
+                  // ✨ Index Cards with Refresh
                   Row(
                     children: [
                       Expanded(
-                        child: IndexCard(
-                          instrument: provider.nifty50,
-                          title: "NIFTY 50",
+                        child: GestureDetector(
+                          onTap: () => _refreshIndexData(provider),
+                          child: IndexCard(
+                            instrument: provider.nifty50,
+                            title: "NIFTY 50",
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      SizedBox(width: ResponsiveHelper.horizontalPadding),
                       Expanded(
-                        child: IndexCard(
-                          instrument: provider.bankNifty,
-                          title: "BANK NIFTY",
+                        child: GestureDetector(
+                          onTap: () => _refreshIndexData(provider),
+                          child: IndexCard(
+                            instrument: provider.bankNifty,
+                            title: "BANK NIFTY",
+                          ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: ResponsiveHelper.itemSpacing * 1.25),
 
                   // ✨ Action Tabs
                   ActionTabBar(

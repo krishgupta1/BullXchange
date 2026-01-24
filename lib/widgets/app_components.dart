@@ -46,9 +46,9 @@ class AppComponents {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: iconColor.withOpacity(0.1),
+          color: iconColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: iconColor.withOpacity(0.2), width: 1),
+          border: Border.all(color: iconColor.withValues(alpha: 0.2), width: 1),
         ),
         child: Row(
           children: [
@@ -94,7 +94,7 @@ class AppComponents {
           children: [
             CircleAvatar(
               radius: 18,
-              backgroundColor: iconColor.withOpacity(0.1),
+              backgroundColor: iconColor.withValues(alpha: 0.1),
               child: Icon(icon, color: iconColor, size: 18),
             ),
             const SizedBox(width: 12),
@@ -147,7 +147,7 @@ class AppComponents {
     return Container(
       height: height,
       decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.2),
+        color: Colors.grey.withValues(alpha: 0.2),
         borderRadius: borderRadius,
       ),
     );
@@ -167,7 +167,7 @@ class AppComponents {
       child: Divider(
         thickness: 1,
         height: 1,
-        color: Colors.grey.withOpacity(0.1),
+        color: Colors.grey.withValues(alpha: 0.1),
       ),
     );
   }

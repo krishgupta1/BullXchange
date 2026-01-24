@@ -10,9 +10,13 @@ class AngelOneApiService {
     Map<String, List<String>> tokensByExchange,
   ) async {
     if (tokensByExchange.isEmpty) {
+      AppLog.w("⚠️ No tokens provided for market data fetch");
       return [];
     }
+    
     try {
+      AppLog.i("🔄 Fetching live market data for tokens: $tokensByExchange");
+      
       final url =
           "https://apiconnect.angelone.in/rest/secure/angelbroking/market/v1/quote/";
 
@@ -40,24 +44,30 @@ class AngelOneApiService {
       // 4. Dio automatically decodes the JSON response body.
       // We access it directly via `response.data`.
       final decoded = response.data;
+      
+      AppLog.d("📊 API Response Status: ${response.statusCode}");
+      AppLog.d("📊 API Response Data: ${decoded.toString().substring(0, decoded.toString().length > 200 ? 200 : decoded.toString().length)}...");
 
-      if (response.statusCode == 200 &&
-          decoded["status"] == true &&
-          decoded["data"]?["fetched"] is List) {
-        return decoded["data"]["fetched"] as List<dynamic>;
-      } else {
-        AppLog.e("API Error: ${decoded['message'] ?? 'Unknown error'}");
+      try {
+        if (response.statusCode == 200 &&
+            decoded["status"] == true &&
+            decoded["data"]?["fetched"] is List) {
+          final fetched = decoded["data"]["fetched"] as List<dynamic>;
+          AppLog.i("✅ Successfully fetched ${fetched.length} market data items");
+          return fetched;
+        } else {
+          final errorMsg = decoded['message'] ?? 'Unknown error';
+          AppLog.e("❌ API Error: $errorMsg");
+          AppLog.e("❌ Full Response: $decoded");
+          return [];
+        }
+      } catch (e) {
+        AppLog.e("❌ Network Error fetching market data: $e");
+        AppLog.e("❌ Stack trace: ${StackTrace.current}");
         return [];
       }
-    } on DioException catch (e) {
-      // 5. Dio has a dedicated exception type for better error handling.
-      AppLog.e("Error in AngelOneApiService (Dio): ${e.message}");
-      if (e.response != null) {
-        AppLog.d("Dio Response Error Data: ${e.response?.data}");
-      }
-      return [];
     } catch (e) {
-      AppLog.e("An unexpected error occurred: $e");
+      AppLog.e("❌ Unexpected error in fetchLiveMarketData: $e");
       return [];
     }
   }

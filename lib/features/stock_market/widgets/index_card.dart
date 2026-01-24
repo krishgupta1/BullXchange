@@ -13,43 +13,73 @@ class IndexCard extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
+    
+    // --- Responsive calculations ---
+    final screenSize = MediaQuery.of(context).size;
+    final screenWidth = screenSize.width;
+    final scaleFactor = screenWidth < 600 ? 1.0 : screenWidth < 1200 ? 1.1 : 1.2;
+    
+    // Helper function for scaling sizes
+    double scaleSize(double size) {
+      final scaled = size * (screenWidth / 375.0);
+      return scaled.clamp(size * 0.8, size * 1.5);
+    }
+    
+    double scaleFontSize(double fontSize) {
+      final scaled = fontSize * scaleFactor;
+      return scaled.clamp(fontSize * 0.95, fontSize * 1.2);
+    }
 
-    // --- Data Logic (Unchanged) ---
-    final name =
-        title ?? // Use the override title if provided
+    // --- Data Logic with Better Error Handling ---
+    final name = title ?? // Use the override title if provided
         instrument?.name.toUpperCase().replaceFirst("NIFTY ", "") ??
         "LOADING...";
-    final value = instrument?.liveData["ltp"]?.toStringAsFixed(2) ?? "0.00";
-    final netChange =
-        instrument?.liveData["netChange"]?.toStringAsFixed(2) ?? "0.00";
-    final percentChange =
-        instrument?.liveData["percentChange"]?.toStringAsFixed(2) ?? "0.00";
+    
+    // Better data parsing with fallbacks
+    double ltpValue = 0.0;
+    double netChangeValue = 0.0;
+    double percentChangeValue = 0.0;
+    
+    if (instrument?.liveData != null) {
+      ltpValue = (instrument?.liveData["ltp"] as num?)?.toDouble() ?? 0.0;
+      netChangeValue = (instrument?.liveData["netChange"] as num?)?.toDouble() ?? 0.0;
+      percentChangeValue = (instrument?.liveData["percentChange"] as num?)?.toDouble() ?? 0.0;
+    }
+    
+    // Format values with proper fallbacks
+    final value = ltpValue > 0 ? ltpValue.toStringAsFixed(2) : "--.--";
+    final netChange = netChangeValue != 0 ? netChangeValue.toStringAsFixed(2) : "0.00";
+    final percentChange = percentChangeValue != 0 ? percentChangeValue.toStringAsFixed(2) : "0.00";
 
-    final double changeValue = num.tryParse(netChange)?.toDouble() ?? 0.0;
-    final isNegative = changeValue.isNegative;
+    final isNegative = netChangeValue < 0;
+    final hasData = ltpValue > 0;
 
-    // Colors & Icon logic
-    final changeColor = isNegative ? Colors.redAccent : const Color(0xFF00C853);
-    final trendIcon = isNegative
-        ? Icons.trending_down_rounded
-        : Icons.trending_up_rounded;
+    // Colors & Icon logic with better states
+    final changeColor = !hasData 
+        ? Colors.grey 
+        : (isNegative ? Colors.redAccent : const Color(0xFF00C853));
+    final trendIcon = !hasData
+        ? Icons.help_outline_rounded
+        : (isNegative ? Icons.trending_down_rounded : Icons.trending_up_rounded);
 
-    final changeText = "$netChange ($percentChange%)";
+    final changeText = hasData 
+        ? "$netChange ($percentChange%)"
+        : "No Data";
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(scaleSize(20.0)),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(scaleSize(20.0)),
         border: Border.all(
-          color: theme.dividerColor.withOpacity(0.08),
+          color: theme.dividerColor.withValues(alpha: 0.08),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             spreadRadius: 0,
-            blurRadius: 12,
+            blurRadius: scaleSize(20.0) * 0.6,
             offset: const Offset(0, 4),
           ),
         ],
@@ -66,7 +96,7 @@ class IndexCard extends StatelessWidget {
                 child: Text(
                   name,
                   style: textTheme.bodySmall?.copyWith(
-                    color: textTheme.bodyMedium?.color?.withOpacity(0.6),
+                    color: textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.5,
                   ),
@@ -75,44 +105,63 @@ class IndexCard extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: EdgeInsets.all(scaleSize(4.0) * 1.5),
                 decoration: BoxDecoration(
-                  color: changeColor.withOpacity(0.1),
+                  color: changeColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(trendIcon, size: 16, color: changeColor),
+                child: Icon(trendIcon, size: scaleSize(24.0) * 0.7, color: changeColor),
               ),
             ],
           ),
 
-          const SizedBox(height: 12),
+          SizedBox(height: scaleSize(8.0)),
 
           // Main Price Text
           Text(
-            value != "0.00" ? "₹$value" : "...",
+            hasData ? "₹$value" : "₹--.--",
             style: TextStyle(
-              fontSize: 18,
+              fontSize: scaleFontSize(18.0) * 0.85, // Reduced font size
               fontWeight: FontWeight.w800,
-              color: colorScheme.onSurface,
+              color: hasData ? colorScheme.onSurface : Colors.grey,
               letterSpacing: -0.5,
             ),
           ),
 
-          const SizedBox(height: 6),
+          SizedBox(height: scaleSize(4.0) * 1.5),
 
           // Change Percentage Text
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: changeColor.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(6),
+            padding: EdgeInsets.symmetric(
+              horizontal: scaleSize(4.0) * 1.5, // Reduced padding
+              vertical: scaleSize(4.0) * 0.8,
             ),
-            child: Text(
-              changeText,
-              style: textTheme.bodySmall?.copyWith(
-                color: changeColor,
-                fontWeight: FontWeight.w700,
-              ),
+            decoration: BoxDecoration(
+              color: changeColor.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(scaleSize(20.0) * 0.3),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  trendIcon,
+                  size: scaleSize(24.0) * 0.4, // Smaller icon
+                  color: changeColor,
+                ),
+                SizedBox(width: scaleSize(4.0) * 0.3), // Reduced spacing
+                Flexible(
+                  child: Text(
+                    changeText,
+                    style: textTheme.bodySmall?.copyWith(
+                      color: changeColor,
+                      fontWeight: FontWeight.w700,
+                      fontSize: scaleFontSize(10.0) * 0.9, // Smaller font
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

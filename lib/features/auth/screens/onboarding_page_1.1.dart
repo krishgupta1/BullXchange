@@ -106,7 +106,7 @@ class OnboardingPage extends StatelessWidget {
                           child: Text(
                             'Next',
                             style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                              // --- ⭐️⭐️ FIX: Text color ko onPrimary (White) kiya ---
+                              // --- ⭐️⭐️ FIX: Text color set to onPrimary (White) ---
                               color: colorScheme.onPrimary,
                             ),
                           ),
@@ -138,9 +138,9 @@ class _Dot extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    // --- ⭐️ MODIFIED: Colors ab theme se aa rahe hain ---
+    // --- ⭐️ MODIFIED: Colors now come from theme ---
     final Color activeColor = colorScheme.primary;
-    final Color inactiveColor = theme.dividerColor.withOpacity(0.5);
+    final Color inactiveColor = theme.dividerColor.withValues(alpha: 0.5);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),

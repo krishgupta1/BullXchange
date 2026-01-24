@@ -22,9 +22,9 @@ Widget _buildIntradayBadge(BuildContext context) {
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
     decoration: BoxDecoration(
-      color: Colors.blue.withOpacity(0.15),
+      color: Colors.blue.withValues(alpha: 0.15),
       borderRadius: BorderRadius.circular(4),
-      border: Border.all(color: Colors.blue.withOpacity(0.3), width: 1),
+      border: Border.all(color: Colors.blue.withValues(alpha: 0.3), width: 1),
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
@@ -155,14 +155,16 @@ class _PositionPageState extends State<PositionPage> {
     } finally {
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: errorCount > 0 ? Colors.red : Colors.green,
-            content: Text(
-              'Exited $successCount positions. $errorCount failed.',
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: errorCount > 0 ? Colors.red : Colors.green,
+              content: Text(
+                'Exited $successCount positions. $errorCount failed.',
+              ),
             ),
-          ),
-        );
+          );
+        }
       }
     }
   }
@@ -262,7 +264,7 @@ class _PositionPageState extends State<PositionPage> {
                   thickness: 0.5,
                   indent: 72,
                   endIndent: 16,
-                  color: theme.dividerColor.withOpacity(0.15),
+                  color: theme.dividerColor.withValues(alpha: 0.15),
                 ),
                 itemBuilder: (context, index) {
                   return PositionStockItem(
@@ -312,13 +314,13 @@ class _PositionPageState extends State<PositionPage> {
             ? []
             : [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 15,
                   offset: const Offset(0, 4),
                 ),
               ],
         border: Border.all(
-          color: theme.dividerColor.withOpacity(isDark ? 0.1 : 0.05),
+          color: theme.dividerColor.withValues(alpha: isDark ? 0.1 : 0.05),
         ),
       ),
       child: Column(
@@ -360,7 +362,7 @@ class _PositionPageState extends State<PositionPage> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                 decoration: BoxDecoration(
-                  color: pnlColor.withOpacity(0.1),
+                  color: pnlColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -375,7 +377,7 @@ class _PositionPageState extends State<PositionPage> {
             ],
           ),
           const SizedBox(height: 24),
-          Divider(height: 1, color: theme.dividerColor.withOpacity(0.1)),
+          Divider(height: 1, color: theme.dividerColor.withValues(alpha: 0.1)),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -410,10 +412,10 @@ class _PositionPageState extends State<PositionPage> {
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: colorScheme.error.withOpacity(0.1),
+                    color: colorScheme.error.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: colorScheme.error.withOpacity(0.3),
+                      color: colorScheme.error.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
@@ -455,7 +457,7 @@ class _EmptyState extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
             shape: BoxShape.circle,
           ),
           child: Icon(
@@ -477,7 +479,7 @@ class _EmptyState extends StatelessWidget {
         Text(
           "Your intraday trades will appear here.",
           style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.textTheme.bodySmall?.color?.withOpacity(0.8),
+            color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.8),
           ),
           textAlign: TextAlign.center,
         ),
@@ -572,8 +574,8 @@ class _PositionStockItemState extends State<PositionStockItem> {
       height: 40,
       decoration: BoxDecoration(
         color: theme.brightness == Brightness.dark
-            ? color.withOpacity(0.2)
-            : color.withOpacity(0.1),
+            ? color.withValues(alpha: 0.2)
+            : color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Center(
@@ -645,7 +647,7 @@ class _PositionStockItemState extends State<PositionStockItem> {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: theme.dividerColor.withOpacity(0.1),
+                          color: theme.dividerColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -671,8 +673,8 @@ class _PositionStockItemState extends State<PositionStockItem> {
               children: [
                 ValueListenableBuilder<double>(
                   valueListenable: _ltpNotifier,
-                  builder: (_, val, __) => Text(
-                    priceFormatter.format(val * p.quantity),
+                  builder: (context, value, child) => Text(
+                    priceFormatter.format(value * p.quantity),
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
@@ -683,10 +685,10 @@ class _PositionStockItemState extends State<PositionStockItem> {
                 const SizedBox(height: 4),
                 ValueListenableBuilder<double>(
                   valueListenable: _plNotifier,
-                  builder: (_, plVal, __) => ValueListenableBuilder<double>(
+                  builder: (context, plValue, child) => ValueListenableBuilder<double>(
                     valueListenable: _percentNotifier,
-                    builder: (_, pctVal, __) {
-                      final isPositive = plVal >= 0;
+                    builder: (context, percentValue, child) {
+                      final isPositive = plValue >= 0;
                       final sign = isPositive ? "+" : "-";
 
                       final color = isPositive
@@ -698,7 +700,7 @@ class _PositionStockItemState extends State<PositionStockItem> {
                                 : const Color(0xFFFF3D00));
 
                       return Text(
-                        "$sign₹${plVal.abs().toStringAsFixed(2)} (${pctVal.abs().toStringAsFixed(2)}%)",
+                        "$sign₹${plValue.abs().toStringAsFixed(2)} (${percentValue.abs().toStringAsFixed(2)}%)",
                         style: TextStyle(
                           color: color,
                           fontSize: 12,
@@ -749,7 +751,7 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
+              color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
               fontSize: 14,
             ),
           ),
@@ -767,8 +769,8 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
       height: 48,
       decoration: BoxDecoration(
         color: theme.brightness == Brightness.dark
-            ? color.withOpacity(0.2)
-            : color.withOpacity(0.1),
+            ? color.withValues(alpha: 0.2)
+            : color.withValues(alpha: 0.1),
         shape: BoxShape.circle,
       ),
       child: Center(
@@ -876,7 +878,7 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, -5),
           ),
@@ -895,7 +897,7 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
-                    color: theme.dividerColor.withOpacity(0.4),
+                    color: theme.dividerColor.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -931,7 +933,7 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
                               style: TextStyle(
                                 color:
                                     theme.textTheme.bodySmall?.color ??
-                                    colorScheme.onSurface.withOpacity(0.7),
+                                    colorScheme.onSurface.withValues(alpha: 0.7),
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -946,7 +948,7 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 24),
-              Divider(height: 1, color: theme.dividerColor.withOpacity(0.1)),
+              Divider(height: 1, color: theme.dividerColor.withValues(alpha: 0.1)),
               const SizedBox(height: 16),
 
               _buildDetailRow(
@@ -980,8 +982,8 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
                 "Current Price",
                 ValueListenableBuilder<double>(
                   valueListenable: ltpNotifier,
-                  builder: (_, ltpVal, __) => Text(
-                    priceFormatter.format(ltpVal),
+                  builder: (context, ltpValue, child) => Text(
+                    priceFormatter.format(ltpValue),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -996,15 +998,15 @@ class PositionStockItemDetailsSheet extends StatelessWidget {
                 "Total P&L",
                 ValueListenableBuilder<double>(
                   valueListenable: plNotifier,
-                  builder: (_, plVal, __) {
-                    final isPositive = plVal >= 0;
+                  builder: (context, plValue, child) {
+                    final isPositive = plValue >= 0;
                     final sign = isPositive ? "+" : "-";
                     final color = isPositive ? primaryColor : sellColor;
 
                     return ValueListenableBuilder<double>(
                       valueListenable: percentNotifier,
-                      builder: (_, pctVal, __) => Text(
-                        "$sign₹${plVal.abs().toStringAsFixed(2)} ($sign${pctVal.abs().toStringAsFixed(2)}%)",
+                      builder: (context, percentValue, child) => Text(
+                        "$sign₹${plValue.abs().toStringAsFixed(2)} ($sign${percentValue.abs().toStringAsFixed(2)}%)",
                         style: TextStyle(
                           color: color,
                           fontSize: 14,

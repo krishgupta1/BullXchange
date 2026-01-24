@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:bullxchange/widgets/custom_back_button.dart';
-import 'package:flutter/services.dart'; // Clipboard ke liye
+import 'package:flutter/services.dart'; // Clipboard import
 
 class ContactUsPage extends StatelessWidget {
   const ContactUsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // --- ⭐️ Theme se colors lo ---
+    // --- ⭐️ Get theme colors ---
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
@@ -41,8 +41,8 @@ class ContactUsPage extends StatelessWidget {
               height: 120,
               width: 120,
               decoration: BoxDecoration(
-                // Light mode mein halka blue, Dark mein transparent/dark blue
-                color: colorScheme.primary.withOpacity(0.1),
+                // Light mode: light blue, Dark mode: transparent/dark blue
+                color: colorScheme.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -82,7 +82,7 @@ class ContactUsPage extends StatelessWidget {
               title: "Email Support",
               subtitle: "support@bullxchange.in",
               onTap: () {
-                // Yahan email app kholne ka logic aa sakta hai
+                // Logic to open email app can be added here
                 _copyToClipboard(context, "support@bullxchange.in");
               },
             ),
@@ -94,7 +94,7 @@ class ContactUsPage extends StatelessWidget {
               title: "Call Us",
               subtitle: "+91 12345 67890",
               onTap: () {
-                // Yahan phone dialer kholne ka logic aa sakta hai
+                // Logic to open phone dialer can be added here
                 _copyToClipboard(context, "+91 12345 67890");
               },
             ),
@@ -104,7 +104,7 @@ class ContactUsPage extends StatelessWidget {
               context,
               icon: Icons.location_on_outlined,
               title: "Office",
-              subtitle: "BullXchange Tech, Cyber City, Gurugram, India",
+              subtitle: "BullXchange Tech, Cyber City, Delhi NCR, India",
               onTap: () {},
             ),
 
@@ -132,7 +132,7 @@ class ContactUsPage extends StatelessWidget {
                 _buildSocialIcon(
                   context,
                   Icons.camera_alt_outlined,
-                ), // Placeholder for Insta
+                ), // Placeholder for Instagram
               ],
             ),
           ],
@@ -157,10 +157,10 @@ class ContactUsPage extends StatelessWidget {
         // Theme surface color (Light: White, Dark: Dark Grey)
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.dividerColor.withOpacity(0.5)),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.5)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02), // Very subtle shadow
+            color: Colors.black.withValues(alpha: 0.02), // Very subtle shadow
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -173,7 +173,7 @@ class ContactUsPage extends StatelessWidget {
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             // Theme accent color (Pink) with opacity
-            color: colorScheme.secondary.withOpacity(0.1),
+            color: colorScheme.secondary.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: colorScheme.secondary, size: 24),
@@ -217,11 +217,11 @@ class ContactUsPage extends StatelessWidget {
         decoration: BoxDecoration(
           color: colorScheme.surface,
           shape: BoxShape.circle,
-          border: Border.all(color: theme.dividerColor.withOpacity(0.5)),
+          border: Border.all(color: theme.dividerColor.withValues(alpha: 0.5)),
         ),
         child: Icon(
           icon,
-          color: colorScheme.onSurface.withOpacity(0.7),
+          color: colorScheme.onSurface.withValues(alpha: 0.7),
           size: 24,
         ),
       ),

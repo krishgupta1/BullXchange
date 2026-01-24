@@ -1,4 +1,4 @@
-import 'package:bullxchange/features/stock_market/screens/StockDetailPage.dart';
+import 'package:bullxchange/features/stock_market/screens/stock_detail_page.dart';
 import 'package:bullxchange/features/stock_market/widgets/stock_card.dart';
 import 'package:bullxchange/features/tools/coming_soon_page.dart';
 import 'package:bullxchange/models/instrument_model.dart';
@@ -131,8 +131,8 @@ Widget _buildSectionHeader(BuildContext context, String title) {
               // Dark Mode: slightly lighter than background (surface-like)
               // Light Mode: very faint primary color or gray
               color: isDark
-                  ? Colors.white.withOpacity(0.1)
-                  : colorScheme.primary.withOpacity(0.08),
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : colorScheme.primary.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
@@ -145,7 +145,7 @@ Widget _buildSectionHeader(BuildContext context, String title) {
                     // Dark Mode: White/Light Grey for contrast
                     // Light Mode: Primary color (Branding)
                     color: isDark
-                        ? Colors.white.withOpacity(0.9)
+                        ? Colors.white.withValues(alpha: 0.9)
                         : colorScheme.primary,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -156,7 +156,7 @@ Widget _buildSectionHeader(BuildContext context, String title) {
                   Icons.arrow_forward_ios_rounded,
                   size: 10,
                   color: isDark
-                      ? Colors.white.withOpacity(0.7)
+                      ? Colors.white.withValues(alpha: 0.7)
                       : colorScheme.primary,
                 ),
               ],
@@ -206,12 +206,12 @@ Widget _buildToolsGrid(BuildContext context) {
     decoration: BoxDecoration(
       color: theme.cardColor,
       borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
+      border: Border.all(color: theme.dividerColor.withValues(alpha: 0.05)),
       boxShadow: isDark
           ? []
           : [
               BoxShadow(
-                color: Colors.black.withOpacity(0.03),
+                color: Colors.black.withValues(alpha: 0.03),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -295,7 +295,7 @@ Widget _buildToolItem(
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: baseColor.withOpacity(0.1),
+            color: baseColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Icon(icon, color: baseColor, size: 22),

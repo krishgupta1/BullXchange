@@ -1,4 +1,3 @@
-import 'package:bullxchange/features/f&o/widgets/share_pnl_card.dart';
 import 'package:bullxchange/models/option_holding_model.dart';
 import 'package:bullxchange/models/user_profile_data_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
@@ -10,24 +9,23 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:bullxchange/utils/responsive_helper.dart';
 
-// --- 1. MAIN F&O POSITIONS PAGE ---
-class FnoPositionsPage extends StatefulWidget {
-  const FnoPositionsPage({super.key});
+class OpenPositionsPage extends StatefulWidget {
+  const OpenPositionsPage({super.key});
 
   @override
-  State<FnoPositionsPage> createState() => _FnoPositionsPageState();
+  State<OpenPositionsPage> createState() => _OpenPositionsPageState();
 }
 
-class _FnoPositionsPageState extends State<FnoPositionsPage> {
+class _OpenPositionsPageState extends State<OpenPositionsPage> {
   Future<void> _handleExitAllPositions(
     BuildContext context,
     List<OptionHoldingModel> positions,
     InstrumentProvider provider,
   ) async {
-    // Placeholder for F&O Exit All Logic
+    // Placeholder for Exit All Logic
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text("Exit All functionality to be implemented for F&O"),
+        content: Text("Exit All functionality to be implemented"),
       ),
     );
   }
@@ -51,7 +49,7 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
           children: [
             Icon(Icons.lock_outline, size: 48, color: colorScheme.secondary),
             const SizedBox(height: 16),
-            const Text("Please log in to see F&O positions."),
+            const Text("Please log in to see positions."),
           ],
         ),
       );
@@ -96,17 +94,21 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
           totalInvestment += invested;
         }
 
-        double totalPnlPercent = 0.0;
-        if (totalInvestment > 0) {
-          totalPnlPercent = (totalOverallPnl / totalInvestment) * 100;
-        }
-
         return Scaffold(
-          bottomNavigationBar: _FnoBottomPnlBar(
-            totalPnl: totalOverallPnl,
-            totalPnlPercent: totalPnlPercent,
-            totalInvested: totalOverallPnl,
-            totalCurrentValue: totalInvestment + totalOverallPnl,
+          backgroundColor: theme.scaffoldBackgroundColor,
+          appBar: AppBar(
+            backgroundColor: theme.scaffoldBackgroundColor,
+            scrolledUnderElevation: 0,
+            elevation: 0,
+            centerTitle: true,
+            title: Text(
+              "Open Positions",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: ResponsiveHelper.appBarFontSize,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
           ),
           body: RefreshIndicator(
             onRefresh: () async {
@@ -123,7 +125,7 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // --- Summary Card (Matched Style) ---
+                  // --- Summary Card ---
                   _buildSummaryCard(
                     context,
                     totalOverallPnl,
@@ -154,7 +156,7 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
                             fontSize: ResponsiveHelper.h3FontSize,
                           ),
                         ),
-                        _buildNfoBadge(context),
+                        _buildFnoBadge(context),
                       ],
                     ),
                   ),
@@ -172,21 +174,22 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
                       color: theme.dividerColor.withValues(alpha: 0.15),
                     ),
                     itemBuilder: (context, index) {
-                      return FnoPositionItem(
+                      return OpenPositionItem(
                         key: ValueKey(fnoPositions[index].contractSymbol),
                         position: fnoPositions[index],
                       );
                     },
                   ),
-              ],
+                ],
+              ),
             ),
           ),
-        ));
+        );
       },
     );
   }
 
-  // --- SUMMARY CARD (Matched to PositionPage) ---
+  // --- SUMMARY CARD ---
   Widget _buildSummaryCard(
     BuildContext context,
     double totalPnl,
@@ -363,7 +366,7 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
     );
   }
 
-  Widget _buildNfoBadge(BuildContext context) {
+  Widget _buildFnoBadge(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: EdgeInsets.symmetric(
@@ -395,197 +398,16 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
   }
 }
 
-class _FnoBottomPnlBar extends StatefulWidget {
-  final double totalPnl;
-  final double totalPnlPercent;
-  final double totalInvested;
-  final double totalCurrentValue;
-
-  const _FnoBottomPnlBar({
-    required this.totalPnl,
-    required this.totalPnlPercent,
-    required this.totalInvested,
-    required this.totalCurrentValue,
-  });
-
-  @override
-  State<_FnoBottomPnlBar> createState() => _FnoBottomPnlBarState();
-}
-
-class _FnoBottomPnlBarState extends State<_FnoBottomPnlBar> {
-  bool _isExpanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final isProfit = widget.totalPnl >= 0;
-
-    // Clean, sharp colors
-    final pnlColor = isProfit
-        ? const Color(0xFF4CAF50) // Material Green
-        : const Color(0xFFF44336); // Material Red
-
-    final formatter = NumberFormat.currency(
-      locale: 'en_IN',
-      symbol: '₹',
-      decimalDigits: 2,
-    );
-
-    return Container(
-      // Minimal margin, closer to bottom
-      margin: EdgeInsets.fromLTRB(
-        ResponsiveHelper.horizontalPadding * 0.75, 
-        0, 
-        ResponsiveHelper.horizontalPadding * 0.75, 
-        ResponsiveHelper.horizontalPadding
-      ),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E), // Matte Black/Grey
-        borderRadius: BorderRadius.circular(ResponsiveHelper.cardBorderRadius), // Tighter radius
-        border: Border.all(color: Colors.white12, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.4),
-            blurRadius: ResponsiveHelper.cardBorderRadius * 0.5,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => setState(() => _isExpanded = !_isExpanded),
-          borderRadius: BorderRadius.circular(12),
-          child: AnimatedSize(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOutCubic,
-            alignment: Alignment.topCenter,
-            child: Padding(
-              // Compact Padding
-              padding: EdgeInsets.symmetric(
-                horizontal: ResponsiveHelper.horizontalPadding, 
-                vertical: ResponsiveHelper.itemSpacing
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // --- COMPACT HEADER ---
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Left: Label + Value in one line
-                      Row(
-                        children: [
-                          Text(
-                            "P&L",
-                            style: TextStyle(
-                              color: Colors.grey.shade400,
-                              fontSize: ResponsiveHelper.captionFontSize,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          SizedBox(width: ResponsiveHelper.tinySpacing * 2),
-                          Text(
-                            "${isProfit ? '+' : ''}${formatter.format(widget.totalPnl)}",
-                            style: TextStyle(
-                              color: pnlColor,
-                              fontSize: ResponsiveHelper.captionFontSize,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.3,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      // Right: % and Chevron
-                      Row(
-                        children: [
-                          Text(
-                            "${widget.totalPnlPercent.abs().toStringAsFixed(2)}%",
-                            style: TextStyle(
-                              color: pnlColor,
-                              fontSize: ResponsiveHelper.captionFontSize,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          SizedBox(width: ResponsiveHelper.tinySpacing * 2),
-                          Icon(
-                            _isExpanded
-                                ? Icons.keyboard_arrow_up
-                                : Icons.keyboard_arrow_down,
-                            color: Colors.grey.shade600,
-                            size: ResponsiveHelper.iconSize * 0.75,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-
-                  // --- HIDDEN DETAILS ---
-                  if (_isExpanded) ...[
-                    SizedBox(height: ResponsiveHelper.itemSpacing),
-                    // Thin separator
-                    Container(height: 1, color: Colors.white.withValues(alpha: 0.05)),
-                    SizedBox(height: ResponsiveHelper.smallSpacing),
-
-                    // Single Row Details
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildMiniDetail(
-                          "Invested",
-                          widget.totalInvested,
-                          formatter,
-                        ),
-                        _buildMiniDetail(
-                          "Current",
-                          widget.totalCurrentValue,
-                          formatter,
-                        ),
-                      ],
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMiniDetail(String label, double value, NumberFormat formatter) {
-    return Row(
-      children: [
-        Text(
-          "$label: ",
-          style: TextStyle(
-            color: Colors.grey.shade600, 
-            fontSize: ResponsiveHelper.captionFontSize
-          ),
-        ),
-        Text(
-          formatter.format(value),
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: ResponsiveHelper.captionFontSize,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// --- LIST ITEM WIDGET (Unchanged) ---
-class FnoPositionItem extends StatefulWidget {
+// --- POSITION ITEM WIDGET ---
+class OpenPositionItem extends StatefulWidget {
   final OptionHoldingModel position;
-  const FnoPositionItem({super.key, required this.position});
+  const OpenPositionItem({super.key, required this.position});
 
   @override
-  State<FnoPositionItem> createState() => _FnoPositionItemState();
+  State<OpenPositionItem> createState() => _OpenPositionItemState();
 }
 
-class _FnoPositionItemState extends State<FnoPositionItem> {
+class _OpenPositionItemState extends State<OpenPositionItem> {
   final ValueNotifier<double> _ltpNotifier = ValueNotifier(0.0);
   final ValueNotifier<double> _plNotifier = ValueNotifier(0.0);
   final ValueNotifier<double> _roiNotifier = ValueNotifier(0.0);
@@ -645,20 +467,6 @@ class _FnoPositionItemState extends State<FnoPositionItem> {
     super.dispose();
   }
 
-  void _showShareCard() {
-    showDialog(
-      context: context,
-      builder: (context) => SharePnlCard(
-        symbol: widget.position.contractSymbol,
-        pnl: _plNotifier.value,
-        roi: _roiNotifier.value,
-        entryPrice: widget.position.averagePrice,
-        lastPrice: _ltpNotifier.value,
-        isIntraday: false,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -673,146 +481,143 @@ class _FnoPositionItemState extends State<FnoPositionItem> {
     final typeColor = isCe ? Colors.green : Colors.red;
     final isShort = widget.position.quantity < 0;
 
-    return InkWell(
-      onTap: _showShareCard,
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: ResponsiveHelper.horizontalPadding, 
-          vertical: ResponsiveHelper.itemSpacing * 1.2
-        ),
-        child: Row(
-          children: [
-            // Badge (CE/PE)
-            Container(
-              width: ResponsiveHelper.avatarSize * 0.9,
-              height: ResponsiveHelper.avatarSize * 0.9,
-              decoration: BoxDecoration(
-                color: typeColor.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(ResponsiveHelper.cardBorderRadius * 0.6),
-              ),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      widget.position.optionType,
-                      style: TextStyle(
-                        color: typeColor,
-                        fontWeight: FontWeight.w900,
-                        fontSize: isShort ? ResponsiveHelper.tinyFontSize : ResponsiveHelper.smallFontSize,
-                      ),
-                    ),
-                    if (isShort)
-                      Text(
-                        "SHORT",
-                        style: TextStyle(
-                          color: typeColor,
-                          fontWeight: FontWeight.w700,
-                          fontSize: ResponsiveHelper.tinyFontSize * 0.6,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsiveHelper.horizontalPadding, 
+        vertical: ResponsiveHelper.itemSpacing * 1.2
+      ),
+      child: Row(
+        children: [
+          // Badge (CE/PE)
+          Container(
+            width: ResponsiveHelper.avatarSize * 0.9,
+            height: ResponsiveHelper.avatarSize * 0.9,
+            decoration: BoxDecoration(
+              color: typeColor.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(ResponsiveHelper.cardBorderRadius * 0.6),
             ),
-            SizedBox(width: ResponsiveHelper.smallSpacing),
-
-            // Details
-            Expanded(
+            child: Center(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    widget.position.contractSymbol,
+                    widget.position.optionType,
                     style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: ResponsiveHelper.captionFontSize,
-                      color: theme.colorScheme.onSurface,
+                      color: typeColor,
+                      fontWeight: FontWeight.w900,
+                      fontSize: isShort ? ResponsiveHelper.tinyFontSize : ResponsiveHelper.smallFontSize,
                     ),
-                    overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: ResponsiveHelper.tinySpacing * 1.5),
-                  Row(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: ResponsiveHelper.tinySpacing,
-                          vertical: ResponsiveHelper.tinySpacing * 0.5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: theme.dividerColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(ResponsiveHelper.cardBorderRadius * 0.2),
-                        ),
-                        child: Text(
-                          "F&O",
-                          style: TextStyle(
-                            fontSize: ResponsiveHelper.tinyFontSize,
-                            fontWeight: FontWeight.bold,
-                            color: theme.textTheme.bodySmall?.color,
-                          ),
-                        ),
+                  if (isShort)
+                    Text(
+                      "SHORT",
+                      style: TextStyle(
+                        color: typeColor,
+                        fontWeight: FontWeight.w700,
+                        fontSize: ResponsiveHelper.tinyFontSize * 0.6,
                       ),
-                      SizedBox(width: ResponsiveHelper.tinySpacing * 1.5),
-                      Text(
-                        "${widget.position.quantity.abs()} Qty",
-                        style: TextStyle(
-                          color: theme.textTheme.bodySmall?.color,
-                          fontSize: ResponsiveHelper.captionFontSize,
-                        ),
-                      ),
-                      SizedBox(width: ResponsiveHelper.tinySpacing * 1.5),
-                      // Add time decay info
-                      _buildTimeDecayInfo(context),
-                    ],
-                  ),
+                    ),
                 ],
               ),
             ),
+          ),
+          SizedBox(width: ResponsiveHelper.smallSpacing),
 
-            // Numbers
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+          // Details
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ValueListenableBuilder<double>(
-                  valueListenable: _ltpNotifier,
-                  builder: (context, ltpValue, child) => Text(
-                    formatter.format(ltpValue * widget.position.quantity.abs()),
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: ResponsiveHelper.captionFontSize,
-                    ),
+                Text(
+                  widget.position.contractSymbol,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: ResponsiveHelper.captionFontSize,
+                    color: theme.colorScheme.onSurface,
                   ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: ResponsiveHelper.tinySpacing),
-                ValueListenableBuilder<double>(
-                  valueListenable: _plNotifier,
-                  builder: (context, pnlValue, child) {
-                    final isProfit = pnlValue >= 0;
-                    final pnlColor = isProfit
-                        ? (isDark
-                              ? const Color(0xFF66BB6A)
-                              : const Color(0xFF00C853))
-                        : (isDark
-                              ? const Color(0xFFEF5350)
-                              : const Color(0xFFFF3D00));
-
-                    return ValueListenableBuilder<double>(
-                      valueListenable: _roiNotifier,
-                      builder: (context, roiValue, child) => Text(
-                        "${isProfit ? '+' : ''}${formatter.format(pnlValue)} (${roiValue.toStringAsFixed(2)}%)",
+                SizedBox(height: ResponsiveHelper.tinySpacing * 1.5),
+                Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: ResponsiveHelper.tinySpacing,
+                        vertical: ResponsiveHelper.tinySpacing * 0.5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: theme.dividerColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(ResponsiveHelper.cardBorderRadius * 0.2),
+                      ),
+                      child: Text(
+                        "F&O",
                         style: TextStyle(
-                          color: pnlColor,
-                          fontWeight: FontWeight.w600,
-                          fontSize: ResponsiveHelper.captionFontSize,
+                          fontSize: ResponsiveHelper.tinyFontSize,
+                          fontWeight: FontWeight.bold,
+                          color: theme.textTheme.bodySmall?.color,
                         ),
                       ),
-                    );
-                  },
+                    ),
+                    SizedBox(width: ResponsiveHelper.tinySpacing * 1.5),
+                    Text(
+                      "${widget.position.quantity.abs()} Qty",
+                      style: TextStyle(
+                        color: theme.textTheme.bodySmall?.color,
+                        fontSize: ResponsiveHelper.captionFontSize,
+                      ),
+                    ),
+                    SizedBox(width: ResponsiveHelper.tinySpacing * 1.5),
+                    // Add time decay info
+                    _buildTimeDecayInfo(context),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+
+          // Numbers
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              ValueListenableBuilder<double>(
+                valueListenable: _ltpNotifier,
+                builder: (context, ltpValue, child) => Text(
+                  formatter.format(ltpValue * widget.position.quantity.abs()),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: ResponsiveHelper.captionFontSize,
+                  ),
+                ),
+              ),
+              SizedBox(height: ResponsiveHelper.tinySpacing),
+              ValueListenableBuilder<double>(
+                valueListenable: _plNotifier,
+                builder: (context, pnlValue, child) {
+                  final isProfit = pnlValue >= 0;
+                  final pnlColor = isProfit
+                      ? (isDark
+                            ? const Color(0xFF66BB6A)
+                            : const Color(0xFF00C853))
+                      : (isDark
+                            ? const Color(0xFFEF5350)
+                            : const Color(0xFFFF3D00));
+
+                  return ValueListenableBuilder<double>(
+                    valueListenable: _roiNotifier,
+                    builder: (context, roiValue, child) => Text(
+                      "P&L ${isProfit ? '+' : ''}${formatter.format(pnlValue)} (${roiValue.toStringAsFixed(2)}%)",
+                      style: TextStyle(
+                        color: pnlColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: ResponsiveHelper.captionFontSize,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -885,7 +690,7 @@ class _EmptyState extends StatelessWidget {
         ),
         SizedBox(height: ResponsiveHelper.sectionSpacing),
         Text(
-          "No Open F&O Positions",
+          "No Open Positions",
           style: TextStyle(
             fontSize: ResponsiveHelper.h3FontSize,
             fontWeight: FontWeight.bold,
@@ -894,7 +699,7 @@ class _EmptyState extends StatelessWidget {
         ),
         SizedBox(height: ResponsiveHelper.smallSpacing),
         Text(
-          "Your options trades will appear here.",
+          "Your F&O positions will appear here.",
           style: theme.textTheme.bodySmall?.copyWith(
             color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.8),
             fontSize: ResponsiveHelper.captionFontSize,

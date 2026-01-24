@@ -61,7 +61,7 @@ class PositionOptionItem extends StatelessWidget {
               height: 42,
               decoration: BoxDecoration(
                 color: (position.optionType == "CE" ? Colors.green : Colors.red)
-                    .withOpacity(0.15),
+                    .withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Center(
@@ -141,7 +141,7 @@ class PositionOptionItem extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
       decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.2),
+        color: Colors.grey.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(

@@ -8,8 +8,11 @@ import 'package:provider/provider.dart';
 import 'package:bullxchange/models/user_profile_data_model.dart';
 import 'package:bullxchange/models/transaction_model.dart';
 import 'package:bullxchange/models/stock_holding_model.dart';
+import 'package:bullxchange/models/option_holding_model.dart';
+import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/provider/instrument_provider.dart';
 import 'package:bullxchange/features/stock_market/screens/order_details_page.dart';
+import 'package:bullxchange/utils/responsive_helper.dart';
 
 class PortfolioPage extends StatefulWidget {
   const PortfolioPage({super.key});
@@ -58,8 +61,29 @@ class _PortfolioPageState extends State<PortfolioPage> {
     });
   }
 
+  void _updateFnoHoldingsLiveData(List<OptionHoldingModel> fnoHoldings) {
+    final symbols = fnoHoldings.map((h) => h.contractSymbol).toList();
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      // For F&O holdings, find the instruments and fetch their live data
+      final provider = context.read<InstrumentProvider>();
+      final instruments = symbols.map((symbol) => provider.getInstrumentBySymbol(symbol)).where((instrument) => instrument != null).cast<Instrument>().toList();
+      
+      if (instruments.isNotEmpty) {
+        provider.fetchLiveDataFor(instruments);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Initialize responsive helper
+    ResponsiveHelper.init(context, BoxConstraints.tightFor(
+      width: MediaQuery.of(context).size.width,
+      height: MediaQuery.of(context).size.height,
+    ));
+    
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -86,7 +110,11 @@ class _PortfolioPageState extends State<PortfolioPage> {
         body: Center(
           child: Text(
             "Please login to view portfolio",
-            style: TextStyle(color: textColor, fontSize: 14),
+            style: TextStyle(
+              color: textColor,
+              fontSize: ResponsiveHelper.captionFontSize,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
       );
@@ -111,7 +139,11 @@ class _PortfolioPageState extends State<PortfolioPage> {
             body: Center(
               child: Text(
                 "Profile Not Found",
-                style: TextStyle(color: textColor, fontSize: 14),
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: ResponsiveHelper.captionFontSize,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           );
@@ -119,10 +151,16 @@ class _PortfolioPageState extends State<PortfolioPage> {
 
         final userProfile = snapshot.data!;
         final allHoldings = userProfile.stocks;
+        final fnoHoldings = userProfile.optionHoldings; // F&O positions are stored separately
         final availableCash = userProfile.availableFunds;
 
         if (allHoldings.isNotEmpty) {
           _updateHoldingsLiveData(allHoldings);
+        }
+        
+        // Also fetch live data for F&O holdings
+        if (fnoHoldings.isNotEmpty) {
+          _updateFnoHoldingsLiveData(fnoHoldings);
         }
 
         return Consumer<InstrumentProvider>(
@@ -137,6 +175,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
             double totalFnoInvested = 0;
             double todaysTotalPL = 0;
 
+            // Process Stock Holdings (Equity)
             for (var holding in allHoldings) {
               final instrument = instrumentProvider.getInstrumentBySymbol(
                 holding.stockSymbol,
@@ -164,20 +203,52 @@ class _PortfolioPageState extends State<PortfolioPage> {
                 'investedVal': investedVal,
               };
 
-              // Identify F&O vs Equity
-              bool isFno =
-                  holding.stockSymbol.endsWith("CE") ||
-                  holding.stockSymbol.endsWith("PE");
+              stockList.add(holdingData);
+              totalEquityCurrent += currentVal;
+              totalEquityInvested += investedVal;
+            }
 
-              if (isFno) {
-                fnoList.add(holdingData);
-                totalFnoCurrent += currentVal;
-                totalFnoInvested += investedVal;
+            // Process F&O Holdings (Options)
+            for (var holding in fnoHoldings) {
+              final instrument = instrumentProvider.getInstrumentBySymbol(
+                holding.contractSymbol,
+              );
+              final double currentPrice =
+                  (instrument?.liveData['ltp'] as num?)?.toDouble() ??
+                  holding.averagePrice;
+
+              // Handle both long and short positions correctly
+              final double invested = holding.averagePrice * holding.quantity.abs();
+              final double currentVal = currentPrice * holding.quantity.abs();
+              
+              double positionPnl;
+              if (holding.quantity < 0) {
+                // Short position: Profit when price goes down
+                positionPnl = (holding.averagePrice - currentPrice) * holding.quantity.abs();
               } else {
-                stockList.add(holdingData);
-                totalEquityCurrent += currentVal;
-                totalEquityInvested += investedVal;
+                // Long position: Profit when price goes up
+                positionPnl = currentVal - invested;
               }
+              
+              // For today's P&L, we don't have yesterday's close for options
+              // This would need historical data to calculate properly
+              double dayPL = 0; // TODO: Implement when historical data available
+              todaysTotalPL += dayPL;
+
+              final holdingData = {
+                'symbol': holding.contractSymbol,
+                'quantity': holding.quantity,
+                'avgBuyPrice': holding.averagePrice,
+                'currentPrice': currentPrice,
+                'companyName': holding.symbol,
+                'currentVal': currentVal,
+                'investedVal': invested,
+                'pnl': positionPnl, // Store individual P&L
+              };
+
+              fnoList.add(holdingData);
+              totalFnoCurrent += currentVal;
+              totalFnoInvested += invested;
             }
 
             // --- AGGREGATED TOTALS ---
@@ -185,7 +256,10 @@ class _PortfolioPageState extends State<PortfolioPage> {
                 availableCash + totalEquityCurrent + totalFnoCurrent;
             double totalInvested = totalEquityInvested + totalFnoInvested;
             double totalEquityPL = totalEquityCurrent - totalEquityInvested;
-            double totalFnoPL = totalFnoCurrent - totalFnoInvested;
+            
+            // Calculate F&O P&L correctly by summing individual position P&L
+            double totalFnoPL = fnoList.fold(0.0, (sum, holding) => sum + (holding['pnl'] ?? 0.0));
+            
             double overallPL = totalEquityPL + totalFnoPL;
             double overallPLPercent = (totalInvested > 0)
                 ? (overallPL / totalInvested) * 100
@@ -206,18 +280,18 @@ class _PortfolioPageState extends State<PortfolioPage> {
                   "Portfolio",
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                    fontSize: ResponsiveHelper.appBarFontSize,
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ),
               body: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.only(bottom: 24),
+                padding: EdgeInsets.only(bottom: ResponsiveHelper.verticalPadding * 1.5),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 10),
+                    SizedBox(height: ResponsiveHelper.smallSpacing),
 
                     // --- 1. TOTAL VALUE CARD ---
                     _buildSummaryCard(
@@ -235,17 +309,17 @@ class _PortfolioPageState extends State<PortfolioPage> {
                       kRed,
                     ),
 
-                    const SizedBox(height: 24),
+                    SizedBox(height: ResponsiveHelper.sectionSpacing),
 
                     // --- 2. SMOOTH TAB SWITCHER ---
                     Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 16),
-                      padding: const EdgeInsets.all(4),
+                      margin: EdgeInsets.symmetric(horizontal: ResponsiveHelper.horizontalPadding),
+                      padding: EdgeInsets.all(ResponsiveHelper.tinySpacing),
                       decoration: BoxDecoration(
                         color: cardColor,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(ResponsiveHelper.cardBorderRadius * 0.6),
                         border: Border.all(
-                          color: subTextColor.withOpacity(0.1),
+                          color: subTextColor.withValues(alpha: 0.1),
                         ),
                       ),
                       child: Row(
@@ -272,7 +346,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
                       ),
                     ),
 
-                    const SizedBox(height: 16),
+                    SizedBox(height: ResponsiveHelper.itemSpacing),
 
                     // --- 3. HOLDINGS LIST ---
                     _buildSectionHeader(
@@ -319,7 +393,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
                         kBlue,
                         kGreen,
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: ResponsiveHelper.sectionSpacing),
                     ],
 
                     // --- 5. RECENT ACTIVITY ---
@@ -357,20 +431,20 @@ class _PortfolioPageState extends State<PortfolioPage> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        padding: EdgeInsets.symmetric(vertical: ResponsiveHelper.smallSpacing),
         decoration: BoxDecoration(
           color: isSelected
-              ? activeColor.withOpacity(0.15)
+              ? activeColor.withValues(alpha: 0.15)
               : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(ResponsiveHelper.cardBorderRadius * 0.4),
         ),
         alignment: Alignment.center,
         child: Text(
           title,
           style: TextStyle(
-            color: isSelected ? activeColor : textColor.withOpacity(0.6),
+            color: isSelected ? activeColor : textColor.withValues(alpha: 0.6),
             fontWeight: FontWeight.bold,
-            fontSize: 12,
+            fontSize: ResponsiveHelper.smallFontSize,
           ),
         ),
       ),
@@ -379,22 +453,22 @@ class _PortfolioPageState extends State<PortfolioPage> {
 
   Widget _buildEmptyState(String msg, Color cardColor, Color subTextColor) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(30),
+      margin: EdgeInsets.symmetric(horizontal: ResponsiveHelper.horizontalPadding),
+      padding: EdgeInsets.all(ResponsiveHelper.cardPadding * 1.5),
       width: double.infinity,
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(ResponsiveHelper.cardBorderRadius),
       ),
       child: Column(
         children: [
           Icon(
             Icons.layers_clear_outlined,
-            size: 40,
-            color: subTextColor.withOpacity(0.5),
+            size: ResponsiveHelper.iconSize * 1.7,
+            color: subTextColor.withValues(alpha: 0.5),
           ),
-          const SizedBox(height: 10),
-          Text(msg, style: TextStyle(color: subTextColor, fontSize: 12)),
+          SizedBox(height: ResponsiveHelper.smallSpacing),
+          Text(msg, style: TextStyle(color: subTextColor, fontSize: ResponsiveHelper.captionFontSize)),
         ],
       ),
     );
@@ -402,12 +476,16 @@ class _PortfolioPageState extends State<PortfolioPage> {
 
   Widget _buildSectionHeader(String title, Color subTextColor) {
     return Padding(
-      padding: const EdgeInsets.only(left: 20, right: 20, bottom: 8),
+      padding: EdgeInsets.only(
+        left: ResponsiveHelper.horizontalPadding * 1.25, 
+        right: ResponsiveHelper.horizontalPadding * 1.25, 
+        bottom: ResponsiveHelper.smallSpacing
+      ),
       child: Text(
         title.toUpperCase(),
         style: TextStyle(
           color: subTextColor,
-          fontSize: 11,
+          fontSize: ResponsiveHelper.tinyFontSize,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.5,
         ),
@@ -430,15 +508,15 @@ class _PortfolioPageState extends State<PortfolioPage> {
     Color kRed,
   ) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(20),
+      margin: EdgeInsets.symmetric(horizontal: ResponsiveHelper.horizontalPadding),
+      padding: EdgeInsets.all(ResponsiveHelper.cardPadding),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(ResponsiveHelper.cardBorderRadius),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 15,
+            color: Colors.black,
+            blurRadius: ResponsiveHelper.cardBorderRadius * 0.75,
             offset: const Offset(0, 4),
           ),
         ],
@@ -447,25 +525,28 @@ class _PortfolioPageState extends State<PortfolioPage> {
         children: [
           Text(
             "Total Portfolio Value",
-            style: TextStyle(color: subTextColor, fontSize: 12),
+            style: TextStyle(color: subTextColor, fontSize: ResponsiveHelper.captionFontSize),
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: ResponsiveHelper.tinySpacing * 1.5),
           Text(
             currency.format(totalValue),
             style: TextStyle(
               color: textColor,
-              fontSize: 28,
+              fontSize: ResponsiveHelper.h1FontSize * 1.3,
               fontWeight: FontWeight.w800,
               letterSpacing: -0.5,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: ResponsiveHelper.itemSpacing),
 
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: EdgeInsets.symmetric(
+              horizontal: ResponsiveHelper.smallSpacing * 1.5, 
+              vertical: ResponsiveHelper.tinySpacing * 1.5
+            ),
             decoration: BoxDecoration(
-              color: (todaysPL >= 0 ? kGreen : kRed).withOpacity(0.15),
-              borderRadius: BorderRadius.circular(8),
+              color: (todaysPL >= 0 ? kGreen : kRed).withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(ResponsiveHelper.cardBorderRadius * 0.4),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -474,22 +555,22 @@ class _PortfolioPageState extends State<PortfolioPage> {
                   todaysPL >= 0
                       ? Icons.arrow_upward_rounded
                       : Icons.arrow_downward_rounded,
-                  size: 14,
+                  size: ResponsiveHelper.iconSize * 0.6,
                   color: todaysPL >= 0 ? kGreen : kRed,
                 ),
-                const SizedBox(width: 4),
+                SizedBox(width: ResponsiveHelper.tinySpacing),
                 Text(
                   "Today: ${currency.format(todaysPL.abs())}",
                   style: TextStyle(
                     color: todaysPL >= 0 ? kGreen : kRed,
                     fontWeight: FontWeight.w600,
-                    fontSize: 12,
+                    fontSize: ResponsiveHelper.captionFontSize,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: ResponsiveHelper.sectionSpacing),
 
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -513,15 +594,15 @@ class _PortfolioPageState extends State<PortfolioPage> {
                 children: [
                   Text(
                     "Overall Returns",
-                    style: TextStyle(color: subTextColor, fontSize: 11),
+                    style: TextStyle(color: subTextColor, fontSize: ResponsiveHelper.tinyFontSize),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: ResponsiveHelper.tinySpacing),
                   Text(
                     "${overallPL >= 0 ? '+' : ''}${currency.format(overallPL)}",
                     style: TextStyle(
                       color: overallPL >= 0 ? kGreen : kRed,
                       fontWeight: FontWeight.w700,
-                      fontSize: 14,
+                      fontSize: ResponsiveHelper.captionFontSize,
                     ),
                   ),
                 ],
@@ -543,14 +624,14 @@ class _PortfolioPageState extends State<PortfolioPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(color: subTextColor, fontSize: 11)),
-        const SizedBox(height: 4),
+        Text(label, style: TextStyle(color: subTextColor, fontSize: ResponsiveHelper.tinyFontSize)),
+        SizedBox(height: ResponsiveHelper.tinySpacing),
         Text(
           currency.format(value),
           style: TextStyle(
             color: textColor,
             fontWeight: FontWeight.w600,
-            fontSize: 14,
+            fontSize: ResponsiveHelper.captionFontSize,
           ),
         ),
       ],
@@ -567,14 +648,14 @@ class _PortfolioPageState extends State<PortfolioPage> {
     Color kRed,
   ) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: EdgeInsets.symmetric(horizontal: ResponsiveHelper.horizontalPadding),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(ResponsiveHelper.cardBorderRadius),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: ResponsiveHelper.cardBorderRadius * 0.5,
             offset: const Offset(0, 4),
           ),
         ],
@@ -587,73 +668,138 @@ class _PortfolioPageState extends State<PortfolioPage> {
         separatorBuilder: (ctx, idx) => Divider(
           height: 1,
           thickness: 0.5,
-          indent: 60,
-          endIndent: 16,
-          color: subTextColor.withOpacity(0.15),
+          indent: ResponsiveHelper.avatarSize + ResponsiveHelper.smallSpacing,
+          endIndent: ResponsiveHelper.horizontalPadding,
+          color: subTextColor.withValues(alpha: 0.15),
         ),
         itemBuilder: (context, index) {
-          final stock = holdings[index];
-          final double profitLoss = stock['currentVal'] - stock['investedVal'];
+          final holding = holdings[index];
+          final bool isFno = holding['symbol'].toString().endsWith("CE") || 
+                            holding['symbol'].toString().endsWith("PE");
+          
+          // Use correct P&L calculation for F&O positions
+          final double profitLoss = isFno 
+              ? (holding['pnl'] ?? 0.0)  // Use pre-calculated P&L for F&O
+              : (holding['currentVal'] - holding['investedVal']);  // Simple calculation for stocks
           final bool isProfit = profitLoss >= 0;
 
-          return ListTile(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 8,
+          return Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: ResponsiveHelper.horizontalPadding,
+              vertical: ResponsiveHelper.smallSpacing,
             ),
-            leading: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.blueAccent.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Center(
-                child: Text(
-                  stock['symbol'][0],
-                  style: const TextStyle(
-                    color: Colors.blueAccent,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-            ),
-            title: Text(
-              stock['symbol'],
-              style: TextStyle(
-                color: textColor,
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
-            ),
-            subtitle: Padding(
-              padding: const EdgeInsets.only(top: 4.0),
-              child: Text(
-                "${stock['quantity']} Qty • Avg ${currency.format(stock['avgBuyPrice'])}",
-                style: TextStyle(color: subTextColor, fontSize: 12),
-              ),
-            ),
-            trailing: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
+            child: Row(
               children: [
-                Text(
-                  currency.format(stock['currentVal']),
-                  style: TextStyle(
-                    color: textColor,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
+                // Leading icon/badge
+                Container(
+                  width: ResponsiveHelper.avatarSize * 0.8,
+                  height: ResponsiveHelper.avatarSize * 0.8,
+                  decoration: BoxDecoration(
+                    color: isFno 
+                        ? (holding['symbol'].toString().endsWith("CE") 
+                            ? Colors.green.withValues(alpha: 0.1)
+                            : Colors.red.withValues(alpha: 0.1))
+                        : Colors.blueAccent.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(ResponsiveHelper.cardBorderRadius * 0.5),
+                  ),
+                  child: Center(
+                    child: isFno
+                        ? Text(
+                            holding['symbol'].toString().endsWith("CE") ? "CE" : "PE",
+                            style: TextStyle(
+                              color: holding['symbol'].toString().endsWith("CE") 
+                                  ? Colors.green 
+                                  : Colors.red,
+                              fontWeight: FontWeight.bold,
+                              fontSize: ResponsiveHelper.tinyFontSize * 1.2,
+                            ),
+                          )
+                        : Text(
+                            holding['symbol'][0],
+                            style: TextStyle(
+                              color: Colors.blueAccent,
+                              fontWeight: FontWeight.bold,
+                              fontSize: ResponsiveHelper.captionFontSize,
+                            ),
+                          ),
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  "${isProfit ? '+' : ''}${currency.format(profitLoss)}",
-                  style: TextStyle(
-                    color: isProfit ? kGreen : kRed,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                SizedBox(width: ResponsiveHelper.smallSpacing),
+                
+                // Main content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        holding['symbol'],
+                        style: TextStyle(
+                          color: textColor,
+                          fontWeight: FontWeight.w600,
+                          fontSize: ResponsiveHelper.captionFontSize,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: ResponsiveHelper.tinySpacing),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              "${holding['quantity'].abs()} Qty • Avg ${currency.format(holding['avgBuyPrice'])}",
+                              style: TextStyle(color: subTextColor, fontSize: ResponsiveHelper.captionFontSize),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (isFno) ...[
+                            SizedBox(width: ResponsiveHelper.tinySpacing),
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: ResponsiveHelper.tinySpacing, 
+                                vertical: ResponsiveHelper.tinySpacing * 0.5
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(ResponsiveHelper.cardBorderRadius * 0.2),
+                              ),
+                              child: Text(
+                                "F&O",
+                                style: TextStyle(
+                                  color: Colors.orange,
+                                  fontSize: ResponsiveHelper.tinyFontSize,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
                   ),
+                ),
+                
+                // Trailing values
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      currency.format(holding['currentVal']),
+                      style: TextStyle(
+                        color: textColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: ResponsiveHelper.captionFontSize,
+                      ),
+                    ),
+                    SizedBox(height: ResponsiveHelper.tinySpacing * 0.5),
+                    Text(
+                      "${isProfit ? '+' : ''}${currency.format(profitLoss)}",
+                      style: TextStyle(
+                        color: isProfit ? kGreen : kRed,
+                        fontSize: ResponsiveHelper.captionFontSize,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -714,7 +860,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.03),
+                        color: Colors.black.withValues(alpha: 0.03),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -732,7 +878,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
                       thickness: 0.5,
                       indent: 60,
                       endIndent: 16,
-                      color: subTextColor.withOpacity(0.15),
+                      color: subTextColor.withValues(alpha: 0.15),
                     ),
                     itemBuilder: (context, index) {
                       final txn = filteredTransactions[index];
@@ -765,9 +911,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
                                 width: 40,
                                 height: 40,
                                 decoration: BoxDecoration(
-                                  color: (isBuy ? kGreen : kRed).withOpacity(
-                                    0.1,
-                                  ),
+                                  color: (isBuy ? kGreen : kRed).withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Icon(
@@ -821,7 +965,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
                                       vertical: 2,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: subTextColor.withOpacity(0.1),
+                                      color: subTextColor.withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(

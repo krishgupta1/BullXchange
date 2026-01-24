@@ -1,4 +1,5 @@
 import 'package:bullxchange/models/transaction_model.dart';
+import 'package:bullxchange/utils/responsive_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:bullxchange/widgets/custom_back_button.dart';
 import 'package:flutter/services.dart';
@@ -45,7 +46,7 @@ class OrderDetailsPage extends StatelessWidget {
         title: Text(
           'Order details',
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontSize: 14,
+            fontSize: ResponsiveHelper.smallFontSize,
             fontWeight: FontWeight.w600,
             color: colorScheme.onSurface,
           ),
@@ -63,9 +64,8 @@ class OrderDetailsPage extends StatelessWidget {
             Text(
               '${transaction.quantity} Shares',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: ResponsiveHelper.bodyFontSize,
                 fontWeight: FontWeight.bold,
-                // --- ⭐️ MODIFIED: Theme text color ---
                 color: colorScheme.onSurface,
               ),
             ),
@@ -74,7 +74,7 @@ class OrderDetailsPage extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 // --- ⭐️ MODIFIED: Theme border and surface color ---
-                border: Border.all(color: theme.dividerColor.withOpacity(0.5)),
+                border: Border.all(color: theme.dividerColor.withValues(alpha: 0.5)),
                 color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -87,9 +87,8 @@ class OrderDetailsPage extends StatelessWidget {
                       Text(
                         transaction.companyName,
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: ResponsiveHelper.smallFontSize,
                           fontWeight: FontWeight.bold,
-                          // --- ⭐️ MODIFIED: Theme text color ---
                           color: colorScheme.onSurface,
                         ),
                       ),
@@ -99,7 +98,7 @@ class OrderDetailsPage extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: typeColor.withOpacity(0.1),
+                          color: typeColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -107,7 +106,7 @@ class OrderDetailsPage extends StatelessWidget {
                           style: TextStyle(
                             color: typeColor,
                             fontWeight: FontWeight.bold,
-                            fontSize: 12,
+                            fontSize: ResponsiveHelper.tinyFontSize,
                           ),
                         ),
                       ),
@@ -117,8 +116,7 @@ class OrderDetailsPage extends StatelessWidget {
                   Text(
                     priceFormatter.format(transaction.totalAmount),
                     style: TextStyle(
-                      fontSize: 14,
-                      // --- ⭐️ MODIFIED: Theme grey color ---
+                      fontSize: ResponsiveHelper.smallFontSize,
                       color: textTheme.bodySmall?.color,
                       fontWeight: FontWeight.w500,
                     ),
@@ -166,7 +164,7 @@ class OrderDetailsPage extends StatelessWidget {
             Text(
               'ORDER STATUS',
               style: TextStyle(
-                fontSize: 10,
+                fontSize: ResponsiveHelper.tinyFontSize,
                 fontWeight: FontWeight.bold,
                 // --- ⭐️ MODIFIED: Theme grey color ---
                 color: textTheme.bodySmall?.color,
@@ -221,7 +219,7 @@ class OrderDetailsPage extends StatelessWidget {
                   // --- ⭐️ MODIFIED: Theme grey color ---
                   style: TextStyle(
                     color: textTheme.bodySmall?.color,
-                    fontSize: 13,
+                    fontSize: ResponsiveHelper.tinyFontSize,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -230,7 +228,7 @@ class OrderDetailsPage extends StatelessWidget {
                   style: TextStyle(
                     // --- ⭐️ MODIFIED: Theme text color ---
                     color: colorScheme.onSurface,
-                    fontSize: 13,
+                    fontSize: ResponsiveHelper.tinyFontSize,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -246,7 +244,7 @@ class OrderDetailsPage extends StatelessWidget {
                   // --- ⭐️ MODIFIED: Theme grey color ---
                   style: TextStyle(
                     color: textTheme.bodySmall?.color,
-                    fontSize: 13,
+                    fontSize: ResponsiveHelper.tinyFontSize,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -255,7 +253,7 @@ class OrderDetailsPage extends StatelessWidget {
                   style: TextStyle(
                     // --- ⭐️ MODIFIED: Theme text color ---
                     color: colorScheme.onSurface,
-                    fontSize: 13,
+                    fontSize: ResponsiveHelper.tinyFontSize,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -305,7 +303,7 @@ class OrderDetailsPage extends StatelessWidget {
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: ResponsiveHelper.tinyFontSize,
                     fontWeight: FontWeight.w500,
                     // --- ⭐️ MODIFIED: Theme text color ---
                     color: colorScheme.onSurface,
@@ -321,7 +319,7 @@ class OrderDetailsPage extends StatelessWidget {
                           style: TextStyle(
                             // --- ⭐️ MODIFIED: Theme grey color ---
                             color: textTheme.bodySmall?.color,
-                            fontSize: 12,
+                            fontSize: ResponsiveHelper.tinyFontSize,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),

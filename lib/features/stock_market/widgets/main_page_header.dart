@@ -1,6 +1,7 @@
 // lib/shared/widgets/main_page_header.dart
 
 import 'package:flutter/material.dart';
+import 'package:bullxchange/utils/responsive_helper.dart';
 
 class MainPageHeader extends StatelessWidget {
   final String? userName;
@@ -25,41 +26,44 @@ class MainPageHeader extends StatelessWidget {
     final textTheme = theme.textTheme;
 
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+      padding: EdgeInsets.symmetric(
+        vertical: ResponsiveHelper.tinySpacing, 
+        horizontal: ResponsiveHelper.tinySpacing
+      ),
       child: Row(
         children: [
           // --- ⭐️ MODERN AVATAR ---
           GestureDetector(
             onTap: onProfileTap,
             child: Container(
-              width: 50,
-              height: 50,
+              width: ResponsiveHelper.avatarSize,
+              height: ResponsiveHelper.avatarSize,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: colorScheme.surface,
                 // Subtle border ring
                 border: Border.all(
-                  color: colorScheme.primary.withOpacity(0.15),
+                  color: colorScheme.primary.withValues(alpha: 0.15),
                   width: 1.5,
                 ),
                 // Soft shadow for depth
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: ResponsiveHelper.cardBorderRadius * 0.5,
                     offset: const Offset(0, 4),
                   ),
                 ],
               ),
               child: ClipOval(
                 child: Material(
-                  color: colorScheme.primary.withOpacity(0.08),
+                  color: colorScheme.primary.withValues(alpha: 0.08),
                   child: InkWell(
                     onTap: onProfileTap,
                     child: Icon(
                       Icons.person_rounded, // Rounded icon looks more modern
                       color: colorScheme.primary,
-                      size: 26,
+                      size: ResponsiveHelper.iconSize * 1.1,
                     ),
                   ),
                 ),
@@ -67,7 +71,7 @@ class MainPageHeader extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(width: 16),
+          SizedBox(width: ResponsiveHelper.smallSpacing),
 
           // --- ⭐️ TYPOGRAPHY & LAYOUT ---
           // Using Expanded ensures text truncates properly on small screens
@@ -83,15 +87,16 @@ class MainPageHeader extends StatelessWidget {
                     fontWeight: FontWeight.w800,
                     color: colorScheme.onSurface,
                     letterSpacing: -0.5,
+                    fontSize: ResponsiveHelper.h2FontSize,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: ResponsiveHelper.tinySpacing),
                 Text(
                   welcomeMessage,
                   style: textTheme.bodySmall?.copyWith(
-                    color: textTheme.bodyMedium?.color?.withOpacity(0.6),
+                    color: textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                     fontWeight: FontWeight.w500,
                     letterSpacing: 0.2,
                   ),
@@ -102,7 +107,7 @@ class MainPageHeader extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(width: 8),
+          SizedBox(width: ResponsiveHelper.tinySpacing),
 
           // --- ⭐️ ACTIONS ---
           Row(mainAxisSize: MainAxisSize.min, children: actions),

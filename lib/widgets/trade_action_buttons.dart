@@ -1,3 +1,4 @@
+import 'package:bullxchange/utils/responsive_helper.dart';
 import 'package:flutter/material.dart';
 
 class TradeActionButtons extends StatelessWidget {
@@ -31,7 +32,7 @@ class TradeActionButtons extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: colorScheme.primary,
                 foregroundColor: colorScheme.onPrimary,
-                shadowColor: colorScheme.primary.withOpacity(0.4),
+                shadowColor: colorScheme.primary.withValues(alpha: 0.4),
                 elevation: 4,
                 padding: const EdgeInsets.symmetric(vertical: 0),
                 shape: RoundedRectangleBorder(
@@ -40,8 +41,8 @@ class TradeActionButtons extends StatelessWidget {
               ),
               child: Text(
                 sellLabel,
-                style: const TextStyle(
-                  fontSize: 14,
+                style: TextStyle(
+                  fontSize: ResponsiveHelper.smallFontSize,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.5,
                 ),
@@ -55,7 +56,7 @@ class TradeActionButtons extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: colorScheme.secondary,
                 foregroundColor: colorScheme.onSecondary,
-                shadowColor: colorScheme.secondary.withOpacity(0.4),
+                shadowColor: colorScheme.secondary.withValues(alpha: 0.4),
                 elevation: 4,
                 padding: const EdgeInsets.symmetric(vertical: 0),
                 shape: RoundedRectangleBorder(
@@ -64,8 +65,8 @@ class TradeActionButtons extends StatelessWidget {
               ),
               child: Text(
                 buyLabel,
-                style: const TextStyle(
-                  fontSize: 14,
+                style: TextStyle(
+                  fontSize: ResponsiveHelper.smallFontSize,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.5,
                 ),

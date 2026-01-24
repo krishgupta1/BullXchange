@@ -43,8 +43,8 @@ class TermsAndConditionsPage extends StatelessWidget {
             [
               '• BullXChange is a **paper trading simulation** app.',
               '• **No real stocks** are bought or sold.',
-              '• The app is NOT linked to any broker, exchange, or demat service.',
-              '• We are NOT a SEBI-registered advisor or intermediary.',
+              '• The app is NOT linked to any broker, exchange, or DEMAT service.',
+              '• We are NOT a Securities and Exchange Board of India (SEBI)-registered advisor or intermediary.',
             ],
           ),
 
@@ -145,10 +145,10 @@ class TermsAndConditionsPage extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -238,7 +238,7 @@ class TermsAndConditionsPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -252,7 +252,7 @@ class TermsAndConditionsPage extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.1),
+                  color: iconColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(icon, size: 20, color: iconColor),
@@ -313,7 +313,7 @@ class TermsAndConditionsPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.primary.withOpacity(0.3),
+            color: colorScheme.primary.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),

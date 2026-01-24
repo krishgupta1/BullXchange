@@ -38,9 +38,11 @@ class _StockDetailPageState extends State<StockDetailPage> {
     try {
       await _userService.toggleWatchlistStock(uid!, widget.instrument.token);
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+      }
     }
   }
 
@@ -84,7 +86,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: theme.shadowColor.withOpacity(0.1),
+                    color: theme.shadowColor.withValues(alpha: 0.1),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -133,7 +135,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: theme.shadowColor.withOpacity(0.05),
+                    color: theme.shadowColor.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -164,7 +166,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: theme.shadowColor.withOpacity(0.05),
+                    color: theme.shadowColor.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -224,7 +226,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
           color: theme.scaffoldBackgroundColor,
           boxShadow: [
             BoxShadow(
-              color: theme.shadowColor.withOpacity(0.05),
+              color: theme.shadowColor.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, -5),
             ),
@@ -317,7 +319,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(
-              color: colorScheme.outline.withOpacity(0.1),
+              color: colorScheme.outline.withValues(alpha: 0.1),
               width: 1,
             ),
           ),
@@ -402,7 +404,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: changeColor.withOpacity(0.1),
+            color: changeColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -477,7 +479,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
             decoration: BoxDecoration(
               color: colorScheme.surface,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+              border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -486,7 +488,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
                 Text(
                   stat['label']!,
                   style: textTheme.bodySmall?.copyWith(
-                    color: textTheme.bodySmall?.color?.withOpacity(0.7),
+                    color: textTheme.bodySmall?.color?.withValues(alpha: 0.7),
                     fontSize: 14,
                   ),
                   maxLines: 1,

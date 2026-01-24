@@ -1,11 +1,12 @@
 import 'package:bullxchange/features/account/screens/add_fund.dart';
-import 'package:bullxchange/features/account/screens/billing_payement_page.dart';
+import 'package:bullxchange/features/account/screens/billing_payment_page.dart';
 import 'package:bullxchange/features/account/screens/edit_profile_page.dart';
 import 'package:bullxchange/features/account/screens/faq_page.dart';
-import 'package:bullxchange/features/account/screens/referralcodepage.dart';
+import 'package:bullxchange/features/account/screens/referral_code_page.dart';
 import 'package:bullxchange/features/account/screens/settings_page.dart';
 import 'package:bullxchange/features/auth/screens/login_page.dart';
 // import 'package:bullxchange/features/account/screens/my_rewards_page.dart'; // Uncomment when page exists
+import 'package:bullxchange/utils/responsive_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -226,7 +227,7 @@ class AccountScreen extends StatelessWidget {
                 'Edit Profile',
                 style: TextStyle(
                   color: colorScheme.secondary,
-                  fontSize: 14,
+                  fontSize: ResponsiveHelper.smallFontSize,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -257,7 +258,7 @@ class AccountScreen extends StatelessWidget {
       children: [
         CircleAvatar(
           radius: 35,
-          backgroundColor: colorScheme.primary.withOpacity(0.1),
+          backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
           child: Text(
             getInitials(name),
             style:
@@ -300,10 +301,10 @@ class AccountScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: colorScheme.primary.withOpacity(0.1),
+        color: colorScheme.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme.primary.withOpacity(0.2),
+          color: colorScheme.primary.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -326,7 +327,7 @@ class AccountScreen extends StatelessWidget {
                 'Wallet Balance',
                 style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                   fontWeight: FontWeight.w500,
-                  color: colorScheme.onSurface.withOpacity(0.7),
+                  color: colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
               ),
               const SizedBox(height: 4),
@@ -357,8 +358,8 @@ class AccountScreen extends StatelessWidget {
             child: Text(
               'Add Fund',
               style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
+                fontSize: ResponsiveHelper.bodyFontSize,
+                fontWeight: FontWeight.bold,
                 color: colorScheme.onPrimary,
               ),
             ),
@@ -375,7 +376,7 @@ class AccountScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.green.withOpacity(0.1),
+        color: Colors.green.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -397,16 +398,16 @@ class AccountScreen extends StatelessWidget {
                 Text(
                   'Referral Code',
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: ResponsiveHelper.smallFontSize,
                     fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface.withOpacity(0.8),
+                    color: colorScheme.onSurface.withValues(alpha: 0.8),
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   'Refer friends & earn 10,000 Points!',
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: ResponsiveHelper.tinyFontSize,
                     color: textTheme.bodySmall?.color,
                     fontWeight: FontWeight.w500,
                   ),
@@ -449,7 +450,7 @@ class AccountScreen extends StatelessWidget {
           Divider(
             height: 24,
             thickness: 1,
-            color: theme.dividerColor.withOpacity(0.1),
+            color: theme.dividerColor.withValues(alpha: 0.1),
           ),
           _buildOptionItem(
             context,
@@ -466,7 +467,7 @@ class AccountScreen extends StatelessWidget {
           Divider(
             height: 24,
             thickness: 1,
-            color: theme.dividerColor.withOpacity(0.1),
+            color: theme.dividerColor.withValues(alpha: 0.1),
           ),
           _buildOptionItem(
             context,
@@ -503,7 +504,7 @@ class AccountScreen extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 20,
-              backgroundColor: color.withOpacity(0.1),
+              backgroundColor: color.withValues(alpha: 0.1),
               child: Icon(icon, color: color, size: 20),
             ),
             const SizedBox(width: 12),
@@ -568,10 +569,10 @@ class AccountScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           // Use Error color with low opacity for background
-          color: colorScheme.error.withOpacity(0.1),
+          color: colorScheme.error.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: colorScheme.error.withOpacity(0.3),
+            color: colorScheme.error.withValues(alpha: 0.3),
             width: 1,
           ),
         ),

@@ -278,6 +278,26 @@ class AngelOneOptionChainService {
         ltp = double.tryParse(data?['close']?.toString() ?? "0") ?? 0.0;
       }
 
+      // ------------------------------------------------------------------
+      // REAL BID / ASK LOGIC (Angel One–style)
+      // ------------------------------------------------------------------
+      double bid = double.tryParse(data?['bestBid']?.toString() ?? "0") ?? 0.0;
+      double ask = double.tryParse(data?['bestAsk']?.toString() ?? "0") ?? 0.0;
+
+      // If API does not provide bid/ask → simulate realistic spread
+      if (bid <= 0 || ask <= 0) {
+        // Options typically have wider spreads
+        double spreadPercent = 0.002; // 0.2%
+        bid = ltp * (1 - spreadPercent);
+        ask = ltp * (1 + spreadPercent);
+      }
+
+      // Safety
+      if (bid > ask) {
+        bid = ltp * 0.999;
+        ask = ltp * 1.001;
+      }
+
       // ⭐️ FIX: Better OI check
       double oi =
           double.tryParse(data?['opnInterest']?.toString() ?? "0") ?? 0.0;
@@ -290,7 +310,12 @@ class AngelOneOptionChainService {
 
       final Map<String, dynamic> node = {
         'openInterest': oi,
-        'lastPrice': ltp,
+
+        // 🔥 REAL EXECUTION PRICES
+        'bidPrice': bid,
+        'askPrice': ask,
+        'ltp': ltp,
+
         'pChange': data?['percentChange'] ?? data?['netChange'] ?? 0.0,
         'lotSize': lotSize,
         'expiryDate': cleanExpiry,

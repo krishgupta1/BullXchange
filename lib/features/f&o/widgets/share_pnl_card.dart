@@ -1,3 +1,4 @@
+import 'package:bullxchange/utils/responsive_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -66,7 +67,7 @@ class SharePnlCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: gradientColors.last.withOpacity(0.5),
+              color: gradientColors.last.withValues(alpha: 0.5),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -97,9 +98,9 @@ class SharePnlCard extends StatelessWidget {
                   ),
                   child: Text(
                     isIntraday ? "INTRADAY" : "OPTIONS",
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
-                      fontSize: 10,
+                      fontSize: ResponsiveHelper.tinyFontSize,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -112,24 +113,24 @@ class SharePnlCard extends StatelessWidget {
             Text(
               symbol,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
-                fontSize: 10,
+                fontSize: ResponsiveHelper.tinyFontSize,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 30),
 
             // The Rocket Icon or Trend Icon
-            Icon(statusIcon, size: 60, color: Colors.white.withOpacity(0.9)),
+            Icon(statusIcon, size: 60, color: Colors.white.withValues(alpha: 0.9)),
             const SizedBox(height: 20),
 
             // P&L Percentage (The big number)
             Text(
               "${pnl >= 0 ? '+' : ''}${roi.toStringAsFixed(2)}%",
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
-                fontSize: 36,
+                fontSize: ResponsiveHelper.displayFontSize,
                 fontWeight: FontWeight.w900,
                 letterSpacing: -1,
               ),
@@ -137,8 +138,8 @@ class SharePnlCard extends StatelessWidget {
             Text(
               "Return on Investment",
               style: TextStyle(
-                color: Colors.white.withOpacity(0.7),
-                fontSize: 10,
+                color: Colors.white.withValues(alpha: 0.7),
+                fontSize: ResponsiveHelper.tinyFontSize,
               ),
             ),
 
@@ -189,14 +190,14 @@ class SharePnlCard extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(color: Colors.white60, fontSize: 10),
+          style: TextStyle(color: Colors.white60, fontSize: ResponsiveHelper.tinyFontSize),
         ),
         const SizedBox(height: 4),
         Text(
           val,
           style: TextStyle(
             color: Colors.white,
-            fontSize: 10,
+            fontSize: ResponsiveHelper.tinyFontSize,
             fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
           ),
         ),
