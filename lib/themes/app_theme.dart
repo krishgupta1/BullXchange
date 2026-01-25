@@ -340,7 +340,7 @@ class AppTheme {
       colorScheme: ColorScheme.dark(
         primary: kPrimaryBlue,
         secondary: kBrandPink,
-        surface: const Color(0xFF121212),
+        surface: Colors.black,
         onSurface: Colors.white,
         secondaryContainer: kButtonPurple,
         onSecondaryContainer: Colors.white,
@@ -349,7 +349,7 @@ class AppTheme {
         onSecondary: Colors.white,
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: const Color(0xFF121212),
+        backgroundColor: Colors.black,
         elevation: 0,
         iconTheme: const IconThemeData(color: kBrandPink),
         titleTextStyle: TextStyle(

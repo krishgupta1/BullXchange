@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:bullxchange/features/f&o/screens/buy_option_page.dart';
+import 'package:bullxchange/features/f&o/screens/charts_and_overview_tab.dart';
 import 'package:bullxchange/features/f&o/screens/sell_option_page.dart';
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/provider/option_chain_provider.dart';
@@ -23,7 +24,13 @@ class _OptionChainPageState extends State<OptionChainPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   String _getApiSymbol(String uiSymbol) {
@@ -65,8 +72,7 @@ class _OptionChainPageState extends State<OptionChainPage>
             indicatorColor: Colors.blueAccent,
             tabs: const [
               Tab(text: 'Option Chain'),
-              Tab(text: 'Overview'),
-              Tab(text: 'Charts'),
+              Tab(text: 'Charts & Overview'),
             ],
           ),
         ),
@@ -74,10 +80,7 @@ class _OptionChainPageState extends State<OptionChainPage>
           controller: _tabController,
           children: [
             const _OptionChainBody(),
-            const OverviewTab(),
-            const Center(
-              child: Text("Charts", style: TextStyle(color: Colors.white)),
-            ),
+            const ChartsAndOverviewTab(),
           ],
         ),
       ),

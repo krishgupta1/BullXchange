@@ -1,6 +1,7 @@
 import 'package:bullxchange/features/stock_market/screens/buy_stock_page.dart';
 import 'package:bullxchange/features/stock_market/screens/sell_stock_page.dart';
 import 'package:bullxchange/features/stock_market/widgets/smart_logo.dart';
+import 'package:bullxchange/features/stock_market/widgets/native_stock_chart.dart';
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/models/stock_holding_model.dart';
 import 'package:bullxchange/models/user_profile_data_model.dart';
@@ -11,7 +12,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import 'package:bullxchange/widgets/custom_back_button.dart';
 import 'package:bullxchange/widgets/trade_action_buttons.dart';
 
@@ -159,7 +159,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
             ),
             // --- Chart Section ---
             Container(
-              height: 400, // Slightly reduced height
+              height: 320, // Reduced height
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
                 color: theme.cardColor,
@@ -174,10 +174,10 @@ class _StockDetailPageState extends State<StockDetailPage> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(24),
-                child: TradingViewChart(instrument: widget.instrument),
+                child: NativeStockChart(instrument: widget.instrument),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 8),
             // --- Statistics Section ---
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -515,82 +515,3 @@ class _StockDetailPageState extends State<StockDetailPage> {
   }
 }
 
-class TradingViewChart extends StatefulWidget {
-  final Instrument instrument;
-  const TradingViewChart({super.key, required this.instrument});
-
-  @override
-  State<TradingViewChart> createState() => _TradingViewChartState();
-}
-
-class _TradingViewChartState extends State<TradingViewChart> {
-  late final WebViewController _controller;
-  String _currentAppliedTheme = "";
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0x00000000));
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final brightness = Theme.of(context).brightness;
-    String chartTheme = (brightness == Brightness.dark) ? "dark" : "light";
-    String toolbarBg = (brightness == Brightness.dark) ? "#1E1E1E" : "#f1f3f6";
-
-    if (_currentAppliedTheme != chartTheme) {
-      _currentAppliedTheme = chartTheme;
-      _controller.loadHtmlString(_buildTradingViewHtml(chartTheme, toolbarBg));
-    }
-  }
-
-  String _buildTradingViewHtml(String chartTheme, String toolbarBg) {
-    final sanitizedSymbol = widget.instrument.symbol.replaceAll('-EQ', '');
-    final tradingViewSymbol = 'BSE:$sanitizedSymbol';
-
-    return '''
-      <!DOCTYPE html>
-      <html lang="en">
-        <head>
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>TradingView Chart</title>
-          <style> body { margin: 0; padding: 0; } </style>
-        </head>
-        <body>
-          <div id="tradingview_chart_container" style="height: 100vh; width: 100vw;"></div>
-          <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-          <script type="text/javascript">
-            new TradingView.widget({
-              "autosize": true,
-              "symbol": "$tradingViewSymbol", 
-              "interval": "D",
-              "intervals": ["1", "5", "15", "30", "60", "D", "W", "M"],
-              "timezone": "Asia/Kolkata",
-              "theme": "$chartTheme", 
-              "style": "1",
-              "locale": "in",
-              "toolbar_bg": "$toolbarBg",
-              "enable_publishing": false,
-              "withdateranges": true,
-              "hide_side_toolbar": false,
-              "allow_symbol_change": true,
-              "details": true, 
-              "hotlist": true,
-              "calendar": true,
-              "container_id": "tradingview_chart_container"
-            });
-          </script>
-        </body>
-      </html>
-    ''';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return WebViewWidget(controller: _controller);
-  }
-}

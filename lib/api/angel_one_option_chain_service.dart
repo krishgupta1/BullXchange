@@ -84,12 +84,25 @@ class AngelOneOptionChainService {
       if (data != null) {
         double ltp = double.tryParse(data['ltp']?.toString() ?? "0") ?? 0;
         double close = double.tryParse(data['close']?.toString() ?? "0") ?? 0;
+        
+        // Use close price as fallback if LTP is 0
         if (ltp == 0 && close > 0) {
           data['ltp'] = close;
-          if (data['change'] == null) data['change'] = 0.0;
-          if (data['pChange'] == null) data['pChange'] = 0.0;
         }
+        
+        // Ensure change and percentChange are calculated if missing
+        if (data['change'] == null && close > 0 && ltp > 0) {
+          data['change'] = ltp - close;
+          data['percentChange'] = ((ltp - close) / close) * 100;
+        } else if (data['change'] == null) {
+          data['change'] = 0.0;
+          data['percentChange'] = 0.0;
+        }
+        
+        AppLog.i("✅ Market overview data fetched for $symbol: LTP=${data['ltp']}, Change=${data['change']}");
         return data;
+      } else {
+        AppLog.w("⚠️ No market data received for $symbol");
       }
     } catch (e) {
       AppLog.e("Error fetching market overview: $e");

@@ -30,18 +30,6 @@ class _HomePageState extends State<HomePage> {
     const StockPage(),
     const FutureOptionPage(),
     const PortfolioPage(),
-    Builder(
-      builder: (context) {
-        return Center(
-          child: Text(
-            'AI Stats Page',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-        );
-      },
-    ),
     const AccountScreen(),
   ];
 

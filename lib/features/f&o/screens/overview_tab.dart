@@ -158,6 +158,28 @@ class OverviewTab extends StatelessWidget {
             const SizedBox(height: 16),
             const Divider(color: Colors.grey, thickness: 0.2),
 
+            // Additional Stats
+            Row(
+              children: [
+                Expanded(
+                  child: _StatItem(
+                    label: "Day Change", 
+                    value: "${data.priceChange >= 0 ? '+' : ''}${_formatNum(data.priceChange)}"
+                  ),
+                ),
+                Expanded(
+                  child: _StatItem(
+                    label: "% Change",
+                    value: "${data.percentChange >= 0 ? '+' : ''}${data.percentChange.toStringAsFixed(2)}%",
+                    alignEnd: true,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+            const Divider(color: Colors.grey, thickness: 0.2),
+
             // Lists
             _ListRow(title: "${provider.symbol} Companies"),
             _ListRow(title: "${provider.symbol} ETFs"),

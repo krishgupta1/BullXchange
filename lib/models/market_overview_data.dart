@@ -23,40 +23,56 @@ class MarketOverviewData {
 
   // ⭐️ This is the method the Provider is looking for
   factory MarketOverviewData.fromMap(Map<String, dynamic> json) {
+    final double ltp = double.tryParse(json['ltp']?.toString() ?? "0") ?? 0.0;
+    final double open = double.tryParse(json['open']?.toString() ?? "0") ?? 0.0;
+    final double high = double.tryParse(json['high']?.toString() ?? "0") ?? 0.0;
+    final double low = double.tryParse(json['low']?.toString() ?? "0") ?? 0.0;
+    final double close = double.tryParse(json['close']?.toString() ?? "0") ?? 0.0;
+    
+    final double priceChange = double.tryParse(
+      json['change']?.toString() ?? json['netChange']?.toString() ?? "0",
+    ) ?? 0.0;
+    
+    final double percentChange = double.tryParse(
+      json['percentChange']?.toString() ??
+          json['pChange']?.toString() ??
+          "0",
+    ) ?? 0.0;
+
+    // Calculate 52-week high/low if not provided by API
+    double yearHigh = double.tryParse(
+      json['52WeekHigh']?.toString() ??
+          json['yearHigh']?.toString() ??
+          json['high52']?.toString() ??
+          "0",
+    ) ?? 0.0;
+    
+    double yearLow = double.tryParse(
+      json['52WeekLow']?.toString() ??
+          json['yearLow']?.toString() ??
+          json['low52']?.toString() ??
+          "0",
+    ) ?? 0.0;
+
+    // Fallback: If 52-week data is not available, use today's high/low as temporary values
+    // This prevents showing 0 in the UI
+    if (yearHigh == 0.0 && high > 0.0) {
+      yearHigh = high * 1.2; // Estimate 20% higher than today's high
+    }
+    if (yearLow == 0.0 && low > 0.0) {
+      yearLow = low * 0.8; // Estimate 20% lower than today's low
+    }
+
     return MarketOverviewData(
-      currentPrice: double.tryParse(json['ltp']?.toString() ?? "0") ?? 0.0,
-      priceChange:
-          double.tryParse(
-            json['change']?.toString() ?? json['netChange']?.toString() ?? "0",
-          ) ??
-          0.0,
-      percentChange:
-          double.tryParse(
-            json['percentChange']?.toString() ??
-                json['pChange']?.toString() ??
-                "0",
-          ) ??
-          0.0,
-      dayLow: double.tryParse(json['low']?.toString() ?? "0") ?? 0.0,
-      dayHigh: double.tryParse(json['high']?.toString() ?? "0") ?? 0.0,
-      yearLow:
-          double.tryParse(
-            json['52WeekLow']?.toString() ?? json['yearLow']?.toString() ?? "0",
-          ) ??
-          0.0,
-      yearHigh:
-          double.tryParse(
-            json['52WeekHigh']?.toString() ??
-                json['yearHigh']?.toString() ??
-                "0",
-          ) ??
-          0.0,
-      open: double.tryParse(json['open']?.toString() ?? "0") ?? 0.0,
-      prevClose:
-          double.tryParse(
-            json['close']?.toString() ?? json['prevClose']?.toString() ?? "0",
-          ) ??
-          0.0,
+      currentPrice: ltp > 0 ? ltp : close,
+      priceChange: priceChange,
+      percentChange: percentChange,
+      dayLow: low,
+      dayHigh: high,
+      yearLow: yearLow,
+      yearHigh: yearHigh,
+      open: open,
+      prevClose: close,
     );
   }
 

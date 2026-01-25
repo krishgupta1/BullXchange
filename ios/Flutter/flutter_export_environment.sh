@@ -1,6 +1,6 @@
 #!/bin/sh
 # This is a generated file; do not edit or check into version control.
-export "FLUTTER_ROOT=/Users/krishgupta/Developer/flutter"
+export "FLUTTER_ROOT=/Users/krishgupta/fvm/versions/stable"
 export "FLUTTER_APPLICATION_PATH=/Users/krishgupta/Developer/Devs/Projects/Future/BullXchange/bullxchange"
 export "COCOAPODS_PARALLEL_CODE_SIGN=true"
 export "FLUTTER_TARGET=/Users/krishgupta/Developer/Devs/Projects/Future/BullXchange/bullxchange/lib/main.dart"

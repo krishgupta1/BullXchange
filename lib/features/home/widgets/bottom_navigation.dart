@@ -23,7 +23,7 @@ class BottomNavBar extends StatelessWidget {
       onTap: onItemTapped,
 
       // Background & Visibility
-      backgroundColor: isDarkMode ? Colors.black : Colors.white,
+      backgroundColor: colorScheme.surface,
       elevation: 8,
 
       // Colors
@@ -56,11 +56,6 @@ class BottomNavBar extends StatelessWidget {
           icon: const Icon(Icons.pie_chart_outline),
           activeIcon: Icon(Icons.pie_chart, color: colorScheme.primary),
           label: 'Portfolio',
-        ),
-        BottomNavigationBarItem(
-          icon: const Icon(Icons.auto_awesome_outlined),
-          activeIcon: Icon(Icons.auto_awesome, color: colorScheme.primary),
-          label: 'AI Stats',
         ),
         BottomNavigationBarItem(
           icon: const Icon(Icons.person_outline),

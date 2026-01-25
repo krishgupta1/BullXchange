@@ -1,7 +1,7 @@
 import 'dart:math'; // Import math for min function
+import 'package:bullxchange/features/account/screens/referral_code_page.dart';
 import 'package:bullxchange/features/auth/screens/onboarding_page_1.1.dart';
 import 'package:bullxchange/features/account/screens/faq_page.dart';
-import 'package:bullxchange/features/account/screens/referral_code_page.dart';
 import 'package:bullxchange/features/account/screens/settings_page.dart';
 import 'package:bullxchange/models/user_profile_data_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
