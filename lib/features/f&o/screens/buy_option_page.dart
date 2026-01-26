@@ -7,6 +7,7 @@ import 'package:bullxchange/models/user_profile_data_model.dart';
 import 'package:bullxchange/services/firebase/charge_calculator_service.dart';
 import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:bullxchange/widgets/custom_back_button.dart';
+import 'package:bullxchange/widgets/swipe_to_confirm_button.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -578,31 +579,41 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
           ),
         ],
       ),
-      child: SizedBox(
-        width: double.infinity,
-        height: 56,
-        child: ElevatedButton(
-          onPressed: isEnabled ? _handleBuy : null,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: colorScheme.secondary,
-            foregroundColor: Colors.white,
-            elevation: isEnabled ? 4 : 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-          ),
-          child: _isPlacingOrder
-              ? const SizedBox(
-                  height: 24,
-                  width: 24,
-                  child: CircularProgressIndicator(color: Colors.white),
-                )
-              : const Text(
-                  "Swipe to Buy",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      child: isEnabled
+          ? SwipeToConfirmButton(
+              onConfirmed: _handleBuy,
+              label: "Swipe to Buy",
+              color: colorScheme.secondary,
+              icon: Icons.double_arrow_rounded,
+            )
+          : SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.disabledColor.withValues(alpha: 0.1),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
                 ),
-        ),
-      ),
+                child: _isPlacingOrder
+                    ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(
+                        "Swipe to Buy",
+                        style: TextStyle(
+                          color: theme.disabledColor,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+              ),
+            ),
     );
   }
 

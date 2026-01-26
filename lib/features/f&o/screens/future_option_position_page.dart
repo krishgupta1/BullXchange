@@ -753,11 +753,14 @@ class _FnoPositionItemState extends State<FnoPositionItem> {
                         ),
                       ),
                       SizedBox(width: ResponsiveHelper.tinySpacing * 1.5),
-                      Text(
-                        "${widget.position.quantity.abs()} Qty",
-                        style: TextStyle(
-                          color: theme.textTheme.bodySmall?.color,
-                          fontSize: ResponsiveHelper.captionFontSize,
+                      Expanded(
+                        child: Text(
+                          "${widget.position.quantity.abs()} Qty",
+                          style: TextStyle(
+                            color: theme.textTheme.bodySmall?.color,
+                            fontSize: ResponsiveHelper.captionFontSize,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       SizedBox(width: ResponsiveHelper.tinySpacing * 1.5),
