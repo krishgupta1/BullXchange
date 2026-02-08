@@ -63,15 +63,40 @@ class _PortfolioPageState extends State<PortfolioPage> {
 
   void _updateFnoHoldingsLiveData(List<OptionHoldingModel> fnoHoldings) {
     final symbols = fnoHoldings.map((h) => h.contractSymbol).toList();
-    
+    print('🔄 Updating F&O live data for symbols: $symbols');
+
+    // Debug: Print actual holding details
+    for (var holding in fnoHoldings) {
+      print(
+        '📋 F&O Holding: ${holding.contractSymbol} - ${holding.symbol} ${holding.optionType} ${holding.strikePrice}',
+      );
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      // For F&O holdings, find the instruments and fetch their live data
-      final provider = context.read<InstrumentProvider>();
-      final instruments = symbols.map((symbol) => provider.getInstrumentBySymbol(symbol)).where((instrument) => instrument != null).cast<Instrument>().toList();
-      
+
+      final provider = Provider.of<InstrumentProvider>(context, listen: false);
+      final instruments = <Instrument>[];
+
+      for (final symbol in symbols) {
+        final instrument = provider.getFnoInstrumentBySymbol(symbol);
+        if (instrument != null) {
+          instruments.add(instrument);
+          print(
+            '✅ Found F&O instrument: ${instrument.name} (${instrument.symbol})',
+          );
+        } else {
+          print('❌ F&O instrument not found: $symbol');
+        }
+      }
+
       if (instruments.isNotEmpty) {
+        print(
+          '📡 Fetching live data for ${instruments.length} F&O instruments',
+        );
         provider.fetchLiveDataFor(instruments);
+      } else {
+        print('⚠️ No F&O instruments found to fetch data for');
       }
     });
   }
@@ -79,11 +104,14 @@ class _PortfolioPageState extends State<PortfolioPage> {
   @override
   Widget build(BuildContext context) {
     // Initialize responsive helper
-    ResponsiveHelper.init(context, BoxConstraints.tightFor(
-      width: MediaQuery.of(context).size.width,
-      height: MediaQuery.of(context).size.height,
-    ));
-    
+    ResponsiveHelper.init(
+      context,
+      BoxConstraints.tightFor(
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.height,
+      ),
+    );
+
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -151,13 +179,14 @@ class _PortfolioPageState extends State<PortfolioPage> {
 
         final userProfile = snapshot.data!;
         final allHoldings = userProfile.stocks;
-        final fnoHoldings = userProfile.optionHoldings; // F&O positions are stored separately
+        final fnoHoldings =
+            userProfile.optionHoldings; // F&O positions are stored separately
         final availableCash = userProfile.availableFunds;
 
         if (allHoldings.isNotEmpty) {
           _updateHoldingsLiveData(allHoldings);
         }
-        
+
         // Also fetch live data for F&O holdings
         if (fnoHoldings.isNotEmpty) {
           _updateFnoHoldingsLiveData(fnoHoldings);
@@ -210,29 +239,111 @@ class _PortfolioPageState extends State<PortfolioPage> {
 
             // Process F&O Holdings (Options)
             for (var holding in fnoHoldings) {
-              final instrument = instrumentProvider.getInstrumentBySymbol(
+              final instrument = instrumentProvider.getFnoInstrumentBySymbol(
                 holding.contractSymbol,
               );
-              final double currentPrice =
-                  (instrument?.liveData['ltp'] as num?)?.toDouble() ??
-                  holding.averagePrice;
+
+              // Debug: Check if instrument is found and is correct
+              double currentPrice;
+              bool useFallbackPrice = false;
+
+              print('🔍 F&O Holding Analysis:');
+              print('   Contract Symbol: ${holding.contractSymbol}');
+              print('   Base Symbol: ${holding.symbol}');
+              print('   Option Type: ${holding.optionType}');
+              print('   Strike Price: ${holding.strikePrice}');
+              print('   Stored Current LTP: ${holding.currentLtp}');
+              print('   Average Price: ${holding.averagePrice}');
+              print('   Quantity: ${holding.quantity}');
+
+              if (instrument == null) {
+                print(
+                  '⚠️ F&O Instrument not found for: ${holding.contractSymbol}',
+                );
+                useFallbackPrice = true;
+              } else {
+                // Check if this is the underlying index instead of the option contract
+                if (instrument.name == holding.symbol &&
+                    (instrument.name == "NIFTY" ||
+                        instrument.name == "BANKNIFTY")) {
+                  print(
+                    '⚠️ Found underlying index instead of option contract for: ${holding.contractSymbol}',
+                  );
+                  print('   Instrument Name: ${instrument.name}');
+                  print('   Instrument Symbol: ${instrument.symbol}');
+                  useFallbackPrice = true;
+                } else {
+                  print(
+                    '✅ F&O Instrument found: ${instrument.name}, LTP: ${instrument.liveData['ltp']}',
+                  );
+                }
+              }
+
+              if (useFallbackPrice) {
+                // Use fallback calculation based on holding's currentLtp if available
+                if (holding.currentLtp > 0) {
+                  currentPrice = holding.currentLtp;
+                  print('📊 Using fallback currentLtp: $currentPrice');
+                } else {
+                  currentPrice = holding.averagePrice;
+                  print('📊 Using fallback averagePrice: $currentPrice');
+                }
+              } else {
+                currentPrice =
+                    (instrument?.liveData['ltp'] as num?)?.toDouble() ??
+                    holding.averagePrice;
+              }
 
               // Handle both long and short positions correctly
-              final double invested = holding.averagePrice * holding.quantity.abs();
+              final double invested =
+                  holding.averagePrice * holding.quantity.abs();
               final double currentVal = currentPrice * holding.quantity.abs();
-              
+
               double positionPnl;
               if (holding.quantity < 0) {
                 // Short position: Profit when price goes down
-                positionPnl = (holding.averagePrice - currentPrice) * holding.quantity.abs();
+                positionPnl =
+                    (holding.averagePrice - currentPrice) *
+                    holding.quantity.abs();
               } else {
                 // Long position: Profit when price goes up
                 positionPnl = currentVal - invested;
               }
-              
-              // For today's P&L, we don't have yesterday's close for options
-              // This would need historical data to calculate properly
-              double dayPL = 0; // TODO: Implement when historical data available
+
+              print('📊 F&O P&L Calculation for ${holding.contractSymbol}:');
+              print('   Quantity: ${holding.quantity}');
+              print('   Average Price: ${holding.averagePrice}');
+              print('   Current Price: $currentPrice');
+              print('   Invested: $invested');
+              print('   Current Value: $currentVal');
+              print('   Position P&L: $positionPnl');
+
+              // Calculate today's P&L for options using available data
+              // Since we don't have yesterday's close for options, we'll use a reasonable approximation
+              double dayPL = 0;
+
+              // Method 1: Use percentage change if available from live data
+              final double percentChange =
+                  (instrument?.liveData['pChange'] as num?)?.toDouble() ?? 0.0;
+              if (percentChange != 0) {
+                // Calculate today's P&L based on percentage change
+                dayPL = (invested * percentChange) / 100;
+              } else {
+                // Method 2: Use recent price movement approximation
+                // For options, we can estimate today's movement based on underlying price change
+                // This is an approximation but better than showing 0
+                final double underlyingChange =
+                    (instrument?.liveData['change'] as num?)?.toDouble() ?? 0.0;
+                if (underlyingChange != 0 && currentPrice > 0) {
+                  // Estimate option's daily movement as a fraction of underlying movement
+                  // This is a simplified approach - in reality, option Greeks would be needed
+                  double estimatedOptionChange =
+                      (underlyingChange / currentPrice) *
+                      0.3; // 30% delta approximation
+                  dayPL = (currentVal * estimatedOptionChange);
+                }
+              }
+
               todaysTotalPL += dayPL;
 
               final holdingData = {
@@ -256,10 +367,13 @@ class _PortfolioPageState extends State<PortfolioPage> {
                 availableCash + totalEquityCurrent + totalFnoCurrent;
             double totalInvested = totalEquityInvested + totalFnoInvested;
             double totalEquityPL = totalEquityCurrent - totalEquityInvested;
-            
+
             // Calculate F&O P&L correctly by summing individual position P&L
-            double totalFnoPL = fnoList.fold(0.0, (sum, holding) => sum + (holding['pnl'] ?? 0.0));
-            
+            double totalFnoPL = fnoList.fold(
+              0.0,
+              (sum, holding) => sum + (holding['pnl'] ?? 0.0),
+            );
+
             double overallPL = totalEquityPL + totalFnoPL;
             double overallPLPercent = (totalInvested > 0)
                 ? (overallPL / totalInvested) * 100
@@ -287,7 +401,9 @@ class _PortfolioPageState extends State<PortfolioPage> {
               ),
               body: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
-                padding: EdgeInsets.only(bottom: ResponsiveHelper.verticalPadding * 1.5),
+                padding: EdgeInsets.only(
+                  bottom: ResponsiveHelper.verticalPadding * 1.5,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -313,11 +429,15 @@ class _PortfolioPageState extends State<PortfolioPage> {
 
                     // --- 2. SMOOTH TAB SWITCHER ---
                     Container(
-                      margin: EdgeInsets.symmetric(horizontal: ResponsiveHelper.horizontalPadding),
+                      margin: EdgeInsets.symmetric(
+                        horizontal: ResponsiveHelper.horizontalPadding,
+                      ),
                       padding: EdgeInsets.all(ResponsiveHelper.tinySpacing),
                       decoration: BoxDecoration(
                         color: cardColor,
-                        borderRadius: BorderRadius.circular(ResponsiveHelper.cardBorderRadius * 0.6),
+                        borderRadius: BorderRadius.circular(
+                          ResponsiveHelper.cardBorderRadius * 0.6,
+                        ),
                         border: Border.all(
                           color: subTextColor.withValues(alpha: 0.1),
                         ),
@@ -436,7 +556,9 @@ class _PortfolioPageState extends State<PortfolioPage> {
           color: isSelected
               ? activeColor.withValues(alpha: 0.15)
               : Colors.transparent,
-          borderRadius: BorderRadius.circular(ResponsiveHelper.cardBorderRadius * 0.4),
+          borderRadius: BorderRadius.circular(
+            ResponsiveHelper.cardBorderRadius * 0.4,
+          ),
         ),
         alignment: Alignment.center,
         child: Text(
@@ -453,7 +575,9 @@ class _PortfolioPageState extends State<PortfolioPage> {
 
   Widget _buildEmptyState(String msg, Color cardColor, Color subTextColor) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: ResponsiveHelper.horizontalPadding),
+      margin: EdgeInsets.symmetric(
+        horizontal: ResponsiveHelper.horizontalPadding,
+      ),
       padding: EdgeInsets.all(ResponsiveHelper.cardPadding * 1.5),
       width: double.infinity,
       decoration: BoxDecoration(
@@ -468,7 +592,13 @@ class _PortfolioPageState extends State<PortfolioPage> {
             color: subTextColor.withValues(alpha: 0.5),
           ),
           SizedBox(height: ResponsiveHelper.smallSpacing),
-          Text(msg, style: TextStyle(color: subTextColor, fontSize: ResponsiveHelper.captionFontSize)),
+          Text(
+            msg,
+            style: TextStyle(
+              color: subTextColor,
+              fontSize: ResponsiveHelper.captionFontSize,
+            ),
+          ),
         ],
       ),
     );
@@ -477,9 +607,9 @@ class _PortfolioPageState extends State<PortfolioPage> {
   Widget _buildSectionHeader(String title, Color subTextColor) {
     return Padding(
       padding: EdgeInsets.only(
-        left: ResponsiveHelper.horizontalPadding * 1.25, 
-        right: ResponsiveHelper.horizontalPadding * 1.25, 
-        bottom: ResponsiveHelper.smallSpacing
+        left: ResponsiveHelper.horizontalPadding * 1.25,
+        right: ResponsiveHelper.horizontalPadding * 1.25,
+        bottom: ResponsiveHelper.smallSpacing,
       ),
       child: Text(
         title.toUpperCase(),
@@ -508,7 +638,9 @@ class _PortfolioPageState extends State<PortfolioPage> {
     Color kRed,
   ) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: ResponsiveHelper.horizontalPadding),
+      margin: EdgeInsets.symmetric(
+        horizontal: ResponsiveHelper.horizontalPadding,
+      ),
       padding: EdgeInsets.all(ResponsiveHelper.cardPadding),
       decoration: BoxDecoration(
         color: cardColor,
@@ -525,7 +657,10 @@ class _PortfolioPageState extends State<PortfolioPage> {
         children: [
           Text(
             "Total Portfolio Value",
-            style: TextStyle(color: subTextColor, fontSize: ResponsiveHelper.captionFontSize),
+            style: TextStyle(
+              color: subTextColor,
+              fontSize: ResponsiveHelper.captionFontSize,
+            ),
           ),
           SizedBox(height: ResponsiveHelper.tinySpacing * 1.5),
           Text(
@@ -541,12 +676,14 @@ class _PortfolioPageState extends State<PortfolioPage> {
 
           Container(
             padding: EdgeInsets.symmetric(
-              horizontal: ResponsiveHelper.smallSpacing * 1.5, 
-              vertical: ResponsiveHelper.tinySpacing * 1.5
+              horizontal: ResponsiveHelper.smallSpacing * 1.5,
+              vertical: ResponsiveHelper.tinySpacing * 1.5,
             ),
             decoration: BoxDecoration(
               color: (todaysPL >= 0 ? kGreen : kRed).withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(ResponsiveHelper.cardBorderRadius * 0.4),
+              borderRadius: BorderRadius.circular(
+                ResponsiveHelper.cardBorderRadius * 0.4,
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -594,7 +731,10 @@ class _PortfolioPageState extends State<PortfolioPage> {
                 children: [
                   Text(
                     "Overall Returns",
-                    style: TextStyle(color: subTextColor, fontSize: ResponsiveHelper.tinyFontSize),
+                    style: TextStyle(
+                      color: subTextColor,
+                      fontSize: ResponsiveHelper.tinyFontSize,
+                    ),
                   ),
                   SizedBox(height: ResponsiveHelper.tinySpacing),
                   Text(
@@ -624,7 +764,13 @@ class _PortfolioPageState extends State<PortfolioPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(color: subTextColor, fontSize: ResponsiveHelper.tinyFontSize)),
+        Text(
+          label,
+          style: TextStyle(
+            color: subTextColor,
+            fontSize: ResponsiveHelper.tinyFontSize,
+          ),
+        ),
         SizedBox(height: ResponsiveHelper.tinySpacing),
         Text(
           currency.format(value),
@@ -648,7 +794,9 @@ class _PortfolioPageState extends State<PortfolioPage> {
     Color kRed,
   ) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: ResponsiveHelper.horizontalPadding),
+      margin: EdgeInsets.symmetric(
+        horizontal: ResponsiveHelper.horizontalPadding,
+      ),
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(ResponsiveHelper.cardBorderRadius),
@@ -674,14 +822,31 @@ class _PortfolioPageState extends State<PortfolioPage> {
         ),
         itemBuilder: (context, index) {
           final holding = holdings[index];
-          final bool isFno = holding['symbol'].toString().endsWith("CE") || 
-                            holding['symbol'].toString().endsWith("PE");
-          
+          final String symbol = holding['symbol'].toString();
+
+          // More robust F&O detection
+          final bool isFno =
+              symbol.contains("CE") ||
+              symbol.contains("PE") ||
+              symbol.contains("FUT") ||
+              symbol.endsWith("CE") ||
+              symbol.endsWith("PE") ||
+              symbol.endsWith("FUT");
+
+          // Debug: Check symbol detection
+          print('🔍 Symbol detection: $symbol -> isFno: $isFno');
+
           // Use correct P&L calculation for F&O positions
-          final double profitLoss = isFno 
-              ? (holding['pnl'] ?? 0.0)  // Use pre-calculated P&L for F&O
-              : (holding['currentVal'] - holding['investedVal']);  // Simple calculation for stocks
+          final double profitLoss = isFno
+              ? (holding['pnl'] ?? 0.0) // Use pre-calculated P&L for F&O
+              : (holding['currentVal'] -
+                    holding['investedVal']); // Simple calculation for stocks
           final bool isProfit = profitLoss >= 0;
+
+          // Debug logging for F&O positions
+          if (isFno) {
+            print('🎯 Display F&O P&L for ${holding['symbol']}: $profitLoss');
+          }
 
           return Padding(
             padding: EdgeInsets.symmetric(
@@ -695,21 +860,31 @@ class _PortfolioPageState extends State<PortfolioPage> {
                   width: ResponsiveHelper.avatarSize * 0.8,
                   height: ResponsiveHelper.avatarSize * 0.8,
                   decoration: BoxDecoration(
-                    color: isFno 
-                        ? (holding['symbol'].toString().endsWith("CE") 
-                            ? Colors.green.withValues(alpha: 0.1)
-                            : Colors.red.withValues(alpha: 0.1))
+                    color: isFno
+                        ? (symbol.contains("CE")
+                              ? Colors.green.withValues(alpha: 0.1)
+                              : symbol.contains("PE")
+                              ? Colors.red.withValues(alpha: 0.1)
+                              : Colors.orange.withValues(alpha: 0.1))
                         : Colors.blueAccent.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(ResponsiveHelper.cardBorderRadius * 0.5),
+                    borderRadius: BorderRadius.circular(
+                      ResponsiveHelper.cardBorderRadius * 0.5,
+                    ),
                   ),
                   child: Center(
                     child: isFno
                         ? Text(
-                            holding['symbol'].toString().endsWith("CE") ? "CE" : "PE",
+                            symbol.contains("CE")
+                                ? "CE"
+                                : symbol.contains("PE")
+                                ? "PE"
+                                : "FUT",
                             style: TextStyle(
-                              color: holding['symbol'].toString().endsWith("CE") 
-                                  ? Colors.green 
-                                  : Colors.red,
+                              color: symbol.contains("CE")
+                                  ? Colors.green
+                                  : symbol.contains("PE")
+                                  ? Colors.red
+                                  : Colors.orange,
                               fontWeight: FontWeight.bold,
                               fontSize: ResponsiveHelper.tinyFontSize * 1.2,
                             ),
@@ -725,7 +900,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
                   ),
                 ),
                 SizedBox(width: ResponsiveHelper.smallSpacing),
-                
+
                 // Main content
                 Expanded(
                   child: Column(
@@ -746,7 +921,10 @@ class _PortfolioPageState extends State<PortfolioPage> {
                           Expanded(
                             child: Text(
                               "${holding['quantity'].abs()} Qty • Avg ${currency.format(holding['avgBuyPrice'])}",
-                              style: TextStyle(color: subTextColor, fontSize: ResponsiveHelper.captionFontSize),
+                              style: TextStyle(
+                                color: subTextColor,
+                                fontSize: ResponsiveHelper.captionFontSize,
+                              ),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -754,12 +932,14 @@ class _PortfolioPageState extends State<PortfolioPage> {
                             SizedBox(width: ResponsiveHelper.tinySpacing),
                             Container(
                               padding: EdgeInsets.symmetric(
-                                horizontal: ResponsiveHelper.tinySpacing, 
-                                vertical: ResponsiveHelper.tinySpacing * 0.5
+                                horizontal: ResponsiveHelper.tinySpacing,
+                                vertical: ResponsiveHelper.tinySpacing * 0.5,
                               ),
                               decoration: BoxDecoration(
                                 color: Colors.orange.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(ResponsiveHelper.cardBorderRadius * 0.2),
+                                borderRadius: BorderRadius.circular(
+                                  ResponsiveHelper.cardBorderRadius * 0.2,
+                                ),
                               ),
                               child: Text(
                                 "F&O",
@@ -776,7 +956,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
                     ],
                   ),
                 ),
-                
+
                 // Trailing values
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -911,7 +1091,9 @@ class _PortfolioPageState extends State<PortfolioPage> {
                                 width: 40,
                                 height: 40,
                                 decoration: BoxDecoration(
-                                  color: (isBuy ? kGreen : kRed).withValues(alpha: 0.1),
+                                  color: (isBuy ? kGreen : kRed).withValues(
+                                    alpha: 0.1,
+                                  ),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Icon(
@@ -965,7 +1147,9 @@ class _PortfolioPageState extends State<PortfolioPage> {
                                       vertical: 2,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: subTextColor.withValues(alpha: 0.1),
+                                      color: subTextColor.withValues(
+                                        alpha: 0.1,
+                                      ),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(

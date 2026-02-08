@@ -160,6 +160,12 @@ async function checkAndExecuteOrders() {
         ? totalAmount + charges
         : totalAmount - charges;
 
+    // Fix: Add zero-division check for percentage calculations
+    let percentChange = 0;
+    if (order.previousPrice && order.previousPrice > 0) {
+      percentChange = ((ltp - order.previousPrice) / order.previousPrice) * 100;
+    }
+
     // 🧾 Record transaction
     const transactionDoc = {
       userId: order.userId,

@@ -37,17 +37,32 @@ class OptionChainRow {
     if (input == null) return null;
     double getD(String key) =>
         double.tryParse(input[key]?.toString() ?? "0") ?? 0.0;
+
+    // Fix: Add zero-division check for percentage calculations
+    double getPercentChange() {
+      double pChange = getD('pChange');
+      if (pChange != 0) return pChange;
+
+      double percentChange = getD('percentChange');
+      if (percentChange != 0) return percentChange;
+
+      // Calculate percent change from netChange if available
+      double netChange = getD('netChange');
+      double lastPrice = getD('lastPrice');
+      if (netChange != 0 && lastPrice > 0) {
+        return (netChange / lastPrice) * 100;
+      }
+
+      return 0.0;
+    }
+
     return {
       ...input,
       'lastPrice': getD('lastPrice') == 0 ? getD('ltp') : getD('lastPrice'),
       'openInterest': getD('openInterest') == 0
           ? (getD('opnInterest') == 0 ? getD('oi') : getD('opnInterest'))
           : getD('openInterest'),
-      'pChange': getD('pChange') == 0
-          ? (getD('percentChange') == 0
-                ? getD('netChange')
-                : getD('percentChange'))
-          : getD('pChange'),
+      'pChange': getPercentChange(),
       'lotSize': input['lotSize']?.toString() ?? "1",
     };
   }

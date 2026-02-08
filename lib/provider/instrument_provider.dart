@@ -292,6 +292,46 @@ class InstrumentProvider with ChangeNotifier {
     return _allNSEStocksMap[eqSymbol];
   }
 
+  // ✨ NEW: Method to get F&O instrument by contract symbol
+  Instrument? getFnoInstrumentBySymbol(String contractSymbol) {
+    // Try to find the instrument in all instruments (including F&O)
+    try {
+      // First try exact match
+      for (var instrument in _allInstruments) {
+        if (instrument.name == contractSymbol ||
+            instrument.symbol == contractSymbol) {
+          return instrument;
+        }
+      }
+
+      // Try partial match for F&O symbols (e.g., "NIFTY 26000 CE" might match "NIFTY26122CE")
+      String normalizedSymbol = contractSymbol
+          .replaceAll(' ', '')
+          .toUpperCase();
+
+      for (var instrument in _allInstruments) {
+        String normalizedInstrument = instrument.symbol
+            .replaceAll(' ', '')
+            .toUpperCase();
+        String normalizedInstrumentName = instrument.name
+            .replaceAll(' ', '')
+            .toUpperCase();
+
+        // Check if the normalized symbols contain the key parts
+        if (normalizedInstrument.contains(normalizedSymbol) ||
+            normalizedSymbol.contains(normalizedInstrument) ||
+            normalizedInstrumentName.contains(normalizedSymbol) ||
+            normalizedSymbol.contains(normalizedInstrumentName)) {
+          return instrument;
+        }
+      }
+    } catch (e) {
+      // If not found, return null
+      print('Error finding F&O instrument for $contractSymbol: $e');
+    }
+    return null;
+  }
+
   Future<void> fetchLiveDataFor(List<Instrument> instruments) async {
     await _updateInstruments(instruments);
   }

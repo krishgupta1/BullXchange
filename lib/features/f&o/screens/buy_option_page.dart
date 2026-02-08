@@ -8,6 +8,7 @@ import 'package:bullxchange/services/firebase/charge_calculator_service.dart';
 import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:bullxchange/widgets/custom_back_button.dart';
 import 'package:bullxchange/widgets/swipe_to_confirm_button.dart';
+import 'package:bullxchange/utils/responsive_helper.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -257,6 +258,7 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
   Widget _buildInputSection(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -269,30 +271,38 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
                 children: [
                   Text(
                     "Lots (x$_lotSize)",
-                    style: theme.textTheme.titleSmall?.copyWith(
+                    style: textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
+                      fontSize: ResponsiveHelper.captionFontSize,
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: ResponsiveHelper.tinySpacing),
                   TextField(
                     controller: _lotsController,
                     keyboardType: TextInputType.number,
-                    style: theme.textTheme.titleLarge?.copyWith(
+                    style: textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
+                      fontSize: ResponsiveHelper.h3FontSize,
                     ),
                     decoration: InputDecoration(
                       hintText: "1",
                       filled: true,
                       fillColor: theme.cardColor,
-                      contentPadding: const EdgeInsets.all(16),
+                      contentPadding: EdgeInsets.all(
+                        ResponsiveHelper.cardPadding * 0.8,
+                      ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(
+                          ResponsiveHelper.cardBorderRadius * 0.8,
+                        ),
                         borderSide: BorderSide(
                           color: theme.dividerColor.withValues(alpha: 0.2),
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(
+                          ResponsiveHelper.cardBorderRadius * 0.8,
+                        ),
                         borderSide: BorderSide(
                           color: colorScheme.secondary,
                           width: 2,
@@ -303,30 +313,36 @@ class _BuyOptionPageState extends State<BuyOptionPage> {
                 ],
               ),
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: ResponsiveHelper.itemSpacing),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     "Price",
-                    style: theme.textTheme.titleSmall?.copyWith(
+                    style: textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
+                      fontSize: ResponsiveHelper.captionFontSize,
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: ResponsiveHelper.tinySpacing),
                   Container(
-                    height: 56,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    height: ResponsiveHelper.buttonHeight,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: ResponsiveHelper.cardPadding * 0.8,
+                    ),
                     alignment: Alignment.centerLeft,
                     decoration: BoxDecoration(
                       color: theme.dividerColor.withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(
+                        ResponsiveHelper.cardBorderRadius * 0.8,
+                      ),
                     ),
                     child: Text(
                       "Market",
-                      style: theme.textTheme.titleMedium?.copyWith(
+                      style: textTheme.titleMedium?.copyWith(
                         color: theme.disabledColor,
+                        fontSize: ResponsiveHelper.bodyFontSize,
                       ),
                     ),
                   ),

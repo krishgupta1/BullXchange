@@ -5,6 +5,7 @@ import 'package:bullxchange/features/f&o/screens/sell_option_page.dart';
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/provider/option_chain_provider.dart';
 import 'package:bullxchange/widgets/custom_back_button.dart';
+import 'package:bullxchange/utils/responsive_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -49,27 +50,38 @@ class _OptionChainPageState extends State<OptionChainPage>
   @override
   Widget build(BuildContext context) {
     final apiSymbol = _getApiSymbol(widget.symbol);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return ChangeNotifierProvider(
       create: (_) => OptionChainProvider(symbol: apiSymbol),
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
           leading: const CustomBackButton(),
           title: Text(
             widget.symbol,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
-              color: Colors.white,
+              color: colorScheme.onSurface,
             ),
           ),
           centerTitle: true,
-          backgroundColor: Colors.black,
+          backgroundColor: theme.scaffoldBackgroundColor,
           elevation: 0,
           bottom: TabBar(
             controller: _tabController,
-            labelColor: Colors.blueAccent,
-            unselectedLabelColor: Colors.grey,
-            indicatorColor: Colors.blueAccent,
+            labelColor: colorScheme.primary,
+            unselectedLabelColor: theme.textTheme.bodySmall?.color,
+            indicatorColor: colorScheme.primary,
+            labelStyle: TextStyle(
+              fontSize: ResponsiveHelper.captionFontSize,
+              fontWeight: FontWeight.w600,
+            ),
+            unselectedLabelStyle: TextStyle(
+              fontSize: ResponsiveHelper.captionFontSize,
+              fontWeight: FontWeight.w500,
+            ),
             tabs: const [
               Tab(text: 'Option Chain'),
               Tab(text: 'Charts & Overview'),
@@ -78,10 +90,7 @@ class _OptionChainPageState extends State<OptionChainPage>
         ),
         body: TabBarView(
           controller: _tabController,
-          children: [
-            const _OptionChainBody(),
-            const ChartsAndOverviewTab(),
-          ],
+          children: [const _OptionChainBody(), const ChartsAndOverviewTab()],
         ),
       ),
     );
@@ -229,7 +238,7 @@ class _OptionChainBodyState extends State<_OptionChainBody>
   ) {
     final theme = Theme.of(context);
     final isCall = type == "CE";
-    
+
     return Container(
       decoration: BoxDecoration(
         color: theme.cardColor,
@@ -255,7 +264,7 @@ class _OptionChainBodyState extends State<_OptionChainBody>
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          
+
           // Content
           Padding(
             padding: const EdgeInsets.all(24),
@@ -290,24 +299,30 @@ class _OptionChainBodyState extends State<_OptionChainBody>
                             Text(
                               "Option Contract",
                               style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
+                                color: theme.textTheme.bodySmall?.color
+                                    ?.withValues(alpha: 0.7),
                               ),
                             ),
                           ],
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
-                          color: isCall 
-                            ? Colors.green.withValues(alpha: 0.1)
-                            : Colors.red.withValues(alpha: 0.1),
+                          color: isCall
+                              ? Colors.green.withValues(alpha: 0.1)
+                              : Colors.red.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
                           "₹${ltp.toStringAsFixed(2)}",
                           style: TextStyle(
-                            color: isCall ? Colors.greenAccent : Colors.redAccent,
+                            color: isCall
+                                ? Colors.greenAccent
+                                : Colors.redAccent,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -316,9 +331,9 @@ class _OptionChainBodyState extends State<_OptionChainBody>
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 // Buy/Sell buttons
                 Row(
                   children: [
@@ -433,7 +448,7 @@ class _OptionChainBodyState extends State<_OptionChainBody>
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 16),
               ],
             ),
@@ -497,6 +512,10 @@ class _OptionChainBodyState extends State<_OptionChainBody>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Column(
       children: [
         // 1. HEADER (Call | Expiry Dropdown | Put)
@@ -506,14 +525,20 @@ class _OptionChainBodyState extends State<_OptionChainBody>
                 ? "Current"
                 : provider.selectedExpiry;
             return Container(
-              color: Colors.black,
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              color: theme.scaffoldBackgroundColor,
+              padding: EdgeInsets.symmetric(
+                vertical: ResponsiveHelper.smallSpacing,
+                horizontal: ResponsiveHelper.horizontalPadding,
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     "Call price",
-                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                    style: textTheme.bodySmall?.copyWith(
+                      color: textTheme.bodySmall?.color,
+                      fontSize: ResponsiveHelper.captionFontSize,
+                    ),
                   ),
                   GestureDetector(
                     onTap: () => _showExpiryPicker(context, provider),
@@ -521,24 +546,27 @@ class _OptionChainBodyState extends State<_OptionChainBody>
                       children: [
                         Text(
                           expiryText,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
+                          style: textTheme.titleSmall?.copyWith(
+                            color: colorScheme.onSurface,
+                            fontSize: ResponsiveHelper.smallFontSize,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(width: 4),
-                        const Icon(
+                        SizedBox(width: ResponsiveHelper.tinySpacing),
+                        Icon(
                           Icons.keyboard_arrow_down,
-                          color: Colors.white,
-                          size: 18,
+                          color: colorScheme.onSurface,
+                          size: ResponsiveHelper.iconSize * 0.75,
                         ),
                       ],
                     ),
                   ),
-                  const Text(
+                  Text(
                     "Put price",
-                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                    style: textTheme.bodySmall?.copyWith(
+                      color: textTheme.bodySmall?.color,
+                      fontSize: ResponsiveHelper.captionFontSize,
+                    ),
                   ),
                 ],
               ),
@@ -548,8 +576,8 @@ class _OptionChainBodyState extends State<_OptionChainBody>
 
         // 2. COLUMNS HEADER
         Container(
-          color: const Color(0xFF1E1E1E),
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          color: theme.cardColor,
+          padding: EdgeInsets.symmetric(vertical: ResponsiveHelper.tinySpacing),
           child: const Row(
             children: [
               Expanded(
@@ -644,7 +672,7 @@ class _OptionChainBodyState extends State<_OptionChainBody>
                         return Divider(
                           height: 1,
                           thickness: 0.5,
-                          color: Colors.grey.withValues(alpha: 0.2),
+                          color: theme.dividerColor.withValues(alpha: 0.2),
                         );
                       },
                       itemBuilder: (ctx, i) {
@@ -652,7 +680,7 @@ class _OptionChainBodyState extends State<_OptionChainBody>
                         // Removed decoration logic for ATM
                         return Container(
                           key: ValueKey("${row.strikePrice}_${row.expiryDate}"),
-                          color: Colors.black,
+                          color: theme.scaffoldBackgroundColor,
                           child: Row(
                             children: [
                               _buildSide(context, row, true),
@@ -660,19 +688,19 @@ class _OptionChainBodyState extends State<_OptionChainBody>
                                 flex: 2,
                                 child: Center(
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2,
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: ResponsiveHelper.tinySpacing,
+                                      vertical:
+                                          ResponsiveHelper.tinySpacing * 0.5,
                                     ),
                                     decoration: null, // No Highlight
                                     child: Text(
                                       row.strikePrice.toStringAsFixed(0),
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 13,
-                                        color: Colors
-                                            .grey
-                                            .shade400, // Uniform Color
+                                        fontSize:
+                                            ResponsiveHelper.smallFontSize,
+                                        color: theme.textTheme.bodySmall?.color,
                                       ),
                                     ),
                                   ),
@@ -705,7 +733,9 @@ class _OptionChainBodyState extends State<_OptionChainBody>
       child: InkWell(
         onTap: () => _onOptionTap(context, row, isCall),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: EdgeInsets.symmetric(
+            vertical: ResponsiveHelper.smallSpacing,
+          ),
           child: Row(
             children: [
               _cell(
@@ -725,54 +755,78 @@ class _OptionChainBodyState extends State<_OptionChainBody>
     );
   }
 
-  Widget _cell(String t, String s, Color? c) => Expanded(
-    flex: 1,
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          child: Text(
-            t,
-            key: ValueKey(t),
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: c ?? Colors.white,
-            ),
-          ),
-        ),
-        if (s.isNotEmpty)
-          Text(s, style: TextStyle(fontSize: 11, color: c ?? Colors.grey)),
-      ],
-    ),
-  );
+  Widget _cell(String t, String s, Color? c) {
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
 
-  Widget _buildSpot(double p) => Container(
-    color: Colors.black,
-    height: 30,
-    child: Stack(
-      alignment: Alignment.center,
-      children: [
-        const Divider(color: Colors.white, thickness: 1),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            p.toStringAsFixed(2),
-            style: const TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
+    return Expanded(
+      flex: 1,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: Text(
+              t,
+              key: ValueKey(t),
+              style: TextStyle(
+                fontSize: ResponsiveHelper.smallFontSize,
+                fontWeight: FontWeight.w500,
+                color: c ?? textTheme.bodyMedium?.color,
+              ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
+          if (s.isNotEmpty)
+            Text(
+              s,
+              style: TextStyle(
+                fontSize: ResponsiveHelper.tinyFontSize,
+                color: c ?? textTheme.bodySmall?.color,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSpot(double p) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      color: theme.scaffoldBackgroundColor,
+      height: ResponsiveHelper.listItemHeight * 0.4,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Divider(
+            color: colorScheme.onSurface.withValues(alpha: 0.3),
+            thickness: 1,
+          ),
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: ResponsiveHelper.smallSpacing,
+              vertical: ResponsiveHelper.tinySpacing,
+            ),
+            decoration: BoxDecoration(
+              color: colorScheme.primary,
+              borderRadius: BorderRadius.circular(
+                ResponsiveHelper.cardBorderRadius,
+              ),
+            ),
+            child: Text(
+              p.toStringAsFixed(2),
+              style: TextStyle(
+                color: colorScheme.onPrimary,
+                fontWeight: FontWeight.bold,
+                fontSize: ResponsiveHelper.smallFontSize,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -786,17 +840,26 @@ class OverviewTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     final provider = context.watch<OptionChainProvider>();
     final data = provider.overviewData;
 
     if (provider.isOverviewLoading && data == null) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(
+        child: CircularProgressIndicator(color: colorScheme.primary),
+      );
     }
     if (data == null) {
-      return const Center(
+      return Center(
         child: Text(
           "No Overview Data",
-          style: TextStyle(color: Colors.grey, fontSize: 14),
+          style: textTheme.bodyMedium?.copyWith(
+            color: textTheme.bodySmall?.color,
+            fontSize: ResponsiveHelper.captionFontSize,
+          ),
         ),
       );
     }
@@ -805,50 +868,49 @@ class OverviewTab extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: () async => await provider.fetchMarketOverview(),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(ResponsiveHelper.cardPadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               provider.symbol,
-              style: const TextStyle(
-                fontSize: 18,
+              style: textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: colorScheme.onSurface,
+                fontSize: ResponsiveHelper.h2FontSize,
               ),
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: ResponsiveHelper.tinySpacing),
             Row(
               children: [
                 Text(
                   _fmt(data.currentPrice),
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                  style: textTheme.headlineSmall?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontSize: ResponsiveHelper.h3FontSize,
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: ResponsiveHelper.tinySpacing),
                 Text(
                   "${isNeg ? '' : '+'}${_fmt(data.priceChange)} (${data.percentChange.toStringAsFixed(2)}%)",
-                  style: TextStyle(
-                    fontSize: 12,
+                  style: textTheme.bodyMedium?.copyWith(
+                    fontSize: ResponsiveHelper.captionFontSize,
                     fontWeight: FontWeight.w500,
                     color: isNeg ? Colors.redAccent : Colors.greenAccent,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 24),
-            const Text(
+            SizedBox(height: ResponsiveHelper.sectionSpacing),
+            Text(
               "Performance",
-              style: TextStyle(
-                fontSize: 14,
+              style: textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: colorScheme.onSurface,
+                fontSize: ResponsiveHelper.captionFontSize,
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: ResponsiveHelper.itemSpacing),
             _RangeLabels(
               "Today's Low",
               "Today's High",

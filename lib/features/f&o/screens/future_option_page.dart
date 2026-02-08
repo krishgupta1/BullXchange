@@ -49,17 +49,17 @@ class _FutureOptionPageState extends State<FutureOptionPage>
           duration: Duration(seconds: 2),
         ),
       );
-      
+
       // Refresh NIFTY data
       final indices = [
         if (provider.nifty50 != null) provider.nifty50!,
         if (provider.bankNifty != null) provider.bankNifty!,
       ];
-      
+
       if (indices.isNotEmpty) {
         await provider.fetchLiveDataFor(indices);
       }
-      
+
       // Hide loading and show success
       if (mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -119,21 +119,30 @@ class _FutureOptionPageState extends State<FutureOptionPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    
+
     // Initialize responsive helper
-    ResponsiveHelper.init(context, BoxConstraints.tightFor(
-      width: MediaQuery.of(context).size.width,
-      height: MediaQuery.of(context).size.height,
-    ));
+    ResponsiveHelper.init(
+      context,
+      BoxConstraints.tightFor(
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.height,
+      ),
+    );
+
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Consumer<InstrumentProvider>(
       builder: (context, provider, child) {
         // Scaffold automatically uses Theme.of(context).scaffoldBackgroundColor
         // This ensures seamless Light/Dark mode switching.
         return Scaffold(
+          backgroundColor: theme.scaffoldBackgroundColor,
           body: SafeArea(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: ResponsiveHelper.horizontalPadding),
+              padding: EdgeInsets.symmetric(
+                horizontal: ResponsiveHelper.horizontalPadding,
+              ),
               child: Column(
                 children: [
                   SizedBox(height: ResponsiveHelper.smallSpacing),
@@ -188,7 +197,7 @@ class _FutureOptionPageState extends State<FutureOptionPage>
                       });
                     },
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: ResponsiveHelper.itemSpacing),
 
                   // ✨ Content Area
                   Expanded(

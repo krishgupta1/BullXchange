@@ -152,14 +152,17 @@ class AccountScreen extends StatelessWidget {
           return SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              padding: EdgeInsets.symmetric(
+                horizontal: ResponsiveHelper.horizontalPadding,
+              ),
               child: Column(
                 children: [
-                  const SizedBox(height: 20),
+                  SizedBox(height: ResponsiveHelper.sectionSpacing),
                   _buildProfileHeader(context, name, email),
-                  const SizedBox(height: 24),
+                  SizedBox(height: ResponsiveHelper.sectionSpacing),
+
                   _buildWalletCard(context, balance),
-                  const SizedBox(height: 16),
+                  SizedBox(height: ResponsiveHelper.itemSpacing),
 
                   // Referral Card
                   GestureDetector(
@@ -174,9 +177,9 @@ class AccountScreen extends StatelessWidget {
                     child: _buildReferralCard(context),
                   ),
 
-                  const SizedBox(height: 24),
+                  SizedBox(height: ResponsiveHelper.sectionSpacing),
                   _buildOptionList(context),
-                  const SizedBox(height: 24),
+                  SizedBox(height: ResponsiveHelper.sectionSpacing),
 
                   // --- ⭐️ CLICKABLE FEEDBACK CARD ---
                   GestureDetector(
@@ -184,10 +187,12 @@ class AccountScreen extends StatelessWidget {
                     child: _buildFeedbackCard(context),
                   ),
 
-                  const SizedBox(height: 20),
+                  SizedBox(height: ResponsiveHelper.itemSpacing),
                   _buildLogoutButton(context),
 
-                  const SizedBox(height: 40), // Extra space at bottom
+                  SizedBox(
+                    height: ResponsiveHelper.sectionSpacing * 2,
+                  ), // Extra space at bottom
                 ],
               ),
             ),
@@ -203,7 +208,10 @@ class AccountScreen extends StatelessWidget {
     return SafeArea(
       child: Container(
         color: theme.scaffoldBackgroundColor,
-        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+        padding: EdgeInsets.symmetric(
+          horizontal: ResponsiveHelper.horizontalPadding,
+          vertical: ResponsiveHelper.tinySpacing,
+        ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [

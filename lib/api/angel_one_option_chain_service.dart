@@ -84,22 +84,27 @@ class AngelOneOptionChainService {
       if (data != null) {
         double ltp = double.tryParse(data['ltp']?.toString() ?? "0") ?? 0;
         double close = double.tryParse(data['close']?.toString() ?? "0") ?? 0;
-        
+
         // Use close price as fallback if LTP is 0
         if (ltp == 0 && close > 0) {
           data['ltp'] = close;
         }
-        
+
         // Ensure change and percentChange are calculated if missing
         if (data['change'] == null && close > 0 && ltp > 0) {
           data['change'] = ltp - close;
-          data['percentChange'] = ((ltp - close) / close) * 100;
+          // Fix: Add zero-division check for percentage calculation
+          data['percentChange'] = close > 0
+              ? ((ltp - close) / close) * 100
+              : 0.0;
         } else if (data['change'] == null) {
           data['change'] = 0.0;
           data['percentChange'] = 0.0;
         }
-        
-        AppLog.i("✅ Market overview data fetched for $symbol: LTP=${data['ltp']}, Change=${data['change']}");
+
+        AppLog.i(
+          "✅ Market overview data fetched for $symbol: LTP=${data['ltp']}, Change=${data['change']}",
+        );
         return data;
       } else {
         AppLog.w("⚠️ No market data received for $symbol");
@@ -202,7 +207,17 @@ class AngelOneOptionChainService {
         final double range = referencePrice * 0.05;
         targetOptions = targetOptions.where((i) {
           double strike = double.tryParse(i.strike) ?? 0.0;
-          if (strike > 100000) strike = strike / 100;
+          // Fix: More robust strike price normalization
+          // Handle different strike price formats from the exchange
+          if (strike > 100000) {
+            // Some exchanges provide strike prices multiplied by 100
+            // Only divide if it results in a reasonable strike price near reference
+            double normalizedStrike = strike / 100;
+            if (normalizedStrike > referencePrice * 0.5 &&
+                normalizedStrike < referencePrice * 2.0) {
+              strike = normalizedStrike;
+            }
+          }
           return strike >= (referencePrice - range) &&
               strike <= (referencePrice + range);
         }).toList();
@@ -275,7 +290,15 @@ class AngelOneOptionChainService {
 
     for (var inst in instruments) {
       double strike = double.tryParse(inst.strike) ?? 0.0;
-      if (strike > 100000) strike = strike / 100;
+      // Fix: Apply same robust strike price normalization here
+      if (strike > 100000) {
+        double normalizedStrike = strike / 100;
+        if (spotPrice > 0 &&
+            normalizedStrike > spotPrice * 0.5 &&
+            normalizedStrike < spotPrice * 2.0) {
+          strike = normalizedStrike;
+        }
+      }
 
       String cleanExpiry = inst.expiry.toUpperCase().replaceAll(
         RegExp(r'[^A-Z0-9]'),
@@ -292,24 +315,44 @@ class AngelOneOptionChainService {
       }
 
       // ------------------------------------------------------------------
-      // REAL BID / ASK LOGIC (Angel One–style)
+      // REAL BID / ASK LOGIC (Improved with dynamic spread)
       // ------------------------------------------------------------------
       double bid = double.tryParse(data?['bestBid']?.toString() ?? "0") ?? 0.0;
       double ask = double.tryParse(data?['bestAsk']?.toString() ?? "0") ?? 0.0;
 
-      // If API does not provide bid/ask → simulate realistic spread
+      // If API does not provide bid/ask → use dynamic spread based on option price
       if (bid <= 0 || ask <= 0) {
-        // Options typically have wider spreads
-        double spreadPercent = 0.002; // 0.2%
-        bid = ltp * (1 - spreadPercent);
-        ask = ltp * (1 + spreadPercent);
+        // Dynamic spread calculation based on option price range
+        double spreadPercent;
+        if (ltp <= 10) {
+          spreadPercent = 0.05; // 5% for cheap options
+        } else if (ltp <= 50) {
+          spreadPercent = 0.02; // 2% for mid-range options
+        } else if (ltp <= 200) {
+          spreadPercent = 0.01; // 1% for expensive options
+        } else {
+          spreadPercent = 0.005; // 0.5% for very expensive options
+        }
+
+        // Ensure minimum spread of 0.05 to avoid zero spread
+        double minSpread = 0.05;
+        double calculatedSpread = ltp * spreadPercent;
+        double actualSpread = calculatedSpread > minSpread
+            ? calculatedSpread
+            : minSpread;
+
+        bid = ltp - actualSpread;
+        ask = ltp + actualSpread;
       }
 
-      // Safety
+      // Safety: Ensure bid < ask and both are positive
       if (bid > ask) {
-        bid = ltp * 0.999;
-        ask = ltp * 1.001;
+        double midPrice = (bid + ask) / 2;
+        bid = midPrice * 0.999;
+        ask = midPrice * 1.001;
       }
+      if (bid <= 0) bid = ltp * 0.995;
+      if (ask <= 0) ask = ltp * 1.005;
 
       // ⭐️ FIX: Better OI check
       double oi =
