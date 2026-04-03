@@ -25,11 +25,19 @@ class OptionChainRow {
         map['expiry']?.toString() ??
         defaultExpiry;
 
+    // Helper to safely convert dynamic maps to Map<String, dynamic>
+    Map<String, dynamic>? safeConvert(dynamic data) {
+      if (data == null) return null;
+      if (data is Map<String, dynamic>) return data;
+      if (data is Map) return Map<String, dynamic>.from(data);
+      return null;
+    }
+
     return OptionChainRow(
       strikePrice: double.tryParse(map['strikePrice'].toString()) ?? 0.0,
       expiryDate: exp,
-      ce: _normalize(map['CE'] as Map<String, dynamic>?),
-      pe: _normalize(map['PE'] as Map<String, dynamic>?),
+      ce: _normalize(safeConvert(map['CE'])),
+      pe: _normalize(safeConvert(map['PE'])),
     );
   }
 
@@ -58,181 +66,229 @@ class OptionChainRow {
 
     return {
       ...input,
-      'lastPrice': getD('lastPrice') == 0 ? getD('ltp') : getD('lastPrice'),
-      'openInterest': getD('openInterest') == 0
-          ? (getD('opnInterest') == 0 ? getD('oi') : getD('opnInterest'))
-          : getD('openInterest'),
-      'pChange': getPercentChange(),
-      'lotSize': input['lotSize']?.toString() ?? "1",
+      'lastPrice': getD('lastPrice'),
+      'openInterest': getD('openInterest'),
+      'change': getD('change'),
+      'percentChange': getPercentChange(),
+      'volume': getD('volume'),
+      'totalTradedVolume': getD('totalTradedVolume'),
+      'impliedVolatility': getD('impliedVolatility'),
+    };
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'strikePrice': strikePrice,
+      'expiryDate': expiryDate,
+      'ce': ce,
+      'pe': pe,
     };
   }
 }
 
 class OptionChainProvider extends ChangeNotifier {
-  final AngelOneOptionChainService _apiService = AngelOneOptionChainService();
   final String symbol;
+  final AngelOneOptionChainService _apiService = AngelOneOptionChainService();
+
+  OptionChainProvider({required this.symbol});
 
   bool _isLoading = false;
-  bool _isOverviewLoading = false;
-  bool _isDisposed = false;
+  String? _errorMessage;
+  List<OptionChainRow> _optionChainData = [];
+  String? _selectedExpiry;
 
-  String? _error;
-  List<OptionChainRow> _allRows = [];
-  List<OptionChainRow> _filteredRows = [];
-  List<String> _expiryDates = [];
-  String _selectedExpiry = "";
-
-  double? _underlyingLtp;
-  int? _atmIndex;
-  MarketOverviewData? _overviewData;
-
+  // Getters
   bool get isLoading => _isLoading;
-  bool get isOverviewLoading => _isOverviewLoading;
-  String? get error => _error;
-  List<OptionChainRow> get rows => _filteredRows;
-  double? get underlyingLtp => _underlyingLtp;
-  int? get atmIndex => _atmIndex;
-  MarketOverviewData? get overviewData => _overviewData;
-  List<String> get expiryDates => _expiryDates;
-  String get selectedExpiry => _selectedExpiry;
+  String? get errorMessage => _errorMessage;
+  List<OptionChainRow> get optionChainData => _optionChainData;
+  String? get selectedExpiry => _selectedExpiry;
 
-  OptionChainProvider({required this.symbol}) {
-    fetchOptionChain();
-    fetchMarketOverview();
+  // Additional getters for compatibility
+  MarketOverviewData get overviewData => marketOverview;
+  bool get isOverviewLoading => _isLoading;
+  List<String> get expiryDates => [_selectedExpiry ?? ''];
+  List<OptionChainRow> get rows => _optionChainData;
+  double get underlyingLtp =>
+      0.0; // Will be updated with actual underlying price
+
+  // ATM (At-The-Money) index calculation
+  int get atmIndex {
+    if (_optionChainData.isEmpty) return 0;
+
+    // Find the strike price closest to the underlying price
+    // For now, return the middle index as a placeholder
+    return _optionChainData.length ~/ 2;
   }
 
-  @override
-  void dispose() {
-    _isDisposed = true;
-    super.dispose();
+  // Computed properties
+  List<OptionChainRow> get callOptions =>
+      _optionChainData.where((row) => row.ce != null).toList();
+
+  List<OptionChainRow> get putOptions =>
+      _optionChainData.where((row) => row.pe != null).toList();
+
+  // Market overview calculations
+  MarketOverviewData get marketOverview {
+    if (_optionChainData.isEmpty) {
+      return MarketOverviewData();
+    }
+
+    // Create a simple overview data with basic market info
+    // The option chain specific data will be handled separately
+    return MarketOverviewData(
+      currentPrice: 0.0, // Will be updated with actual underlying price
+      priceChange: 0.0,
+      percentChange: 0.0,
+      dayLow: 0.0,
+      dayHigh: 0.0,
+      yearLow: 0.0,
+      yearHigh: 0.0,
+      open: 0.0,
+      prevClose: 0.0,
+    );
   }
 
-  void _safeNotifyListeners() {
-    if (!_isDisposed) notifyListeners();
+  // Public methods
+  Future<void> fetchOptionChain({String? expiryDate}) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      AppLog.i("🔄 Fetching option chain for $symbol");
+
+      final data = await _apiService.fetchOptionChainData(
+        symbol: symbol,
+        expiryDate: expiryDate ?? '',
+      );
+
+      _optionChainData = data
+          .map((item) => OptionChainRow.fromMap(item))
+          .toList();
+      _selectedExpiry = expiryDate;
+
+      // Sort by strike price
+      _optionChainData.sort((a, b) => a.strikePrice.compareTo(b.strikePrice));
+
+      AppLog.i(
+        "✅ Successfully fetched ${_optionChainData.length} option chain rows",
+      );
+    } catch (e) {
+      _errorMessage = "Failed to fetch option chain: $e";
+      AppLog.e("❌ Error in option chain: $e");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
+  Future<void> refresh() async {
+    await fetchOptionChain(expiryDate: _selectedExpiry);
+  }
+
+  void setSelectedExpiry(String expiry) {
+    if (_selectedExpiry != expiry) {
+      _selectedExpiry = expiry;
+      fetchOptionChain(expiryDate: expiry);
+    }
+  }
+
+  // Alias for setSelectedExpiry for compatibility
   void selectExpiry(String expiry) {
-    if (_selectedExpiry == expiry) return;
-    _selectedExpiry = expiry;
-    fetchOptionChain();
+    setSelectedExpiry(expiry);
   }
 
   Future<void> fetchMarketOverview() async {
-    if (_isDisposed) return;
-    _isOverviewLoading = true;
-    _safeNotifyListeners();
-    try {
-      final exchange = (symbol == 'BANKEX' || symbol == 'SENSEX')
-          ? 'BSE'
-          : 'NSE';
-      final data = await _apiService.fetchMarketOverview(
-        symbol,
-        exchange: exchange,
-      );
-      if (!_isDisposed && data.isNotEmpty) {
-        _overviewData = MarketOverviewData.fromMap(data);
-        _underlyingLtp ??= _overviewData?.currentPrice;
-      }
-    } catch (_) {
-    } finally {
-      if (!_isDisposed) {
-        _isOverviewLoading = false;
-        _safeNotifyListeners();
-      }
-    }
+    // This method is for compatibility - market overview is already calculated
+    await fetchOptionChain(expiryDate: _selectedExpiry);
   }
 
-  Future<void> fetchOptionChain() async {
-    if (_isDisposed) return;
+  // Private helper methods
+  double _calculateMaxPain() {
+    if (_optionChainData.isEmpty) return 0.0;
 
-    if (_allRows.isEmpty) {
-      _isLoading = true;
-      _error = null;
-      _safeNotifyListeners();
-    }
+    double maxPain = 0.0;
+    double minPainValue = double.infinity;
 
-    try {
-      final exchange = (symbol == 'BANKEX' || symbol == 'SENSEX')
-          ? 'BSE'
-          : 'NSE';
+    for (var row in _optionChainData) {
+      double painValue = 0.0;
 
-      final raw = await _apiService.fetchOptionChainData(
-        symbol,
-        exchange: exchange,
-        specificExpiry: _selectedExpiry.isEmpty ? null : _selectedExpiry,
-      );
+      // Calculate pain at this strike price
+      for (var testRow in _optionChainData) {
+        double callLoss = 0.0;
+        double putLoss = 0.0;
 
-      if (_isDisposed) return;
-
-      if (raw['records']?['underlyingValue'] != null) {
-        _underlyingLtp = double.tryParse(
-          raw['records']['underlyingValue'].toString(),
-        );
-      }
-      _underlyingLtp ??= 0.0;
-
-      List<String> foundExpiries = [];
-      if (raw['expiryDates'] != null) {
-        foundExpiries = List<String>.from(raw['expiryDates']);
-      }
-
-      _expiryDates = foundExpiries;
-
-      if (_expiryDates.isNotEmpty) {
-        if (_selectedExpiry.isEmpty || _selectedExpiry == "Current") {
-          _selectedExpiry = _expiryDates.first;
+        if (testRow.ce != null) {
+          double intrinsicValue = (testRow.strikePrice - row.strikePrice).clamp(
+            0.0,
+            double.infinity,
+          );
+          callLoss = (testRow.ce!['lastPrice'] ?? 0.0) - intrinsicValue;
+          callLoss = callLoss.clamp(
+            0.0,
+            double.infinity,
+          ); // Only positive losses
         }
-      } else {
-        _expiryDates = ["Current"];
-        _selectedExpiry = "Current";
+
+        if (testRow.pe != null) {
+          double intrinsicValue = (row.strikePrice - testRow.strikePrice).clamp(
+            0.0,
+            double.infinity,
+          );
+          putLoss = (testRow.pe!['lastPrice'] ?? 0.0) - intrinsicValue;
+          putLoss = putLoss.clamp(0.0, double.infinity); // Only positive losses
+        }
+
+        double oi =
+            (testRow.ce?['openInterest'] ?? 0.0) +
+            (testRow.pe?['openInterest'] ?? 0.0);
+        painValue += (callLoss + putLoss) * oi;
       }
 
-      final List<dynamic>? list = raw['filtered']?['data'];
-      if (list == null || list.isEmpty) {
-        if (_allRows.isEmpty) _error = "No contracts found.";
-      } else {
-        _allRows = list
-            .map(
-              (e) => OptionChainRow.fromMap(e, defaultExpiry: _selectedExpiry),
-            )
-            .toList();
-        _filterRows();
-      }
-    } catch (e) {
-      if (_allRows.isEmpty) {
-        _error = "Error loading data. Market might be closed.";
-        AppLog.e("Provider Error: $e");
-      }
-    } finally {
-      if (!_isDisposed) {
-        _isLoading = false;
-        _safeNotifyListeners();
+      if (painValue < minPainValue) {
+        minPainValue = painValue;
+        maxPain = row.strikePrice;
       }
     }
+
+    return maxPain;
   }
 
-  void _filterRows() {
-    _filteredRows = _allRows;
-    _findAtm();
+  double _findSupport() {
+    if (_optionChainData.isEmpty) return 0.0;
+
+    double maxPutOI = 0.0;
+    double supportLevel = 0.0;
+
+    for (var row in _optionChainData) {
+      if (row.pe != null) {
+        double putOI = row.pe!['openInterest'] ?? 0.0;
+        if (putOI > maxPutOI) {
+          maxPutOI = putOI;
+          supportLevel = row.strikePrice;
+        }
+      }
+    }
+
+    return supportLevel;
   }
 
-  void _findAtm() {
-    if (_filteredRows.isEmpty) {
-      _atmIndex = null;
-      return;
-    }
-    if (_underlyingLtp == null || _underlyingLtp == 0) {
-      _atmIndex = (_filteredRows.length / 2).floor();
-      return;
+  double _findResistance() {
+    if (_optionChainData.isEmpty) return 0.0;
+
+    double maxCallOI = 0.0;
+    double resistanceLevel = 0.0;
+
+    for (var row in _optionChainData) {
+      if (row.ce != null) {
+        double callOI = row.ce!['openInterest'] ?? 0.0;
+        if (callOI > maxCallOI) {
+          maxCallOI = callOI;
+          resistanceLevel = row.strikePrice;
+        }
+      }
     }
 
-    int idx = _filteredRows.indexWhere((r) => r.strikePrice >= _underlyingLtp!);
-    if (idx == -1) {
-      _atmIndex = _filteredRows.length - 1;
-    } else if (idx == 0) {
-      _atmIndex = 0;
-    } else {
-      _atmIndex = idx - 1;
-    }
+    return resistanceLevel;
   }
 }

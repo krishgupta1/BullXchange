@@ -172,7 +172,7 @@ class _OptionChainBodyState extends State<_OptionChainBody>
   Color _col(dynamic v) {
     final d = double.tryParse(v?.toString() ?? "0") ?? 0.0;
     return d > 0
-        ? Colors.greenAccent
+        ? const Color(0xFF00C853) // Darker green for better visibility
         : (d < 0 ? Colors.redAccent : Colors.grey);
   }
 
@@ -200,14 +200,16 @@ class _OptionChainBodyState extends State<_OptionChainBody>
 
     final double ltp = double.tryParse(data['lastPrice'].toString()) ?? 0.0;
     final instrument = Instrument(
-      token: "",
+      token: data['token']?.toString() ?? "",
       symbol: provider.symbol,
       name: provider.symbol,
       exchSeg: "F&O",
       expiry: row.expiryDate,
       strike: row.strikePrice.toString(),
       instrumentType: "OPTIDX",
-      lotSize: data['lotSize']?.toString() ?? "25",
+      lotSize:
+          data['lotSize']?.toString() ??
+          "50", // Default to "50" if null or invalid
       outstandingShares: 0,
       avgVolume: 0,
     );
@@ -245,7 +247,9 @@ class _OptionChainBodyState extends State<_OptionChainBody>
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
+            color: Colors.black.withValues(
+              alpha: theme.brightness == Brightness.dark ? 0.5 : 0.3,
+            ),
             blurRadius: 20,
             offset: const Offset(0, -8),
           ),
@@ -321,7 +325,9 @@ class _OptionChainBodyState extends State<_OptionChainBody>
                           "₹${ltp.toStringAsFixed(2)}",
                           style: TextStyle(
                             color: isCall
-                                ? Colors.greenAccent
+                                ? const Color(
+                                    0xFF00C853,
+                                  ) // Darker green for better visibility
                                 : Colors.redAccent,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -459,9 +465,10 @@ class _OptionChainBodyState extends State<_OptionChainBody>
   }
 
   void _showExpiryPicker(BuildContext context, OptionChainProvider provider) {
+    final theme = Theme.of(context);
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1E1E1E),
+      backgroundColor: theme.scaffoldBackgroundColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -470,10 +477,10 @@ class _OptionChainBodyState extends State<_OptionChainBody>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               "Select Expiry",
               style: TextStyle(
-                color: Colors.white,
+                color: theme.textTheme.bodyMedium?.color,
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
               ),
@@ -491,7 +498,9 @@ class _OptionChainBodyState extends State<_OptionChainBody>
                       date,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: isSel ? Colors.blueAccent : Colors.white,
+                        color: isSel
+                            ? theme.colorScheme.primary
+                            : theme.textTheme.bodyMedium?.color,
                         fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
                       ),
                     ),
@@ -521,9 +530,9 @@ class _OptionChainBodyState extends State<_OptionChainBody>
         // 1. HEADER (Call | Expiry Dropdown | Put)
         Consumer<OptionChainProvider>(
           builder: (context, provider, _) {
-            final expiryText = provider.selectedExpiry.isEmpty
-                ? "Current"
-                : provider.selectedExpiry;
+            final expiryText = provider.selectedExpiry?.isNotEmpty == true
+                ? provider.selectedExpiry!
+                : "Current";
             return Container(
               color: theme.scaffoldBackgroundColor,
               padding: EdgeInsets.symmetric(
@@ -578,14 +587,17 @@ class _OptionChainBodyState extends State<_OptionChainBody>
         Container(
           color: theme.cardColor,
           padding: EdgeInsets.symmetric(vertical: ResponsiveHelper.tinySpacing),
-          child: const Row(
+          child: Row(
             children: [
               Expanded(
                 flex: 2,
                 child: Center(
                   child: Text(
                     "OI",
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).textTheme.bodySmall?.color,
+                    ),
                   ),
                 ),
               ),
@@ -594,7 +606,10 @@ class _OptionChainBodyState extends State<_OptionChainBody>
                 child: Center(
                   child: Text(
                     "LTP",
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).textTheme.bodySmall?.color,
+                    ),
                   ),
                 ),
               ),
@@ -603,7 +618,10 @@ class _OptionChainBodyState extends State<_OptionChainBody>
                 child: Center(
                   child: Text(
                     "Strike",
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).textTheme.bodySmall?.color,
+                    ),
                   ),
                 ),
               ),
@@ -612,7 +630,10 @@ class _OptionChainBodyState extends State<_OptionChainBody>
                 child: Center(
                   child: Text(
                     "LTP",
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).textTheme.bodySmall?.color,
+                    ),
                   ),
                 ),
               ),
@@ -621,7 +642,10 @@ class _OptionChainBodyState extends State<_OptionChainBody>
                 child: Center(
                   child: Text(
                     "OI",
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).textTheme.bodySmall?.color,
+                    ),
                   ),
                 ),
               ),
@@ -648,9 +672,7 @@ class _OptionChainBodyState extends State<_OptionChainBody>
               final rows = provider.rows;
               return LayoutBuilder(
                 builder: (ctx, c) {
-                  if (provider.atmIndex != null) {
-                    _scrollToAtm(provider.atmIndex!, c.maxHeight);
-                  }
+                  _scrollToAtm(provider.atmIndex, c.maxHeight);
                   return RefreshIndicator(
                     onRefresh: () async {
                       _hasScrolledToAtm = false;
@@ -738,15 +760,21 @@ class _OptionChainBodyState extends State<_OptionChainBody>
           ),
           child: Row(
             children: [
-              _cell(
-                isCall ? oi : price,
-                isCall ? "" : chg,
-                isCall ? null : _col(data?['pChange']),
+              Expanded(
+                flex: 2,
+                child: _cell(
+                  isCall ? oi : price,
+                  isCall ? "" : chg,
+                  isCall ? null : _col(data?['pChange']),
+                ),
               ),
-              _cell(
-                isCall ? price : oi,
-                isCall ? chg : "",
-                isCall ? _col(data?['pChange']) : null,
+              Expanded(
+                flex: 2,
+                child: _cell(
+                  isCall ? price : oi,
+                  isCall ? chg : "",
+                  isCall ? _col(data?['pChange']) : null,
+                ),
               ),
             ],
           ),
@@ -852,17 +880,6 @@ class OverviewTab extends StatelessWidget {
         child: CircularProgressIndicator(color: colorScheme.primary),
       );
     }
-    if (data == null) {
-      return Center(
-        child: Text(
-          "No Overview Data",
-          style: textTheme.bodyMedium?.copyWith(
-            color: textTheme.bodySmall?.color,
-            fontSize: ResponsiveHelper.captionFontSize,
-          ),
-        ),
-      );
-    }
 
     final isNeg = data.priceChange < 0;
     return RefreshIndicator(
@@ -896,7 +913,11 @@ class OverviewTab extends StatelessWidget {
                   style: textTheme.bodyMedium?.copyWith(
                     fontSize: ResponsiveHelper.captionFontSize,
                     fontWeight: FontWeight.w500,
-                    color: isNeg ? Colors.redAccent : Colors.greenAccent,
+                    color: isNeg
+                        ? Colors.redAccent
+                        : const Color(
+                            0xFF00C853,
+                          ), // Darker green for better visibility
                   ),
                 ),
               ],
@@ -937,7 +958,10 @@ class OverviewTab extends StatelessWidget {
               current: data.currentPrice,
             ),
             const SizedBox(height: 16),
-            const Divider(color: Colors.grey, thickness: 0.2),
+            Divider(
+              color: theme.dividerColor.withValues(alpha: 0.2),
+              thickness: 0.2,
+            ),
             const SizedBox(height: 16),
             Row(
               children: [
@@ -964,6 +988,7 @@ class _RangeLabels extends StatelessWidget {
   const _RangeLabels(this.l, this.h, this.lv, this.hv);
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final f = NumberFormat("#,##0.00", "en_US");
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -971,11 +996,17 @@ class _RangeLabels extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(l, style: TextStyle(color: Colors.grey[500], fontSize: 14)),
+            Text(
+              l,
+              style: TextStyle(
+                color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
+                fontSize: 14,
+              ),
+            ),
             Text(
               lv == 0 ? "-" : f.format(lv),
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: theme.textTheme.bodyMedium?.color,
                 fontWeight: FontWeight.w600,
                 fontSize: 15,
               ),
@@ -988,8 +1019,8 @@ class _RangeLabels extends StatelessWidget {
             Text(h, style: TextStyle(color: Colors.grey[500], fontSize: 14)),
             Text(
               hv == 0 ? "-" : f.format(hv),
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: theme.textTheme.bodyMedium?.color,
                 fontWeight: FontWeight.w600,
                 fontSize: 15,
               ),
@@ -1007,17 +1038,24 @@ class _StatItem extends StatelessWidget {
   const _StatItem(this.l, this.v, {this.alignEnd = false});
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: alignEnd
           ? CrossAxisAlignment.end
           : CrossAxisAlignment.start,
       children: [
-        Text(l, style: TextStyle(color: Colors.grey[500], fontSize: 14)),
+        Text(
+          l,
+          style: TextStyle(
+            color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
+            fontSize: 14,
+          ),
+        ),
         const SizedBox(height: 4),
         Text(
           v,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: theme.textTheme.bodyMedium?.color,
             fontSize: 15,
             fontWeight: FontWeight.w600,
           ),
@@ -1037,8 +1075,12 @@ class MarketRangeSlider extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     if (low == 0 || high == 0) {
-      return Container(height: 4, color: Colors.grey[800]);
+      return Container(
+        height: 4,
+        color: theme.dividerColor.withValues(alpha: 0.3),
+      );
     }
     double pct = ((current - low) / (high - low)).clamp(0.0, 1.0);
     return SizedBox(
@@ -1051,15 +1093,15 @@ class MarketRangeSlider extends StatelessWidget {
               height: 4,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.grey[800],
+                color: theme.dividerColor.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             Positioned(
               left: (c.maxWidth * pct).clamp(0.0, c.maxWidth - 12),
-              child: const Icon(
+              child: Icon(
                 Icons.arrow_drop_up,
-                color: Colors.white,
+                color: theme.textTheme.bodyMedium?.color,
                 size: 20,
               ),
             ),
