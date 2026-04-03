@@ -2,21 +2,17 @@
 
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/utils/json_parser.dart';
+import 'package:bullxchange/services/firebase/angel_one_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:dio/dio.dart';
 import 'dart:async';
 
 class StocksProvider extends ChangeNotifier {
-  final String jwtToken;
   final String apiKey;
   final String clientIP;
 
-  StocksProvider({
-    required this.jwtToken,
-    required this.apiKey,
-    required this.clientIP,
-  }) {
+  StocksProvider({required this.apiKey, required this.clientIP}) {
     _initialize();
   }
 
@@ -79,7 +75,7 @@ class StocksProvider extends ChangeNotifier {
             }
           });
         } else {
-          print("🔴 Market Closed. StocksProvider timer not started.");
+          print("� Market Closed. StocksProvider timer not started.");
         }
       }
     });
@@ -92,7 +88,6 @@ class StocksProvider extends ChangeNotifier {
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 15),
       headers: {
-        "Authorization": "Bearer $jwtToken",
         "Content-Type": "application/json",
         "Accept": "application/json",
         "X-UserType": "USER",
@@ -183,13 +178,25 @@ class StocksProvider extends ChangeNotifier {
   Future<void> fetchAndUpdateData(List<String> tokens) async {
     if (tokens.isEmpty) return;
 
+    // Get JWT token from Firebase
+    final jwtToken = await AngelOneService.getJwtToken();
+    if (jwtToken == null || jwtToken.isEmpty) {
+      errorMessage = "Failed to get JWT token from Firebase";
+      notifyListeners();
+      return;
+    }
+
     final payload = {
       "mode": "FULL",
       "exchangeTokens": {"NSE": tokens},
     };
 
     try {
-      final response = await _dio.post("/market/v1/market_data", data: payload);
+      final response = await _dio.post(
+        "/market/v1/market_data",
+        data: payload,
+        options: Options(headers: {"Authorization": "Bearer $jwtToken"}),
+      );
 
       final List<dynamic> fetchedData =
           response.data?['data']?['fetched'] ?? [];

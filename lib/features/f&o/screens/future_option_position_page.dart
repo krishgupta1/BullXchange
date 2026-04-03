@@ -35,11 +35,14 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
   @override
   Widget build(BuildContext context) {
     // Initialize responsive helper
-    ResponsiveHelper.init(context, BoxConstraints.tightFor(
-      width: MediaQuery.of(context).size.width,
-      height: MediaQuery.of(context).size.height,
-    ));
-    
+    ResponsiveHelper.init(
+      context,
+      BoxConstraints.tightFor(
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.height,
+      ),
+    );
+
     final auth = FirebaseAuth.instance;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -77,16 +80,18 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
           final double ltp =
               (instrument?.liveData['ltp'] as num?)?.toDouble() ??
               position.averagePrice;
-          
+
           // Handle both long and short positions
-          final double invested = position.averagePrice * position.quantity.abs();
+          final double invested =
+              position.averagePrice * position.quantity.abs();
           final double currentVal = ltp * position.quantity.abs();
-          
+
           // P&L calculation: For short positions, profit = (sell price - current price)
           double positionPnl;
           if (position.quantity < 0) {
             // Short position: Profit when price goes down
-            positionPnl = (position.averagePrice - ltp) * position.quantity.abs();
+            positionPnl =
+                (position.averagePrice - ltp) * position.quantity.abs();
           } else {
             // Long position: Profit when price goes up
             positionPnl = currentVal - invested;
@@ -105,7 +110,7 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
           bottomNavigationBar: _FnoBottomPnlBar(
             totalPnl: totalOverallPnl,
             totalPnlPercent: totalPnlPercent,
-            totalInvested: totalOverallPnl,
+            totalInvested: totalInvestment,
             totalCurrentValue: totalInvestment + totalOverallPnl,
           ),
           body: RefreshIndicator(
@@ -119,7 +124,9 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
             },
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.only(bottom: ResponsiveHelper.bottomNavHeight),
+              padding: EdgeInsets.only(
+                bottom: ResponsiveHelper.bottomNavHeight,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -138,10 +145,10 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
                   // --- Section Header ---
                   Padding(
                     padding: EdgeInsets.fromLTRB(
-                      ResponsiveHelper.horizontalPadding, 
-                      ResponsiveHelper.itemSpacing, 
-                      ResponsiveHelper.horizontalPadding, 
-                      ResponsiveHelper.smallSpacing
+                      ResponsiveHelper.horizontalPadding,
+                      ResponsiveHelper.itemSpacing,
+                      ResponsiveHelper.horizontalPadding,
+                      ResponsiveHelper.smallSpacing,
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -167,7 +174,9 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
                     separatorBuilder: (context, index) => Divider(
                       height: 1,
                       thickness: 0.5,
-                      indent: ResponsiveHelper.avatarSize + ResponsiveHelper.smallSpacing,
+                      indent:
+                          ResponsiveHelper.avatarSize +
+                          ResponsiveHelper.smallSpacing,
                       endIndent: ResponsiveHelper.horizontalPadding,
                       color: theme.dividerColor.withValues(alpha: 0.15),
                     ),
@@ -178,10 +187,11 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
                       );
                     },
                   ),
-              ],
+                ],
+              ),
             ),
           ),
-        ));
+        );
       },
     );
   }
@@ -269,12 +279,14 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
               ),
               Container(
                 padding: EdgeInsets.symmetric(
-                  horizontal: ResponsiveHelper.tinySpacing * 2, 
-                  vertical: ResponsiveHelper.tinySpacing * 1.5
+                  horizontal: ResponsiveHelper.tinySpacing * 2,
+                  vertical: ResponsiveHelper.tinySpacing * 1.5,
                 ),
                 decoration: BoxDecoration(
                   color: pnlColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(ResponsiveHelper.cardBorderRadius * 0.4),
+                  borderRadius: BorderRadius.circular(
+                    ResponsiveHelper.cardBorderRadius * 0.4,
+                  ),
                 ),
                 child: Text(
                   "$sign${totalPnlPercent.abs().toStringAsFixed(2)}%",
@@ -322,7 +334,9 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
               // Exit All Button Only
               InkWell(
                 onTap: onExitAll,
-                borderRadius: BorderRadius.circular(ResponsiveHelper.cardBorderRadius * 0.6),
+                borderRadius: BorderRadius.circular(
+                  ResponsiveHelper.cardBorderRadius * 0.6,
+                ),
                 child: Container(
                   padding: EdgeInsets.symmetric(
                     horizontal: ResponsiveHelper.horizontalPadding,
@@ -330,7 +344,9 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
                   ),
                   decoration: BoxDecoration(
                     color: colorScheme.error.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(ResponsiveHelper.cardBorderRadius * 0.6),
+                    borderRadius: BorderRadius.circular(
+                      ResponsiveHelper.cardBorderRadius * 0.6,
+                    ),
                     border: Border.all(
                       color: colorScheme.error.withValues(alpha: 0.3),
                     ),
@@ -367,18 +383,27 @@ class _FnoPositionsPageState extends State<FnoPositionsPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: ResponsiveHelper.tinySpacing * 1.5, 
-        vertical: ResponsiveHelper.tinySpacing * 0.75
+        horizontal: ResponsiveHelper.tinySpacing * 1.5,
+        vertical: ResponsiveHelper.tinySpacing * 0.75,
       ),
       decoration: BoxDecoration(
         color: Colors.orange.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(ResponsiveHelper.cardBorderRadius * 0.2),
-        border: Border.all(color: Colors.orange.withValues(alpha: 0.3), width: 1),
+        borderRadius: BorderRadius.circular(
+          ResponsiveHelper.cardBorderRadius * 0.2,
+        ),
+        border: Border.all(
+          color: Colors.orange.withValues(alpha: 0.3),
+          width: 1,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.flash_on_rounded, size: ResponsiveHelper.iconSize * 0.4, color: Colors.orange),
+          Icon(
+            Icons.flash_on_rounded,
+            size: ResponsiveHelper.iconSize * 0.4,
+            color: Colors.orange,
+          ),
           SizedBox(width: ResponsiveHelper.tinySpacing * 0.75),
           Text(
             "F&O",
@@ -433,14 +458,16 @@ class _FnoBottomPnlBarState extends State<_FnoBottomPnlBar> {
     return Container(
       // Minimal margin, closer to bottom
       margin: EdgeInsets.fromLTRB(
-        ResponsiveHelper.horizontalPadding * 0.75, 
-        0, 
-        ResponsiveHelper.horizontalPadding * 0.75, 
-        ResponsiveHelper.horizontalPadding
+        ResponsiveHelper.horizontalPadding * 0.75,
+        0,
+        ResponsiveHelper.horizontalPadding * 0.75,
+        ResponsiveHelper.horizontalPadding,
       ),
       decoration: BoxDecoration(
         color: const Color(0xFF1E1E1E), // Matte Black/Grey
-        borderRadius: BorderRadius.circular(ResponsiveHelper.cardBorderRadius), // Tighter radius
+        borderRadius: BorderRadius.circular(
+          ResponsiveHelper.cardBorderRadius,
+        ), // Tighter radius
         border: Border.all(color: Colors.white12, width: 1),
         boxShadow: [
           BoxShadow(
@@ -462,8 +489,8 @@ class _FnoBottomPnlBarState extends State<_FnoBottomPnlBar> {
             child: Padding(
               // Compact Padding
               padding: EdgeInsets.symmetric(
-                horizontal: ResponsiveHelper.horizontalPadding, 
-                vertical: ResponsiveHelper.itemSpacing
+                horizontal: ResponsiveHelper.horizontalPadding,
+                vertical: ResponsiveHelper.itemSpacing,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -524,7 +551,10 @@ class _FnoBottomPnlBarState extends State<_FnoBottomPnlBar> {
                   if (_isExpanded) ...[
                     SizedBox(height: ResponsiveHelper.itemSpacing),
                     // Thin separator
-                    Container(height: 1, color: Colors.white.withValues(alpha: 0.05)),
+                    Container(
+                      height: 1,
+                      color: Colors.white.withValues(alpha: 0.05),
+                    ),
                     SizedBox(height: ResponsiveHelper.smallSpacing),
 
                     // Single Row Details
@@ -559,8 +589,8 @@ class _FnoBottomPnlBarState extends State<_FnoBottomPnlBar> {
         Text(
           "$label: ",
           style: TextStyle(
-            color: Colors.grey.shade600, 
-            fontSize: ResponsiveHelper.captionFontSize
+            color: Colors.grey.shade600,
+            fontSize: ResponsiveHelper.captionFontSize,
           ),
         ),
         Text(
@@ -610,18 +640,21 @@ class _FnoPositionItemState extends State<FnoPositionItem> {
             widget.position.averagePrice;
 
         // Handle both long and short positions for individual items
-        final double invested = widget.position.averagePrice * widget.position.quantity.abs();
+        final double invested =
+            widget.position.averagePrice * widget.position.quantity.abs();
         final double currentVal = currentLtp * widget.position.quantity.abs();
-        
+
         double pnl;
         if (widget.position.quantity < 0) {
           // Short position: Profit when price goes down
-          pnl = (widget.position.averagePrice - currentLtp) * widget.position.quantity.abs();
+          pnl =
+              (widget.position.averagePrice - currentLtp) *
+              widget.position.quantity.abs();
         } else {
           // Long position: Profit when price goes up
           pnl = currentVal - invested;
         }
-        
+
         final double roi = (invested > 0) ? (pnl / invested) * 100 : 0.0;
 
         _ltpNotifier.value = currentLtp;
@@ -677,8 +710,8 @@ class _FnoPositionItemState extends State<FnoPositionItem> {
       onTap: _showShareCard,
       child: Padding(
         padding: EdgeInsets.symmetric(
-          horizontal: ResponsiveHelper.horizontalPadding, 
-          vertical: ResponsiveHelper.itemSpacing * 1.2
+          horizontal: ResponsiveHelper.horizontalPadding,
+          vertical: ResponsiveHelper.itemSpacing * 1.2,
         ),
         child: Row(
           children: [
@@ -688,7 +721,9 @@ class _FnoPositionItemState extends State<FnoPositionItem> {
               height: ResponsiveHelper.avatarSize * 0.9,
               decoration: BoxDecoration(
                 color: typeColor.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(ResponsiveHelper.cardBorderRadius * 0.6),
+                borderRadius: BorderRadius.circular(
+                  ResponsiveHelper.cardBorderRadius * 0.6,
+                ),
               ),
               child: Center(
                 child: Column(
@@ -699,7 +734,9 @@ class _FnoPositionItemState extends State<FnoPositionItem> {
                       style: TextStyle(
                         color: typeColor,
                         fontWeight: FontWeight.w900,
-                        fontSize: isShort ? ResponsiveHelper.tinyFontSize : ResponsiveHelper.smallFontSize,
+                        fontSize: isShort
+                            ? ResponsiveHelper.tinyFontSize
+                            : ResponsiveHelper.smallFontSize,
                       ),
                     ),
                     if (isShort)
@@ -741,7 +778,9 @@ class _FnoPositionItemState extends State<FnoPositionItem> {
                         ),
                         decoration: BoxDecoration(
                           color: theme.dividerColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(ResponsiveHelper.cardBorderRadius * 0.2),
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.cardBorderRadius * 0.2,
+                          ),
                         ),
                         child: Text(
                           "F&O",
@@ -821,8 +860,10 @@ class _FnoPositionItemState extends State<FnoPositionItem> {
   }
 
   Widget _buildTimeDecayInfo(BuildContext context) {
-    final expiryInfo = OptionCalculator.getExpiryInfo(widget.position.expiryDate);
-    
+    final expiryInfo = OptionCalculator.getExpiryInfo(
+      widget.position.expiryDate,
+    );
+
     Color urgencyColor;
     switch (expiryInfo.urgency) {
       case ExpiryUrgency.expired:
@@ -845,13 +886,18 @@ class _FnoPositionItemState extends State<FnoPositionItem> {
 
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: ResponsiveHelper.tinySpacing, 
-        vertical: ResponsiveHelper.tinySpacing * 0.5
+        horizontal: ResponsiveHelper.tinySpacing,
+        vertical: ResponsiveHelper.tinySpacing * 0.5,
       ),
       decoration: BoxDecoration(
         color: urgencyColor.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(ResponsiveHelper.cardBorderRadius * 0.2),
-        border: Border.all(color: urgencyColor.withValues(alpha: 0.3), width: 1),
+        borderRadius: BorderRadius.circular(
+          ResponsiveHelper.cardBorderRadius * 0.2,
+        ),
+        border: Border.all(
+          color: urgencyColor.withValues(alpha: 0.3),
+          width: 1,
+        ),
       ),
       child: Text(
         expiryInfo.statusText,
@@ -877,7 +923,9 @@ class _EmptyState extends StatelessWidget {
         Container(
           padding: EdgeInsets.all(ResponsiveHelper.cardPadding * 1.2),
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            color: theme.colorScheme.surfaceContainerHighest.withValues(
+              alpha: 0.3,
+            ),
             shape: BoxShape.circle,
           ),
           child: Icon(

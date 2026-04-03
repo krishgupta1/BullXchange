@@ -1,10 +1,15 @@
 import 'package:dio/dio.dart';
 import 'package:bullxchange/utils/logger.dart';
+import 'package:bullxchange/services/firebase/angel_one_service.dart';
 import '../constants/api_constants.dart';
 
 class AngelOneApiService {
   // 2. Create a Dio instance for network requests
   final Dio _dio = Dio();
+  
+  // Track consecutive invalid token attempts
+  static int _invalidTokenCount = 0;
+  static const int _maxInvalidAttempts = 3;
 
   Future<List<dynamic>> fetchLiveMarketData(
     Map<String, List<String>> tokensByExchange,
@@ -13,17 +18,27 @@ class AngelOneApiService {
       AppLog.w("⚠️ No tokens provided for market data fetch");
       return [];
     }
-    
+
     try {
       AppLog.i("🔄 Fetching live market data for tokens: $tokensByExchange");
-      
+
+      // Get JWT token from Firebase
+      final jwtToken = await AngelOneService.getJwtToken();
+      if (jwtToken == null || jwtToken.isEmpty) {
+        AppLog.e("❌ Failed to get JWT token from Firebase");
+        return [];
+      }
+
+      // Reset invalid token counter on successful token retrieval
+      _invalidTokenCount = 0;
+
       final url =
           "https://apiconnect.angelone.in/rest/secure/angelbroking/market/v1/quote/";
 
       // Note: In Dio, headers are passed via an `Options` object.
       final options = Options(
         headers: {
-          "Authorization": "Bearer ${ApiConstants.jwtToken}",
+          "Authorization": "Bearer $jwtToken",
           "Content-Type": "application/json",
           "Accept": "application/json",
           "X-UserType": "USER",
@@ -44,21 +59,45 @@ class AngelOneApiService {
       // 4. Dio automatically decodes the JSON response body.
       // We access it directly via `response.data`.
       final decoded = response.data;
-      
+
       AppLog.d("📊 API Response Status: ${response.statusCode}");
-      AppLog.d("📊 API Response Data: ${decoded.toString().substring(0, decoded.toString().length > 200 ? 200 : decoded.toString().length)}...");
+      AppLog.d(
+        "📊 API Response Data: ${decoded.toString().substring(0, decoded.toString().length > 200 ? 200 : decoded.toString().length)}...",
+      );
 
       try {
         if (response.statusCode == 200 &&
             decoded["status"] == true &&
             decoded["data"]?["fetched"] is List) {
           final fetched = decoded["data"]["fetched"] as List<dynamic>;
-          AppLog.i("✅ Successfully fetched ${fetched.length} market data items");
+          AppLog.i(
+            "✅ Successfully fetched ${fetched.length} market data items",
+          );
           return fetched;
         } else {
           final errorMsg = decoded['message'] ?? 'Unknown error';
           AppLog.e("❌ API Error: $errorMsg");
           AppLog.e("❌ Full Response: $decoded");
+
+          // Handle invalid JWT token
+          if (errorMsg.toString().toLowerCase().contains('invalid token') ||
+              decoded['errorCode'] == 'AG8001') {
+            _invalidTokenCount++;
+            AngelOneService.handleInvalidToken();
+            AppLog.w(
+              "🔄 Cleared invalid JWT token cache - please re-authenticate ($_invalidTokenCount/$_maxInvalidAttempts)",
+            );
+
+            // If we've had multiple invalid attempts, clear the token from Firebase
+            if (_invalidTokenCount >= _maxInvalidAttempts) {
+              AppLog.w(
+                "🚨 Persistent invalid token detected - clearing from Firebase",
+              );
+              await AngelOneService.clearInvalidTokenFromFirebase();
+              _invalidTokenCount = 0; // Reset counter
+            }
+          }
+
           return [];
         }
       } catch (e) {
@@ -113,6 +152,13 @@ class AngelOneApiService {
     required String toDate,
   }) async {
     try {
+      // Get JWT token from Firebase
+      final jwtToken = await AngelOneService.getJwtToken();
+      if (jwtToken == null || jwtToken.isEmpty) {
+        AppLog.e("❌ Failed to get JWT token from Firebase");
+        return null;
+      }
+
       // This is the Angel One API endpoint for historical data
       const String historicalDataUrl =
           "https://apiconnect.angelone.in/rest/secure/angelbroking/historical/v1/getCandleData";
@@ -120,7 +166,7 @@ class AngelOneApiService {
       // Re-use the same headers, as they are required for all authenticated calls
       final options = Options(
         headers: {
-          "Authorization": "Bearer ${ApiConstants.jwtToken}",
+          "Authorization": "Bearer $jwtToken",
           "Content-Type": "application/json",
           "Accept": "application/json",
           "X-UserType": "USER",

@@ -34,44 +34,47 @@ class ChartsAndOverviewTab extends StatelessWidget {
         );
 
         // 2. Populate Data
-        if (provider.overviewData != null) {
-          instrument.liveData = {
-            'ltp': provider.overviewData!.currentPrice,
-            'netChange': provider.overviewData!.priceChange,
-            'high': provider.overviewData!.dayHigh,
-            'low': provider.overviewData!.dayLow,
-            'open': provider.overviewData!.open,
-            'tradeVolume': 0, 
-          };
-        } else {
-          instrument.liveData = {
-            'ltp': 0.0, 'netChange': 0.0, 'high': 0.0, 'low': 0.0, 'open': 0.0, 'tradeVolume': 0,
-          };
-        }
-
+        instrument.liveData = {
+          'ltp': provider.overviewData.currentPrice,
+          'netChange': provider.overviewData.priceChange,
+          'high': provider.overviewData.dayHigh,
+          'low': provider.overviewData.dayLow,
+          'open': provider.overviewData.open,
+          'tradeVolume': 0,
+        };
+      
         return Scaffold(
-          backgroundColor: Colors.black,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: RefreshIndicator(
             onRefresh: () async => await provider.fetchOptionChain(),
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.only(top: 24.0, left: 16.0, right: 16.0, bottom: 16.0),
+              padding: const EdgeInsets.only(
+                top: 24.0,
+                left: 16.0,
+                right: 16.0,
+                bottom: 16.0,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // 3. Professional Header
-                  _buildProfessionalHeader(provider.symbol, provider.overviewData),
-                  
+                  _buildProfessionalHeader(
+                    context,
+                    provider.symbol,
+                    provider.overviewData,
+                  ),
+
                   const SizedBox(height: 24),
-                  
+
                   // 4. The Chart (Fixed height)
                   SizedBox(
                     height: 300,
                     child: NativeStockChart(instrument: instrument),
                   ),
-                  
+
                   // 5. Overview Section
-                  if (provider.overviewData != null) _buildOverviewSection(provider),
+                  _buildOverviewSection(context, provider),
                 ],
               ),
             ),
@@ -81,14 +84,33 @@ class ChartsAndOverviewTab extends StatelessWidget {
     );
   }
 
-  Widget _buildProfessionalHeader(String symbol, dynamic overviewData) {
+  Widget _buildProfessionalHeader(
+    BuildContext context,
+    String symbol,
+    dynamic overviewData,
+  ) {
+    final theme = Theme.of(context);
     if (overviewData == null) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(symbol, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white70)),
+          Text(
+            symbol,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+            ),
+          ),
           const SizedBox(height: 8),
-          const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white24)),
+          SizedBox(
+            height: 20,
+            width: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: theme.textTheme.bodyMedium?.color,
+            ),
+          ),
         ],
       );
     }
@@ -97,9 +119,9 @@ class ChartsAndOverviewTab extends StatelessWidget {
     final double change = overviewData.priceChange;
     final double percent = overviewData.percentChange;
     final bool isPositive = change >= 0;
-    
+
     // Premium Finance Colors (Neon-ish)
-    final Color trendColor = isPositive 
+    final Color trendColor = isPositive
         ? const Color(0xFF26A69A) // Kite/Binance Green
         : const Color(0xFFEF5350); // Kite/Binance Red
 
@@ -112,13 +134,15 @@ class ChartsAndOverviewTab extends StatelessWidget {
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: Colors.grey[500], // Professional Grey
+            color: theme.textTheme.bodySmall?.color?.withValues(
+              alpha: 0.7,
+            ), // Professional Grey
             letterSpacing: 1.0,
           ),
         ),
-        
+
         const SizedBox(height: 6),
-        
+
         // Price Row
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -126,22 +150,24 @@ class ChartsAndOverviewTab extends StatelessWidget {
             // Big Price
             Text(
               '₹${price.toStringAsFixed(2)}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 34, // Large Hero Text
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: theme.textTheme.bodyLarge?.color,
                 height: 1.0,
                 fontFeatures: [ui.FontFeature.tabularFigures()],
               ),
             ),
-            
+
             const SizedBox(width: 12),
-            
+
             // Change Pill
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: trendColor.withValues(alpha: 0.12), // Subtle glow background
+                color: trendColor.withValues(
+                  alpha: 0.12,
+                ), // Subtle glow background
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Row(
@@ -170,8 +196,12 @@ class ChartsAndOverviewTab extends StatelessWidget {
     );
   }
 
-  Widget _buildOverviewSection(OptionChainProvider provider) {
-    final data = provider.overviewData!;
+  Widget _buildOverviewSection(
+    BuildContext context,
+    OptionChainProvider provider,
+  ) {
+    final theme = Theme.of(context);
+    final data = provider.overviewData;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -179,34 +209,42 @@ class ChartsAndOverviewTab extends StatelessWidget {
         // Section Header
         Row(
           children: [
-            const Text(
+            Text(
               "Market Overview",
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: theme.textTheme.bodyLarge?.color,
               ),
             ),
             const SizedBox(width: 8),
-            Icon(Icons.info_outline, size: 18, color: Colors.grey[600]),
+            Icon(
+              Icons.info_outline,
+              size: 18,
+              color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
+            ),
           ],
         ),
-        
+
         const SizedBox(height: 20),
 
         // Performance Section
         Row(
           children: [
-            const Text(
+            Text(
               "Performance",
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: theme.textTheme.bodyLarge?.color,
               ),
             ),
             const SizedBox(width: 8),
-            Icon(Icons.trending_up, size: 18, color: Colors.grey[600]),
+            Icon(
+              Icons.trending_up,
+              size: 18,
+              color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
+            ),
           ],
         ),
         const SizedBox(height: 20),
@@ -242,7 +280,10 @@ class ChartsAndOverviewTab extends StatelessWidget {
         ),
 
         const SizedBox(height: 24),
-        const Divider(color: Colors.grey, thickness: 0.2),
+        Divider(
+          color: theme.dividerColor.withValues(alpha: 0.2),
+          thickness: 0.2,
+        ),
         const SizedBox(height: 16),
 
         // Open & Prev Close
@@ -262,21 +303,26 @@ class ChartsAndOverviewTab extends StatelessWidget {
         ),
 
         const SizedBox(height: 16),
-        const Divider(color: Colors.grey, thickness: 0.2),
+        Divider(
+          color: theme.dividerColor.withValues(alpha: 0.2),
+          thickness: 0.2,
+        ),
 
         // Additional Stats
         Row(
           children: [
             Expanded(
               child: _StatItem(
-                label: "Day Change", 
-                value: "${data.priceChange >= 0 ? '+' : ''}${_formatNum(data.priceChange)}"
+                label: "Day Change",
+                value:
+                    "${data.priceChange >= 0 ? '+' : ''}${_formatNum(data.priceChange)}",
               ),
             ),
             Expanded(
               child: _StatItem(
                 label: "% Change",
-                value: "${data.percentChange >= 0 ? '+' : ''}${data.percentChange.toStringAsFixed(2)}%",
+                value:
+                    "${data.percentChange >= 0 ? '+' : ''}${data.percentChange.toStringAsFixed(2)}%",
                 alignEnd: true,
               ),
             ),
@@ -284,7 +330,10 @@ class ChartsAndOverviewTab extends StatelessWidget {
         ),
 
         const SizedBox(height: 16),
-        const Divider(color: Colors.grey, thickness: 0.2),
+        Divider(
+          color: theme.dividerColor.withValues(alpha: 0.2),
+          thickness: 0.2,
+        ),
 
         // Lists
         _ListRow(title: "${provider.symbol} Companies"),
@@ -308,6 +357,7 @@ class _RangeLabels extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final f = NumberFormat("#,##0.00", "en_US");
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -317,13 +367,16 @@ class _RangeLabels extends StatelessWidget {
           children: [
             Text(
               labelLow,
-              style: TextStyle(color: Colors.grey[500], fontSize: 12),
+              style: TextStyle(
+                color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
+                fontSize: 12,
+              ),
             ),
             const SizedBox(height: 2),
             Text(
               valLow == 0 ? "-" : f.format(valLow),
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: theme.textTheme.bodyMedium?.color,
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
               ),
@@ -335,13 +388,16 @@ class _RangeLabels extends StatelessWidget {
           children: [
             Text(
               labelHigh,
-              style: TextStyle(color: Colors.grey[500], fontSize: 12),
+              style: TextStyle(
+                color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
+                fontSize: 12,
+              ),
             ),
             const SizedBox(height: 2),
             Text(
               valHigh == 0 ? "-" : f.format(valHigh),
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: theme.textTheme.bodyMedium?.color,
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
               ),
@@ -364,17 +420,24 @@ class _StatItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: alignEnd
           ? CrossAxisAlignment.end
           : CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+        Text(
+          label,
+          style: TextStyle(
+            color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
+            fontSize: 12,
+          ),
+        ),
         const SizedBox(height: 4),
         Text(
           value,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: theme.textTheme.bodyMedium?.color,
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
@@ -390,6 +453,7 @@ class _ListRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       children: [
         Padding(
@@ -399,17 +463,20 @@ class _ListRow extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: Colors.white,
+                  color: theme.textTheme.bodyMedium?.color,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const Icon(Icons.keyboard_arrow_down, color: Colors.white),
+              Icon(
+                Icons.keyboard_arrow_down,
+                color: theme.textTheme.bodyMedium?.color,
+              ),
             ],
           ),
         ),
-        Divider(color: Colors.grey.withValues(alpha: 0.2), height: 1),
+        Divider(color: theme.dividerColor.withValues(alpha: 0.2), height: 1),
       ],
     );
   }

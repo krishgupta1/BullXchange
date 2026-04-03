@@ -22,25 +22,6 @@ class OverviewTab extends StatelessWidget {
       return const Center(child: CircularProgressIndicator());
     }
 
-    // Empty State
-    if (data == null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              "No Overview Data",
-              style: TextStyle(color: Colors.grey),
-            ),
-            TextButton(
-              onPressed: () => provider.fetchOptionChain(),
-              child: const Text("Retry"),
-            ),
-          ],
-        ),
-      );
-    }
-
     final isNegative = data.priceChange < 0;
     final color = isNegative ? Colors.redAccent : Colors.greenAccent;
 

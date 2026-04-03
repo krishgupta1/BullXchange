@@ -29,7 +29,9 @@ class _SettingsPageState extends State<SettingsPage> {
     final tileColor = theme.cardColor;
 
     // Common background color for icons
-    final iconBgColor = colorScheme.surfaceContainerHighest.withValues(alpha: 0.4);
+    final iconBgColor = colorScheme.surfaceContainerHighest.withValues(
+      alpha: 0.4,
+    );
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,

@@ -27,21 +27,15 @@ class ChartsTab extends StatelessWidget {
         );
 
         // 2. Populate Data
-        if (provider.overviewData != null) {
-          instrument.liveData = {
-            'ltp': provider.overviewData!.currentPrice,
-            'netChange': provider.overviewData!.priceChange,
-            'high': provider.overviewData!.dayHigh,
-            'low': provider.overviewData!.dayLow,
-            'open': provider.overviewData!.open,
-            'tradeVolume': 0, 
-          };
-        } else {
-          instrument.liveData = {
-            'ltp': 0.0, 'netChange': 0.0, 'high': 0.0, 'low': 0.0, 'open': 0.0, 'tradeVolume': 0,
-          };
-        }
-
+        instrument.liveData = {
+          'ltp': provider.overviewData.currentPrice,
+          'netChange': provider.overviewData.priceChange,
+          'high': provider.overviewData.dayHigh,
+          'low': provider.overviewData.dayLow,
+          'open': provider.overviewData.open,
+          'tradeVolume': 0, 
+        };
+      
         return Scaffold(
           backgroundColor: Colors.black,
           body: Padding(
