@@ -1,17 +1,12 @@
 // lib/provider/instrument_provider.dart
 
 import 'dart:async';
-import 'dart:convert';
 import 'package:bullxchange/models/stock_holding_model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:bullxchange/utils/logger.dart';
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:bullxchange/services/scrip_master_service.dart';
 import '../api/angel_one_api_service.dart';
 import '../models/instrument_model.dart';
-
-List<dynamic> _parseJson(String jsonString) {
-  return jsonDecode(jsonString) as List<dynamic>;
-}
 
 class InstrumentProvider with ChangeNotifier {
   final AngelOneApiService _apiService = AngelOneApiService();
@@ -131,13 +126,7 @@ class InstrumentProvider with ChangeNotifier {
 
   Future<void> _initialize() async {
     try {
-      final jsonString = await rootBundle.loadString(
-        'assets/OpenAPIScripMaster.json',
-      );
-      final List<dynamic> data = await compute(_parseJson, jsonString);
-      _allInstruments = data
-          .map((item) => Instrument.fromJson(item as Map<String, dynamic>))
-          .toList();
+      _allInstruments = await ScripMasterService.instance.getInstruments();
 
       await _startPeriodicFetches();
     } catch (e, stackTrace) {

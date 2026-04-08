@@ -1,9 +1,8 @@
 // lib/provider/market_provider.dart
 
 import 'package:bullxchange/models/instrument_model.dart';
-import 'package:bullxchange/utils/json_parser.dart';
+import 'package:bullxchange/services/scrip_master_service.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:dio/dio.dart';
 import 'dart:async';
 
@@ -111,13 +110,9 @@ class StocksProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final String jsonString = await rootBundle.loadString(
-        'assets/OpenAPIScripMaster.json',
-      );
-      final List<dynamic> data = await compute(parseJson, jsonString);
+      final allInstruments = await ScripMasterService.instance.getInstruments();
 
-      final equityList = data
-          .map((item) => Instrument.fromJson(item as Map<String, dynamic>))
+      final equityList = allInstruments
           .where((inst) => inst.exchSeg == 'NSE' && inst.symbol.endsWith('-EQ'))
           .toList();
 

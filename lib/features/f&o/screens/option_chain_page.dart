@@ -159,6 +159,30 @@ class _OptionChainBodyState extends State<_OptionChainBody>
   }
 
   final NumberFormat _lotsFormat = NumberFormat("#,##0", "en_US");
+  final DateFormat _expiryDisplayFormat = DateFormat("dd MMM yy", "en_US");
+
+  String _formatExpiryDate(String expiryDate) {
+    try {
+      String cleanDate = expiryDate.trim().toUpperCase().replaceAll(
+        RegExp(r'[^A-Z0-9]'),
+        '',
+      );
+
+      if (cleanDate.length >= 9) {
+        DateTime dt = DateFormat("ddMMMyyyy", "en_US").parseLoose(cleanDate);
+        return _expiryDisplayFormat.format(dt);
+      } else if (cleanDate.length >= 7) {
+        String prefix = cleanDate.substring(0, 5);
+        String suffix = cleanDate.substring(5);
+        DateTime dt = DateFormat(
+          "ddMMMyyyy",
+          "en_US",
+        ).parseLoose("${prefix}20$suffix");
+        return _expiryDisplayFormat.format(dt);
+      }
+    } catch (_) {}
+    return expiryDate;
+  }
 
   String _formatOI(dynamic oiVal, dynamic lotSizeVal) {
     if (oiVal == null) return "-";
@@ -488,7 +512,7 @@ class _OptionChainBodyState extends State<_OptionChainBody>
                   final isSel = date == provider.selectedExpiry;
                   return ListTile(
                     title: Text(
-                      date,
+                      _formatExpiryDate(date),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: isSel ? Colors.blueAccent : Colors.white,
@@ -523,7 +547,7 @@ class _OptionChainBodyState extends State<_OptionChainBody>
           builder: (context, provider, _) {
             final expiryText = provider.selectedExpiry.isEmpty
                 ? "Current"
-                : provider.selectedExpiry;
+                : _formatExpiryDate(provider.selectedExpiry);
             return Container(
               color: theme.scaffoldBackgroundColor,
               padding: EdgeInsets.symmetric(

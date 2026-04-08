@@ -25,6 +25,11 @@ class OptionChainRow {
         map['expiry']?.toString() ??
         defaultExpiry;
 
+    // Clean up expiry date format for consistency
+    if (exp.isNotEmpty) {
+      exp = exp.trim().toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
+    }
+
     return OptionChainRow(
       strikePrice: double.tryParse(map['strikePrice'].toString()) ?? 0.0,
       expiryDate: exp,
@@ -177,14 +182,18 @@ class OptionChainProvider extends ChangeNotifier {
       }
 
       _expiryDates = foundExpiries;
+      AppLog.i("📅 Provider received expiries: $_expiryDates");
+      AppLog.i("🎯 Current selected expiry: $_selectedExpiry");
 
       if (_expiryDates.isNotEmpty) {
         if (_selectedExpiry.isEmpty || _selectedExpiry == "Current") {
           _selectedExpiry = _expiryDates.first;
+          AppLog.i("🔄 Auto-selected first expiry: $_selectedExpiry");
         }
       } else {
         _expiryDates = ["Current"];
         _selectedExpiry = "Current";
+        AppLog.i("⚠️ No expiries found, using 'Current'");
       }
 
       final List<dynamic>? list = raw['filtered']?['data'];

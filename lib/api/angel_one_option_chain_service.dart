@@ -1,8 +1,7 @@
-import 'dart:convert';
 import 'package:bullxchange/models/instrument_model.dart';
 import 'package:bullxchange/utils/logger.dart';
 import 'package:bullxchange/api/angel_one_api_service.dart';
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:bullxchange/services/scrip_master_service.dart';
 import 'package:intl/intl.dart';
 
 class AngelOneOptionChainService {
@@ -191,6 +190,29 @@ class AngelOneOptionChainService {
         targetExpiry = specificExpiry;
       } else if (allExpiries.isNotEmpty) {
         targetExpiry = allExpiries.first;
+
+        // Additional validation: if first expiry is too far in future (> 2 months),
+        // try to find a more reasonable one
+        if (targetExpiry.isNotEmpty) {
+          DateTime parsedExpiry = _parseDateRobust(targetExpiry);
+          final now = DateTime.now();
+          final twoMonthsLater = DateTime(now.year, now.month + 2, now.day);
+
+          if (parsedExpiry.isAfter(twoMonthsLater)) {
+            AppLog.w(
+              "⚠️ First expiry ($targetExpiry) is > 2 months away, looking for nearer expiry",
+            );
+            // Try to find expiry within next 2 months
+            for (String expiry in allExpiries) {
+              DateTime dt = _parseDateRobust(expiry);
+              if (!dt.isAfter(twoMonthsLater)) {
+                targetExpiry = expiry;
+                AppLog.i("✅ Found nearer expiry: $targetExpiry");
+                break;
+              }
+            }
+          }
+        }
       }
 
       // 6. Filter by Expiry
@@ -444,7 +466,21 @@ class AngelOneOptionChainService {
       '',
     );
     try {
-      if (d.length >= 9) return DateFormat("ddMMMyyyy", "en_US").parseLoose(d);
+      // Try different date formats that might be in the data
+      if (d.length >= 9) {
+        // Try ddMMMyyyy format first
+        try {
+          return DateFormat("ddMMMyyyy", "en_US").parseLoose(d);
+        } catch (_) {
+          // Try ddMMyyyy format
+          try {
+            return DateFormat("ddMMyyyy", "en_US").parseLoose(d);
+          } catch (_) {
+            // Try yyyyMMdd format
+            return DateFormat("yyyyMMdd", "en_US").parseLoose(d);
+          }
+        }
+      }
       if (d.length >= 7) {
         String prefix = d.substring(0, 5);
         String suffix = d.substring(5);
@@ -453,8 +489,33 @@ class AngelOneOptionChainService {
           "en_US",
         ).parseLoose("${prefix}20$suffix");
       }
-    } catch (_) {}
+    } catch (e) {
+      AppLog.e("❌ Failed to parse date: '$dateStr' -> '$d'. Error: $e");
+    }
     return DateTime(2099);
+  }
+
+  String _formatExpiryForDisplay(String expiryDate) {
+    try {
+      String cleanDate = expiryDate.trim().toUpperCase().replaceAll(
+        RegExp(r'[^A-Z0-9]'),
+        '',
+      );
+
+      if (cleanDate.length >= 9) {
+        DateTime dt = DateFormat("ddMMMyyyy", "en_US").parseLoose(cleanDate);
+        return DateFormat("ddMMMyyyy", "en_US").format(dt);
+      } else if (cleanDate.length >= 7) {
+        String prefix = cleanDate.substring(0, 5);
+        String suffix = cleanDate.substring(5);
+        DateTime dt = DateFormat(
+          "ddMMMyyyy",
+          "en_US",
+        ).parseLoose("${prefix}20$suffix");
+        return DateFormat("ddMMMyyyy", "en_US").format(dt);
+      }
+    } catch (_) {}
+    return expiryDate;
   }
 
   // ⭐️ UPDATED: Hides Past Expiries
@@ -468,16 +529,29 @@ class AngelOneOptionChainService {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
+    AppLog.i(
+      "🔍 Finding expiries. Today is: ${today.toString().split(' ')[0]}",
+    );
+    AppLog.i("📅 Raw expiry dates found: ${exps.toList()}");
+
     for (var e in exps) {
       DateTime dt = _parseDateRobust(e);
-      // Strictly ignore dates before today
+      AppLog.i("📆 Parsing expiry '$e' -> ${dt.toString().split(' ')[0]}");
+      // Strictly ignore dates before today, but include today's expiry
       if (dt.year < 2099 && (dt.isAfter(today) || dt.isAtSameMomentAs(today))) {
         dates.add(dt);
         map[dt] = e.replaceAll(RegExp(r'[^A-Z0-9]'), '');
+        AppLog.i("✅ Added valid expiry: ${dt.toString().split(' ')[0]}");
+      } else {
+        AppLog.i(
+          "❌ Rejected expiry: ${dt.toString().split(' ')[0]} (past or invalid)",
+        );
       }
     }
     dates.sort();
-    return dates.map((d) => map[d]!).toList();
+    final result = dates.map((d) => map[d]!).toList();
+    AppLog.i("🎯 Final sorted expiries: $result");
+    return result;
   }
 
   String _findNearestExpiry(List<Instrument> o) {
@@ -489,9 +563,7 @@ class AngelOneOptionChainService {
 
   Future<List<Instrument>> _getOrLoadScripMaster() async {
     if (_cachedInstruments != null) return _cachedInstruments!;
-    final s = await rootBundle.loadString('assets/OpenAPIScripMaster.json');
-    final List<dynamic> d = jsonDecode(s);
-    _cachedInstruments = d.map((e) => Instrument.fromJson(e)).toList();
+    _cachedInstruments = await ScripMasterService.instance.getInstruments();
     return _cachedInstruments!;
   }
 }
