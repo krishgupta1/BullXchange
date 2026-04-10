@@ -278,7 +278,7 @@ class _NativeStockChartState extends State<NativeStockChart>
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: timeframes.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        separatorBuilder: (_, _) => const SizedBox(width: 12),
         itemBuilder: (context, index) {
           final tf = timeframes[index];
           final isSelected = tf == _selectedTimeframe;
