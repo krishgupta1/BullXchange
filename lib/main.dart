@@ -15,6 +15,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bullxchange/services/firebase/user_service.dart';
 import 'package:bullxchange/models/user_profile_data_model.dart';
 import 'package:bullxchange/services/expiry_service.dart';
+import 'package:bullxchange/services/firebase/admin_config_service.dart';
+import 'package:bullxchange/constants/api_constants.dart';
 
 // --- main() function ---
 Future<void> main() async {
@@ -24,6 +26,12 @@ Future<void> main() async {
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await dotenv.load(fileName: ".env");
+
+  // 🚀 Fetch Angel One configuration from Firestore
+  final adminConfig = await AdminConfigService().fetchAngelOneConfig();
+  if (adminConfig != null) {
+    ApiConstants.updateFromFirestore(adminConfig);
+  }
 
   // 🆓 FREE: Check expired positions on app startup (no paid services)
   await ExpiryService.checkAndCleanExpiredPositions();

@@ -1,8 +1,28 @@
 class ApiConstants {
-  // IMPORTANT: Replace these with your actual, fresh credentials.
-  // The JWT token is short-lived and must be regenerated regularly.
-  static const String jwtToken =
-      "eyJhbGciOiJIUzUxMiJ9.eyJ1c2VybmFtZSI6IkFBQU83ODQzOTMiLCJyb2xlcyI6MCwidXNlcnR5cGUiOiJVU0VSIiwidG9rZW4iOiJleUpoYkdjaU9pSlNVekkxTmlJc0luUjVjQ0k2SWtwWFZDSjkuZXlKMWMyVnlYM1I1Y0dVaU9pSmpiR2xsYm5RaUxDSjBiMnRsYmw5MGVYQmxJam9pZEhKaFpHVmZZV05qWlhOelgzUnZhMlZ1SWl3aVoyMWZhV1FpT2pNc0luTnZkWEpqWlNJNklqTWlMQ0prWlhacFkyVmZhV1FpT2lJNE16a3paVEl5T0MweE1ESXhMVE0zTmpJdE9URmtZUzAwWlRNNU1HRTVOVE0yTWpRaUxDSnJhV1FpT2lKMGNtRmtaVjlyWlhsZmRqSWlMQ0p2Ylc1bGJXRnVZV2RsY21sa0lqb3pMQ0p3Y205a2RXTjBjeUk2ZXlKa1pXMWhkQ0k2ZXlKemRHRjBkWE1pT2lKaFkzUnBkbVVpZlN3aWJXWWlPbnNpYzNSaGRIVnpJam9pWVdOMGFYWmxJbjE5TENKcGMzTWlPaUowY21Ga1pWOXNiMmRwYmw5elpYSjJhV05sSWl3aWMzVmlJam9pUVVGQlR6YzRORE01TXlJc0ltVjRjQ0k2TVRjM05UY3hNemd5TWl3aWJtSm1Jam94TnpjMU5qSTNNalF5TENKcFlYUWlPakUzTnpVMk1qY3lORElzSW1wMGFTSTZJalkyWm1ZeVlqSTBMV1ZoWlRrdE5HTTBOQzFpWmpabExXWTRZakEyTlRRM1pUaG1OU0lzSWxSdmEyVnVJam9pSW4wLmJJV19xY01ub0daTjNsd0VFV1Vmb0FiMGlLTW1CM0VVSEFpanpnNmRHdVQwbURKMUk1TFhObXNmRmVPNmFEdUdiZmdpMjVYNUpqWjJfcU5uVXExX2R4YTJ0LVEySm5ZaUUtX0ZVcHdGbFhDa214V0lWZlNhZjMzYWVqWjNsaWJuc3BjTFphd2t0SUExWG91OXZfZkR2RjJTWXpaNEIzb2RNaFh4amhLOHBkOCIsIkFQSS1LRVkiOiJOZGNvUFhCSyIsIlgtT0xELUFQSS1LRVkiOmZhbHNlLCJpYXQiOjE3NzU2Mjc0MjIsImV4cCI6MTc3NTY3MzAwMH0.DXkXFQMTmb1QwzAd_YlPjIs1rSu8aFqPAdYd4JjR3LgvmnWx8f8yRuJLuuyz5ArbTlioYdRyoXRnFLEAFFbkWw";
-  static const String apiKey = "NdcoPXBK";
-  static const String clientIP = "172.16.52.194";
+  // These will be updated from Firestore on startup
+  static String jwtToken = "";
+  static String apiKey = "NdcoPXBK";
+  static String clientIP = "172.16.52.194";
+  
+  // Additional fields from Firestore
+  static String clientCode = "";
+  static String clientPublicIP = "172.16.52.194";
+  static String macAddress = "00:00:00:00:00:00";
+  static String privateKey = "";
+  static String sourceId = "WEB";
+
+  static void updateFromFirestore(Map<String, dynamic> data) {
+    if (data.containsKey('jwtToken')) jwtToken = data['jwtToken'];
+    if (data.containsKey('apiKey')) apiKey = data['apiKey'];
+    if (data.containsKey('clientLocalIP')) clientIP = data['clientLocalIP'];
+    if (data.containsKey('clientPublicIP')) clientPublicIP = data['clientPublicIP'];
+    if (data.containsKey('clientCode')) clientCode = data['clientCode'];
+    if (data.containsKey('macAddress')) macAddress = data['macAddress'];
+    if (data.containsKey('privateKey')) privateKey = data['privateKey'];
+    if (data.containsKey('sourceId')) sourceId = data['sourceId'];
+    
+    // Fallback logic
+    if (apiKey.isEmpty && privateKey.isNotEmpty) apiKey = privateKey;
+  }
 }
+
